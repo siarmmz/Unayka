@@ -1,0 +1,52 @@
+@using Microsoft.AspNetCore.WebUtilities
+@using Unayka.Web.Components.Store
+@inject ICatalogQuery Catalog
+
+@if (_productName is not null)
+{
+    <div role="status" class="fixed inset-x-4 bottom-24 z-50 mx-auto max-w-md rounded-2xl border border-border bg-surface p-4 shadow-xl md:bottom-6 md:left-auto md:right-6 md:mx-0">
+        <div class="flex items-start gap-3">
+            <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-success-soft text-success">
+                <StoreIcon Name="@StoreIcons.Check" Class="h-5 w-5"/>
+            </span>
+            <p class="text-base text-accent-strong">@Text(_message)</p>
+        </div>
+        <div class="mt-4 flex flex-col gap-2 sm:flex-row">
+            <a href="@_cartUrl" class="btn-compact sm:flex-1">@Text(Data.ViewCartLabel)</a>
+            <a href="@_continueUrl" class="inline-flex min-h-11 items-center justify-center rounded-full border border-border px-4 text-sm text-accent-strong transition hover:border-accent sm:flex-1">@Text(Data.ContinueLabel)</a>
+        </div>
+    </div>
+}
+
+@code {
+    private static readonly (string AddedSuffix, string ViewCartLabel, string ContinueLabel) Data = (
+        " foi adicionado ao carrinho.",
+        "Ver carrinho",
+        "Continuar a comprar");
+
+    private string? _productName;
+    private string _message = string.Empty;
+    private string _cartUrl = string.Empty;
+    private string _continueUrl = string.Empty;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _productName = null;
+        var query = QueryHelpers.ParseQuery(new Uri(Navigation.Uri).Query);
+        if (!query.TryGetValue(CartNotice.QueryKey, out var slug) || string.IsNullOrWhiteSpace(slug))
+        {
+            return;
+        }
+
+        var product = await Catalog.FindProductAsync(slug.ToString());
+        if (product is null)
+        {
+            return;
+        }
+
+        _productName = product.Name;
+        _message = product.Name + Data.AddedSuffix;
+        _cartUrl = ToUrl(StoreUrls.Cart);
+        _continueUrl = Navigation.GetUriWithQueryParameter(CartNotice.QueryKey, (string?)null);
+    }
+}
