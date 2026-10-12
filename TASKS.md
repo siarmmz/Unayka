@@ -83,7 +83,7 @@ Wave 2 (worktrees in parallel, Sonnet, split by feature folder):
 - [ ] P12 (S) Palette and tokens (globals.css plus a sweep of every .razor): introduce semantic tokens (accent, accent-strong, accent-soft, surface, surface-alt, ink, muted, border, success, warning, danger, brand-google, brand-facebook) and a more vivid palette (warmer terracotta accent, fresher leaf green, keeping AA contrast for text); replace every use of Tailwind default colors, white and black in markup with tokens so changing one variable changes the whole site. Test added: no .razor uses a non token color class.
 
 Wave 3 (primary agent):
-- [ ] P13 (H) Tests: section, category and tag CRUD, archive rule (no delete when referenced), archived 404 public and visible in orders, stock per location in checkout, digital download token (valid, expired, other user), token only color rule. Responsive check in Chrome at 375, 768 and 1280 widths on home, loja, product, cart, checkout, contacto and admin product form.
+- [ ] P13 (H) Tests: section, category and tag CRUD, archive rule (no delete when referenced), archived 404 public and visible in orders, stock per location in checkout, digital download (buyer allowed, other user and anonymous refused), token only color rule. Responsive check in Chrome at 375, 768 and 1280 widths on home, loja, product, cart, checkout, contacto and admin product form.
 - [ ] P14 (O) Merge, update MAP.md, regenerate Tailwind, build green, commits grouped by problem solved.
 
 Owner decisions (2026-10-12):
