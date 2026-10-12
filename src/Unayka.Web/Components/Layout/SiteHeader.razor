@@ -1,6 +1,5 @@
 @using Unayka.Web.Components.Store
 @inject ICartSummary CartSummary
-@inject ICatalogQuery Catalog
 
 <header class="sticky top-0 z-40 border-b border-border bg-surface/90 backdrop-blur">
     <div class="container-page flex h-16 items-center gap-2 sm:gap-3 lg:h-20 lg:gap-8">
@@ -82,7 +81,7 @@
 
     private sealed record NavItem(string Label, string Url);
 
-    private static readonly (string BrandName, string HomeUrl, string SearchUrl, string SearchPlaceholder, string MenuLabel, string SignInLabel, string SignInUrl, string AccountLabel, string AccountUrl, string AdminLabel, string AdminUrl, string SignOutLabel, string SignOutUrl, string CartLabel, string CartUrl, (string Label, string Url) Home, (string Label, string Url) Shop, (string Label, string Url)[] Trailing) Data = (
+    private static readonly (string BrandName, string HomeUrl, string SearchUrl, string SearchPlaceholder, string MenuLabel, string SignInLabel, string SignInUrl, string AccountLabel, string AccountUrl, string AdminLabel, string AdminUrl, string SignOutLabel, string SignOutUrl, string CartLabel, string CartUrl, (string Label, string Url)[] Navigation) Data = (
         "Unayka",
         "/",
         StoreUrls.AllProducts,
@@ -98,10 +97,9 @@
         StoreUrls.SignOut,
         "Carrinho",
         StoreUrls.Cart,
-        ("Início", "/"),
-        ("Loja", StoreUrls.Shop),
         [
-            ("Sobre", "/about"),
+            ("Início", "/"),
+            ("Loja", StoreUrls.Shop),
             ("Contacto", "/contacto"),
         ]
     );
@@ -122,14 +120,7 @@
 
     protected override async Task OnInitializedAsync()
     {
-        var sections = await Catalog.SectionsAsync();
-        _navigation =
-        [
-            new NavItem(Data.Home.Label, ToUrl(Data.Home.Url)),
-            new NavItem(Data.Shop.Label, ToUrl(Data.Shop.Url)),
-            .. sections.Select(section => new NavItem(section.Name, ToUrl(StoreUrls.Section(section.Slug)))),
-            .. Data.Trailing.Select(item => new NavItem(item.Label, ToUrl(item.Url))),
-        ];
+        _navigation = Data.Navigation.Select(item => new NavItem(item.Label, ToUrl(item.Url))).ToList();
 
         var state = AuthenticationState is null ? null : await AuthenticationState;
         var user = state?.User;
