@@ -4,11 +4,11 @@
 
 <SeoComponent Title="@Data.Seo.Title" Description="@Data.Seo.Description"/>
 
-<section class="border-b border-sand bg-cream">
+<section class="border-b border-border bg-surface-alt">
     <div class="container-page py-10 md:py-14">
         <div class="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
             <div>
-                <p class="font-script text-3xl text-clay">@Text(Data.Eyebrow)</p>
+                <p class="font-script text-3xl text-accent">@Text(Data.Eyebrow)</p>
                 <h1 class="mt-1 text-4xl md:text-5xl">@Text(Data.Title)</h1>
             </div>
             <form method="get" action="@_allProductsUrl" class="flex w-full gap-2 md:max-w-md">
@@ -16,44 +16,36 @@
                 <button type="submit" class="btn-primary shrink-0">@Text(Data.SearchLabel)</button>
             </form>
         </div>
-        <nav aria-label="@Data.CategoriesTitle" class="-mx-4 mt-8 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none]">
-            <a href="@_allProductsUrl" class="@ChipClass">@Text(Data.AllLabel)</a>
-            @foreach (var category in _categories)
+        <nav aria-label="@Data.SectionsTitle" class="no-scrollbar -mx-4 mt-8 flex gap-2 overflow-x-auto px-4 pb-1">
+            @foreach (var chip in _sectionChips)
             {
-                <a href="@category.Url" class="@ChipClass">@Text(category.Name)</a>
+                <a href="@chip.Url" class="@ChipClass">@Text(chip.Name)</a>
             }
         </nav>
     </div>
 </section>
 
-@if (_marquee.Count > 0)
+@if (_featured.Count > 0)
 {
     <section class="container-page py-12 md:py-16">
         <SectionHeading Eyebrow="@Data.Featured.Eyebrow" Title="@Data.Featured.Title"/>
-        <div class="group relative mt-8 overflow-hidden rounded-3xl bg-paper [mask-image:linear-gradient(to_right,transparent,black_6%,black_94%,transparent)]">
-            <div class="flex w-max animate-marquee gap-6 py-2 group-hover:[animation-play-state:paused]">
-                @foreach (var item in _marquee)
-                {
-                    <div class="w-52 shrink-0 md:w-60">
-                        <ProductCard Model="item"/>
-                    </div>
-                }
-            </div>
+        <div class="mt-8">
+            <ProductRail Items="_featured"/>
         </div>
     </section>
 }
 
-<section class="bg-sage-soft">
+<section class="bg-success-soft">
     <div class="container-page py-12 md:py-16">
         <SectionHeading Eyebrow="@Data.Categories.Eyebrow" Title="@Data.CategoriesTitle"/>
         <div class="mt-8 grid grid-cols-2 gap-4 md:grid-cols-4">
             @foreach (var category in _categories)
             {
-                <a href="@category.Url" class="group flex items-center gap-4 rounded-2xl bg-paper p-3 transition hover:shadow-md">
+                <a href="@category.Url" class="group flex items-center gap-4 rounded-2xl bg-surface p-3 transition hover:shadow-md">
                     <img src="@category.ImageUrl" alt="" loading="lazy" class="h-16 w-16 shrink-0 rounded-xl object-cover md:h-20 md:w-20"/>
                     <span>
-                        <span class="block font-serif text-lg leading-tight text-espresso group-hover:text-clay md:text-xl">@Text(category.Name)</span>
-                        <span class="mt-1 block text-sm text-stone">@Text(category.CountLabel)</span>
+                        <span class="block font-serif text-lg leading-tight text-accent-strong group-hover:text-accent md:text-xl">@Text(category.Name)</span>
+                        <span class="mt-1 block text-sm text-muted">@Text(category.CountLabel)</span>
                     </span>
                 </a>
             }
@@ -64,12 +56,12 @@
 <section class="container-page py-12 md:py-16">
     <div class="flex items-end justify-between gap-6">
         <SectionHeading Eyebrow="@Data.Latest.Eyebrow" Title="@Data.Latest.Title"/>
-        <a href="@_allProductsUrl" class="hidden shrink-0 text-base text-espresso underline-offset-4 hover:text-clay hover:underline md:inline">@Text(Data.AllProductsLabel)</a>
+        <a href="@_allProductsUrl" class="hidden shrink-0 text-base text-accent-strong underline-offset-4 hover:text-accent hover:underline md:inline">@Text(Data.AllProductsLabel)</a>
     </div>
     <div class="mt-8 grid grid-cols-2 gap-x-4 gap-y-10 md:grid-cols-3 lg:grid-cols-4 md:gap-x-6">
         @foreach (var item in _latest)
         {
-            <ProductCard Model="item"/>
+            <StoreProductCard Model="item"/>
         }
     </div>
     <div class="mt-12 text-center">
@@ -80,37 +72,45 @@
 @code {
     private const int FeaturedCount = 10;
     private const int LatestCount = 8;
-    private const string ChipClass = "inline-flex min-h-11 shrink-0 items-center rounded-full border border-sand bg-paper px-5 text-base text-espresso transition hover:border-clay";
+    private const string ChipClass = "inline-flex min-h-11 shrink-0 items-center rounded-full border border-border bg-surface px-5 text-base text-accent-strong transition hover:border-accent";
+
+    private sealed record Link(string Name, string Url);
 
     private sealed record CategoryLink(string Name, string Url, string ImageUrl, string CountLabel);
 
-    private static readonly (string Title, string Eyebrow, string SearchPlaceholder, string SearchLabel, string AllLabel, string AllProductsLabel, string CategoriesTitle, (string Eyebrow, string Title) Featured, (string Eyebrow, string Title) Categories, (string Eyebrow, string Title) Latest, (string Title, string Description) Seo) Data = (
+    private static readonly (string Title, string Eyebrow, string SearchPlaceholder, string SearchLabel, string AllLabel, string AllProductsLabel, string SectionsTitle, string CategoriesTitle, (string Eyebrow, string Title) Featured, (string Eyebrow, string Title) Categories, (string Eyebrow, string Title) Latest, (string Title, string Description) Seo) Data = (
         "Loja",
         "Tudo num só lugar",
         "Procurar chás, cafés ou cosméticos",
         "Procurar",
         "Tudo",
         "Ver todos os produtos",
+        "Secções da loja",
         "Comprar por categoria",
         ("Os favoritos da casa", "Em destaque"),
         ("Encontre depressa", "Comprar por categoria"),
         ("Acabados de chegar", "Novidades"),
         ("Loja | Unayka", "Chás, cafés e cosméticos naturais selecionados pela Unayka. Pague com M-Pesa, e-Mola, mKesh ou cartão e levante na loja ou receba em Maputo."));
 
-    private List<ProductCardModel> _marquee = [];
+    private IReadOnlyList<ProductCardModel> _featured = [];
     private IReadOnlyList<ProductCardModel> _latest = [];
+    private List<Link> _sectionChips = [];
     private List<CategoryLink> _categories = [];
     private string _allProductsUrl = string.Empty;
 
     protected override async Task OnInitializedAsync()
     {
-        var featured = await Catalog.FeaturedAsync(FeaturedCount);
-        _marquee = [.. featured, .. featured];
+        _featured = await Catalog.FeaturedAsync(FeaturedCount);
         _latest = await Catalog.NewArrivalsAsync(LatestCount);
+        _allProductsUrl = ToUrl(StoreUrls.AllProducts);
+        var sections = await Catalog.SectionsAsync();
+        _sectionChips = sections
+            .Select(section => new Link(section.Name, ToUrl(StoreUrls.Section(section.Slug))))
+            .Prepend(new Link(Data.AllLabel, _allProductsUrl))
+            .ToList();
         _categories = (await Catalog.CategoriesAsync())
             .Select(category => new CategoryLink(category.Name, ToUrl(StoreUrls.Category(category.Slug)), ToUrl(category.ImageUrl), CountLabel(category.ProductCount)))
             .ToList();
-        _allProductsUrl = ToUrl(StoreUrls.AllProducts);
     }
 
     private static string CountLabel(int count) => count == 1 ? "1 produto" : $"{count} produtos";

@@ -1,0 +1,70 @@
+<unayka-share data-url="@_absoluteUrl" data-title="@Title" data-copied-label="@Data.CopiedLabel" class="relative inline-block">
+    <details>
+        <summary class="@_summaryClass" aria-label="@Data.ShareLabel">
+            <StoreIcon Name="@StoreIcons.Share" Class="h-5 w-5 shrink-0"/>
+            <span class="@_labelClass">@Text(Data.ShareLabel)</span>
+        </summary>
+        <div class="@_panelClass">
+            <a href="@_whatsAppUrl" target="_blank" rel="noopener noreferrer" class="@ItemClass">
+                <StoreIcon Name="@StoreIcons.WhatsApp" Class="h-5 w-5 shrink-0"/>
+                <span>@Text(Data.WhatsAppLabel)</span>
+            </a>
+            <a href="@_facebookUrl" target="_blank" rel="noopener noreferrer" class="@ItemClass">
+                <StoreIcon Name="@StoreIcons.Facebook" Class="h-5 w-5 shrink-0"/>
+                <span>@Text(Data.FacebookLabel)</span>
+            </a>
+            <button type="button" data-copy class="@ItemClass">
+                <StoreIcon Name="@StoreIcons.Link" Class="h-5 w-5 shrink-0"/>
+                <span data-copy-label>@Text(Data.CopyLabel)</span>
+            </button>
+        </div>
+    </details>
+</unayka-share>
+
+@code {
+    private const string SummaryBase = "flex cursor-pointer list-none items-center justify-center gap-2 text-sm text-accent-strong transition hover:text-accent [&::-webkit-details-marker]:hidden ";
+    private const string CompactSummary = SummaryBase + "h-11 w-11 rounded-full border border-border hover:border-accent";
+    private const string LabeledSummary = SummaryBase + "min-h-11 rounded-full border border-border px-5 hover:border-accent";
+    private const string PanelBase = "absolute right-0 z-30 w-44 rounded-2xl border border-border bg-surface p-2 shadow-xl ";
+    private const string UpwardsPanel = PanelBase + "bottom-full mb-2";
+    private const string DownwardsPanel = PanelBase + "top-full mt-2";
+    private const string ItemClass = "flex min-h-11 w-full items-center gap-3 rounded-xl px-3 text-left text-sm text-accent-strong transition hover:bg-surface-alt";
+    private const string CompactLabel = "sr-only";
+    private const string VisibleLabel = "";
+
+    private static readonly (string ShareLabel, string WhatsAppLabel, string FacebookLabel, string CopyLabel, string CopiedLabel) Data = (
+        "Partilhar",
+        "WhatsApp",
+        "Facebook",
+        "Copiar link",
+        "Link copiado");
+
+    [Parameter, EditorRequired]
+    public string Path { get; set; } = string.Empty;
+
+    [Parameter, EditorRequired]
+    public string Title { get; set; } = string.Empty;
+
+    [Parameter]
+    public bool Compact { get; set; }
+
+    [Parameter]
+    public bool Upwards { get; set; }
+
+    private string _absoluteUrl = string.Empty;
+    private string _whatsAppUrl = string.Empty;
+    private string _facebookUrl = string.Empty;
+    private string _summaryClass = LabeledSummary;
+    private string _labelClass = VisibleLabel;
+    private string _panelClass = DownwardsPanel;
+
+    protected override void OnParametersSet()
+    {
+        _absoluteUrl = Navigation.ToAbsoluteUri(Path).ToString();
+        _whatsAppUrl = $"https://wa.me/?text={Uri.EscapeDataString(Title + " " + _absoluteUrl)}";
+        _facebookUrl = $"https://www.facebook.com/sharer/sharer.php?u={Uri.EscapeDataString(_absoluteUrl)}";
+        _summaryClass = Compact ? CompactSummary : LabeledSummary;
+        _labelClass = Compact ? CompactLabel : VisibleLabel;
+        _panelClass = Upwards ? UpwardsPanel : DownwardsPanel;
+    }
+}

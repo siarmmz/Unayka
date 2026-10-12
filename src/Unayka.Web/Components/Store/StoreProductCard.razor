@@ -1,0 +1,99 @@
+<article class="@@container group flex h-full flex-col">
+    <a href="@_url" class="block">
+        <div class="relative aspect-[4/5] overflow-hidden rounded-2xl bg-surface-alt">
+            <unayka-fade class="block h-full w-full">
+                @foreach (var image in _images)
+                {
+                    <img src="@image.Url" alt="@image.Alt" loading="lazy" draggable="false" data-fade data-active="@image.ActiveMarker" class="absolute inset-0 h-full w-full object-cover opacity-0 transition-opacity duration-1000 data-[active]:opacity-100"/>
+                }
+            </unayka-fade>
+            <div class="absolute left-3 top-3 flex flex-wrap gap-1.5">
+                @foreach (var badge in _badges)
+                {
+                    <span class="@badge.CssClass">@Text(badge.Label)</span>
+                }
+            </div>
+        </div>
+        <div class="mt-4 space-y-1">
+            <p class="text-xs uppercase tracking-widest text-muted">@Text(Model.CategoryName)</p>
+            <h3 class="font-serif text-xl text-accent-strong transition group-hover:text-accent">@Text(Model.Name)</h3>
+            <PriceTag PriceMinor="Model.PriceMinor" CompareAtPriceMinor="Model.CompareAtPriceMinor"/>
+        </div>
+    </a>
+    <div class="mt-auto flex items-center gap-2 pt-4">
+        <form method="post" action="@Data.AddAction" class="min-w-0 flex-1">
+            <AntiforgeryToken/>
+            <input type="hidden" name="ProductId" value="@Model.Id"/>
+            <input type="hidden" name="ReturnUrl" value="@_returnUrl"/>
+            <button type="submit" disabled="@_soldOut" aria-label="@_addLabel" class="btn-compact w-full px-3">
+                <StoreIcon Name="@StoreIcons.Bag" Class="h-5 w-5 shrink-0"/>
+                <span aria-hidden="true" class="hidden @@[11rem]:inline @@[17rem]:hidden">@Text(_shortLabel)</span>
+                <span aria-hidden="true" class="hidden @@[17rem]:inline">@Text(_addLabel)</span>
+            </button>
+        </form>
+        <ShareButton Path="@_url" Title="@Model.Name" Compact="true" Upwards="true"/>
+    </div>
+</article>
+
+@code {
+    private const int MaxImages = 4;
+    private const string BadgeBase = "rounded-full px-3 py-1 text-xs font-medium tracking-wide ";
+    private const string NewBadgeClass = BadgeBase + "bg-accent text-surface";
+    private const string PlainBadgeClass = BadgeBase + "bg-surface/90 text-accent-strong";
+
+    private sealed record CardImage(string Url, string Alt, string? ActiveMarker);
+
+    private sealed record CardBadge(string Label, string CssClass);
+
+    private static readonly (string AddAction, string AddLabel, string ShortLabel, string SoldOutLabel, string NewLabel, string DigitalLabel) Data = (
+        "/carrinho/adicionar",
+        "Adicionar ao carrinho",
+        "Adicionar",
+        "Esgotado",
+        "Novo",
+        "Digital");
+
+    [Parameter, EditorRequired]
+    public ProductCardModel Model { get; set; } = null!;
+
+    private List<CardImage> _images = [];
+    private List<CardBadge> _badges = [];
+    private string _url = string.Empty;
+    private string _returnUrl = string.Empty;
+    private string _addLabel = Data.AddLabel;
+    private string _shortLabel = Data.ShortLabel;
+    private bool _soldOut;
+
+    protected override void OnParametersSet()
+    {
+        _url = ToUrl(StoreUrls.Product(Model.Slug));
+        _returnUrl = CartNotice.ReturnUrl(Navigation, Model.Slug);
+        _soldOut = !Model.InStock;
+        _addLabel = _soldOut ? Data.SoldOutLabel : Data.AddLabel;
+        _shortLabel = _soldOut ? Data.SoldOutLabel : Data.ShortLabel;
+        string[] urls = Model.ImageUrls.Count > 0 ? [.. Model.ImageUrls.Take(MaxImages)] : [Model.ImageUrl];
+        _images = urls.Select((url, index) => new CardImage(ToUrl(url), index == 0 ? Model.Name : string.Empty, index == 0 ? string.Empty : null)).ToList();
+        _badges = BuildBadges();
+    }
+
+    private List<CardBadge> BuildBadges()
+    {
+        var badges = new List<CardBadge>();
+        if (Model.IsNew)
+        {
+            badges.Add(new CardBadge(Data.NewLabel, NewBadgeClass));
+        }
+
+        if (Model.Badge is not null && !string.Equals(Model.Badge, Data.NewLabel, StringComparison.OrdinalIgnoreCase))
+        {
+            badges.Add(new CardBadge(Model.Badge, PlainBadgeClass));
+        }
+
+        if (Model.Kind == ProductKind.Digital)
+        {
+            badges.Add(new CardBadge(Data.DigitalLabel, PlainBadgeClass));
+        }
+
+        return badges;
+    }
+}

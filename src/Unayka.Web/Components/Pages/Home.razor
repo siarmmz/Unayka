@@ -4,15 +4,15 @@
 
 <SeoComponent Title="@Data.Seo.Title" Description="@Data.Seo.Description" StructuredDataJson="@_structuredData"/>
 
-<unayka-carousel class="relative block h-[78vh] min-h-[32rem] overflow-hidden bg-cream">
+<unayka-carousel class="relative block touch-pan-y select-none h-[78vh] min-h-[32rem] overflow-hidden bg-surface-alt">
     @foreach (var slide in _slides)
     {
         <div data-slide class="@SlideClass" data-active="@slide.ActiveMarker">
             <img src="@slide.ImageUrl" alt="" class="absolute inset-0 -z-20 h-full w-full scale-105 object-cover transition-transform duration-[6000ms] ease-out group-data-[active]:scale-100"/>
-            <div class="absolute inset-0 -z-10 bg-gradient-to-r from-paper via-paper/80 to-paper/10"></div>
+            <div class="absolute inset-0 -z-10 bg-gradient-to-r from-surface via-surface/80 to-surface/10"></div>
             <div class="container-page flex h-full items-center">
                 <div class="max-w-xl translate-y-4 transition duration-700 group-data-[active]:translate-y-0">
-                    <p class="font-script text-3xl text-clay md:text-4xl">@Text(slide.Eyebrow)</p>
+                    <p class="font-script text-3xl text-accent md:text-4xl">@Text(slide.Eyebrow)</p>
                     <h1 class="mt-2 text-5xl leading-[1.05] md:text-6xl">@Text(slide.Title)</h1>
                     <p class="mt-5 text-lg text-ink">@Text(slide.Text)</p>
                     <a href="@slide.Url" class="btn-primary mt-8">@Text(slide.ActionLabel)</a>
@@ -20,11 +20,11 @@
             </div>
         </div>
     }
-    <div class="absolute bottom-6 left-1/2 z-20 flex -translate-x-1/2 gap-1 rounded-full bg-paper/85 px-2 shadow-sm">
+    <div class="absolute bottom-6 left-1/2 z-20 flex -translate-x-1/2 gap-1 rounded-full bg-surface/85 px-2 shadow-sm">
         @foreach (var slide in _slides)
         {
             <button type="button" data-bullet aria-label="@slide.Eyebrow" class="group/bullet flex h-11 items-center px-1.5">
-                <span class="block h-2.5 w-2.5 rounded-full bg-espresso/35 transition-all duration-500 group-hover/bullet:bg-espresso/60 group-aria-[current=true]/bullet:w-8 group-aria-[current=true]/bullet:bg-espresso"></span>
+                <span class="block h-2.5 w-2.5 rounded-full bg-accent-strong/35 transition-all duration-500 group-hover/bullet:bg-accent-strong/60 group-aria-[current=true]/bullet:w-8 group-aria-[current=true]/bullet:bg-accent-strong"></span>
             </button>
         }
     </div>
@@ -35,21 +35,21 @@
     <ProductRowSection Eyebrow="@row.Eyebrow" Title="@row.Title" Subtitle="@row.Subtitle" Url="@row.Url" MoreLabel="@Data.MoreLabel" Items="row.Items" Tinted="row.Tinted"/>
 }
 
-<section class="container-page py-16 md:py-20">
+<section id="como-comprar" class="container-page py-16 md:py-20">
     <SectionHeading Eyebrow="@Data.Steps.Eyebrow" Title="@Data.Steps.Title" Centered="true"/>
     <ol class="mt-12 grid gap-6 md:grid-cols-3">
         @foreach (var step in _steps)
         {
-            <li class="rounded-3xl bg-cream p-8 text-center">
-                <p class="font-script text-4xl text-clay">@Text(step.Number)</p>
+            <li class="rounded-3xl bg-surface-alt p-8 text-center">
+                <p class="font-script text-4xl text-accent">@Text(step.Number)</p>
                 <h3 class="mt-2 text-2xl">@Text(step.Title)</h3>
-                <p class="mt-3 text-stone">@Text(step.Text)</p>
+                <p class="mt-3 text-muted">@Text(step.Text)</p>
             </li>
         }
     </ol>
 </section>
 
-<section class="bg-sage-soft">
+<section class="bg-success-soft">
     <div class="container-page grid items-center gap-10 py-16 md:grid-cols-2 md:gap-16 md:py-20">
         <img src="@_storyUrl" alt="@Data.Story.ImageAlt" loading="lazy" class="aspect-[4/5] w-full rounded-3xl object-cover"/>
         <div>
@@ -64,11 +64,11 @@
 </section>
 
 <section class="container-page py-16 md:py-20">
-    <div class="flex flex-col items-center gap-6 rounded-3xl border border-sand bg-paper p-8 text-center md:flex-row md:justify-between md:p-12 md:text-left">
+    <div class="flex flex-col items-center gap-6 rounded-3xl border border-border bg-surface p-8 text-center md:flex-row md:justify-between md:p-12 md:text-left">
         <div>
-            <p class="font-script text-3xl text-clay">@Text(Data.Contact.Eyebrow)</p>
+            <p class="font-script text-3xl text-accent">@Text(Data.Contact.Eyebrow)</p>
             <h2 class="mt-1 text-3xl md:text-4xl">@Text(Data.Contact.Title)</h2>
-            <p class="mt-3 max-w-lg text-stone">@Text(Data.Contact.Text)</p>
+            <p class="mt-3 max-w-lg text-muted">@Text(Data.Contact.Text)</p>
         </div>
         <a href="@_contactUrl" class="btn-primary shrink-0">@Text(Data.Contact.ActionLabel)</a>
     </div>
