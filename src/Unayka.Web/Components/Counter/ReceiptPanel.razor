@@ -1,0 +1,76 @@
+@using Unayka.Core.Counter
+
+<article class="mx-auto w-full max-w-md rounded-3xl border border-sand bg-paper p-8 shadow-sm">
+    <header class="text-center">
+        <p class="font-script text-4xl text-clay">@Text(Heading)</p>
+        <p class="mt-1 font-serif text-3xl text-espresso">@Text(_number)</p>
+        <p class="mt-1 text-xs uppercase tracking-widest text-stone">@Text(_when)</p>
+    </header>
+
+    <ul class="mt-6 divide-y divide-sand border-y border-sand">
+        @foreach (var row in _rows)
+        {
+            <li class="flex items-baseline justify-between gap-4 py-2 text-sm">
+                <span class="text-ink">@Text(row.Label)</span>
+                <span class="text-stone">@Text(row.Amount)</span>
+            </li>
+        }
+    </ul>
+
+    <dl class="mt-4 space-y-1 text-sm">
+        @foreach (var row in _summary)
+        {
+            <div class="flex justify-between">
+                <dt class="text-stone">@Text(row.Label)</dt>
+                <dd class="@row.CssClass">@Text(row.Value)</dd>
+            </div>
+        }
+    </dl>
+
+    <div class="mt-6 flex justify-center">
+        <StatusBadge Order="Receipt.Status"/>
+    </div>
+
+    <button type="button" @onclick="OnNewSale" class="btn-primary mt-8 w-full">@Text(NewSaleLabel)</button>
+</article>
+
+@code {
+    private const string Heading = "Obrigada";
+    private const string NewSaleLabel = "Nova venda";
+    private const string TotalLabel = "Total";
+    private const string MethodLabel = "Pagamento";
+    private const string ReceivedLabel = "Recebido";
+    private const string ChangeLabel = "Troco";
+    private const string CustomerLabel = "Cliente";
+    private const string NormalClass = "text-ink";
+    private const string StrongClass = "font-serif text-xl text-espresso";
+    private const string QuantityFormat = "{0} x {1}";
+
+    [Parameter, EditorRequired]
+    public CounterReceipt Receipt { get; set; } = default!;
+
+    [Parameter]
+    public EventCallback OnNewSale { get; set; }
+
+    private string _number = string.Empty;
+    private string _when = string.Empty;
+    private List<(string Label, string Amount)> _rows = [];
+    private List<(string Label, string Value, string CssClass)> _summary = [];
+
+    protected override void OnParametersSet()
+    {
+        _number = Receipt.Number;
+        _when = CounterTimes.FormatDateTime(Receipt.At);
+        _rows = Receipt.Lines
+            .Select(line => (string.Format(System.Globalization.CultureInfo.InvariantCulture, QuantityFormat, line.Quantity, line.Name), FormatMoney(line.TotalMinor)))
+            .ToList();
+        _summary =
+        [
+            (CustomerLabel, Receipt.CustomerName, NormalClass),
+            (MethodLabel, StatusLabels.For(Receipt.Method), NormalClass),
+            (ReceivedLabel, FormatMoney(Receipt.ReceivedMinor), NormalClass),
+            (ChangeLabel, FormatMoney(Receipt.ChangeMinor), NormalClass),
+            (TotalLabel, FormatMoney(Receipt.TotalMinor), StrongClass),
+        ];
+    }
+}

@@ -1,0 +1,449 @@
+@page "/balcao"
+@layout AdminLayout
+@rendermode InteractiveServer
+@attribute [Authorize(Policy = UnaykaPolicies.Staff)]
+@using Unayka.Core.Counter
+@using Unayka.Web.Components.Counter
+@inherits CounterPageBase
+@inject ICounterShifts Shifts
+@inject ICounterSales Sales
+
+<PageTitle>@Texts.PageTitle</PageTitle>
+
+<div class="mx-auto max-w-7xl">
+    <header class="mb-6">
+        <p class="font-script text-3xl text-clay">@Text(Texts.Eyebrow)</p>
+        <h1 class="font-serif text-4xl text-espresso">@Text(Texts.Title)</h1>
+    </header>
+
+    <CounterNav/>
+
+    @if (_loaded)
+    {
+        @if (!_shiftOpen)
+        {
+            <section class="mx-auto max-w-lg rounded-3xl bg-paper p-8 shadow-sm">
+                <h2 class="font-serif text-2xl text-espresso">@Text(Texts.NoShiftTitle)</h2>
+                <p class="mt-2 text-sm text-stone">@Text(Texts.NoShiftIntro)</p>
+                @if (_error is not null)
+                {
+                    <p role="alert" class="mt-4 rounded-xl bg-rose-soft px-4 py-3 text-sm text-red-700">@Text(_error)</p>
+                }
+                <div class="mt-6">
+                    <label for="opening" class="field-label">@Text(Texts.OpeningLabel)</label>
+                    <input id="opening" type="text" inputmode="decimal" @bind="_openingText" @bind:event="oninput" class="field"/>
+                </div>
+                <button type="button" @onclick="OpenShift" class="btn-primary mt-6 w-full">@Text(Texts.OpenButton)</button>
+            </section>
+        }
+
+        @if (_shiftOpen && _stage == PosStage.Receipt && _receipt is not null)
+        {
+            <ReceiptPanel Receipt="_receipt" OnNewSale="StartNewSale"/>
+        }
+
+        @if (_shiftOpen && _stage != PosStage.Receipt)
+        {
+            <div class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_26rem]">
+                <section>
+                    <div class="mb-4 flex flex-wrap items-center gap-2">
+                        @foreach (var tab in Tabs)
+                        {
+                            <button type="button" @onclick="tab.Select" class="@tab.CssClass">@Text(tab.Label)</button>
+                        }
+                    </div>
+                    <input type="search" @bind="_search" @bind:event="oninput" placeholder="@Texts.SearchPlaceholder" class="field mb-4"/>
+
+                    <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">
+                        @foreach (var product in VisibleProducts)
+                        {
+                            <CounterTile Product="product" OnPick="AddProduct"/>
+                        }
+                    </div>
+                    @if (!VisibleProducts.Any())
+                    {
+                        <EmptyState Title="@Texts.NoProductsTitle" Message="@Texts.NoProductsMessage"/>
+                    }
+                </section>
+
+                <aside class="h-fit space-y-5 rounded-3xl bg-paper p-6 shadow-sm lg:sticky lg:top-6">
+                    <h2 class="font-serif text-2xl text-espresso">@Text(Texts.TicketTitle)</h2>
+
+                    @if (_lines.Count == 0)
+                    {
+                        <p class="py-4 text-center font-script text-2xl text-stone">@Text(Texts.EmptyTicket)</p>
+                    }
+                    <ul>
+                        @for (var index = 0; index < _lines.Count; index++)
+                        {
+                            <TicketRow Line="_lines[index]" Index="index" OnChange="ChangeQuantity" OnRemove="RemoveLine"/>
+                        }
+                    </ul>
+
+                    <details class="rounded-2xl bg-cream px-4 py-3">
+                        <summary class="cursor-pointer text-sm text-espresso">@Text(Texts.FreeAmountTitle)</summary>
+                        <div class="mt-3 space-y-3">
+                            <input type="text" maxlength="80" @bind="_freeDescription" placeholder="@Texts.FreeDescriptionPlaceholder" class="field"/>
+                            <input type="text" inputmode="decimal" @bind="_freeAmount" placeholder="@Texts.FreeAmountPlaceholder" class="field"/>
+                            <button type="button" @onclick="AddFreeAmount" class="btn-outline w-full">@Text(Texts.FreeAmountButton)</button>
+                        </div>
+                    </details>
+
+                    <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+                        <input type="text" maxlength="80" @bind="_customerName" placeholder="@Texts.CustomerNamePlaceholder" class="field"/>
+                        <input type="tel" inputmode="numeric" maxlength="16" @bind="_customerPhone" placeholder="@Texts.CustomerPhonePlaceholder" class="field"/>
+                    </div>
+
+                    <div class="flex items-baseline justify-between border-t border-sand pt-4">
+                        <span class="text-sm uppercase tracking-widest text-stone">@Text(Texts.TotalLabel)</span>
+                        <span class="font-serif text-4xl text-espresso">@Text(TotalText)</span>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2">
+                        @foreach (var method in MethodButtons)
+                        {
+                            <button type="button" @onclick="method.Select" class="@method.CssClass">@Text(method.Label)</button>
+                        }
+                    </div>
+
+                    @if (_method == PaymentMethod.Cash)
+                    {
+                        <div class="space-y-2">
+                            <label for="received" class="field-label">@Text(Texts.ReceivedLabel)</label>
+                            <input id="received" type="text" inputmode="decimal" @bind="_receivedText" @bind:event="oninput" class="field"/>
+                            <div class="flex items-center justify-between text-sm">
+                                <button type="button" @onclick="FillExact" class="text-clay underline-offset-4 hover:underline">@Text(Texts.ExactLabel)</button>
+                                <span class="@ChangeClass">@Text(ChangeText)</span>
+                            </div>
+                        </div>
+                    }
+
+                    @if (IsWallet)
+                    {
+                        <div class="space-y-2">
+                            <label for="wallet" class="field-label">@Text(Texts.WalletPhoneLabel)</label>
+                            <input id="wallet" type="tel" inputmode="numeric" maxlength="16" @bind="_walletPhone" @bind:event="oninput" placeholder="@Texts.WalletPhonePlaceholder" class="field"/>
+                        </div>
+                    }
+
+                    @if (_method == PaymentMethod.Card)
+                    {
+                        <p class="rounded-xl bg-cream px-4 py-3 text-sm text-stone">@Text(Texts.CardHint)</p>
+                    }
+
+                    @if (_stage == PosStage.WalletWaiting)
+                    {
+                        <p role="status" class="animate-pulse rounded-xl bg-sage-soft px-4 py-3 text-sm text-espresso">@Text(_walletStatus)</p>
+                    }
+
+                    @if (_error is not null)
+                    {
+                        <p role="alert" class="rounded-xl bg-rose-soft px-4 py-3 text-sm text-red-700">@Text(_error)</p>
+                    }
+
+                    <button type="button" @onclick="Pay" disabled="@(_stage == PosStage.WalletWaiting)" class="btn-primary w-full disabled:opacity-60">@Text(PayLabel)</button>
+                </aside>
+            </div>
+        }
+    }
+</div>
+
+@code {
+    private const string AllCategoriesLabel = "Todos";
+    private const string TabBase = "rounded-full border px-5 py-2 text-sm transition ";
+    private const string TabIdle = TabBase + "border-sand bg-paper text-stone hover:border-clay";
+    private const string TabActive = TabBase + "border-espresso bg-espresso text-paper";
+    private const string MethodBase = "rounded-2xl border px-3 py-3 text-sm transition ";
+    private const string MethodIdle = MethodBase + "border-sand bg-paper text-stone hover:border-clay";
+    private const string MethodActive = MethodBase + "border-espresso bg-espresso text-paper";
+    private const string ChangeEnoughClass = "font-medium text-espresso";
+    private const string ChangeMissingClass = "font-medium text-red-700";
+    private const string ChangeFormat = "Troco {0}";
+    private const string MissingFormat = "Falta {0}";
+    private const string WalletReference = "Pedido de pagamento enviado para {0}.";
+    private const string WalletWaitingFormat = "A aguardar confirmação no telemóvel {0}.";
+    private const int FirstLineQuantity = 1;
+    private const int AllCategoriesId = 0;
+
+    private static readonly (string PageTitle, string Eyebrow, string Title, string NoShiftTitle, string NoShiftIntro, string OpeningLabel, string OpenButton,
+        string SearchPlaceholder, string NoProductsTitle, string NoProductsMessage, string TicketTitle, string EmptyTicket, string FreeAmountTitle,
+        string FreeDescriptionPlaceholder, string FreeAmountPlaceholder, string FreeAmountButton, string CustomerNamePlaceholder, string CustomerPhonePlaceholder,
+        string TotalLabel, string ReceivedLabel, string ExactLabel, string WalletPhoneLabel, string WalletPhonePlaceholder, string CardHint, string CashPay,
+        string CardPay, string WalletPay, string WalletApproved, string WalletDeclined, string InvalidAmount, string DefaultFreeDescription) Texts = (
+        "Balcão | Unayka",
+        "Balcão",
+        "Venda ao balcão",
+        "Abra o caixa para vender",
+        "Indique o valor com que a gaveta começa o turno.",
+        "Valor de abertura (MZN)",
+        "Abrir caixa",
+        "Procurar produto",
+        "Nenhum produto encontrado",
+        "Experimente outra categoria ou outra pesquisa.",
+        "Talão",
+        "Toque num produto para o adicionar.",
+        "Valor livre",
+        "Descrição",
+        "Valor (MZN)",
+        "Adicionar valor livre",
+        "Nome do cliente (opcional)",
+        "Telemóvel do cliente (opcional)",
+        "Total",
+        "Valor recebido (MZN)",
+        "Valor exato",
+        "Telemóvel da carteira",
+        "84 123 4567",
+        "Confirme o valor no terminal de cartões e depois registe a venda.",
+        "Cobrar em dinheiro",
+        "Confirmar pagamento no terminal",
+        "Enviar pedido de pagamento",
+        "Pagamento aprovado.",
+        "O pagamento foi recusado. Tente outro número ou outro método.",
+        "Indique um valor válido.",
+        "Valor livre"
+    );
+
+    private static readonly Dictionary<CounterSaleError, string> SaleErrors = new()
+    {
+        [CounterSaleError.NoOpenShift] = "Abra o caixa antes de vender.",
+        [CounterSaleError.EmptyTicket] = "O talão está vazio.",
+        [CounterSaleError.InvalidAmount] = "Existe uma linha com valor ou quantidade inválidos.",
+        [CounterSaleError.InvalidWalletPhone] = "Indique um número de telemóvel válido para a carteira.",
+        [CounterSaleError.InsufficientCash] = "O valor recebido não cobre o total.",
+        [CounterSaleError.OutOfStock] = "Um dos produtos já não tem stock suficiente.",
+    };
+
+    private static readonly PaymentMethod[] Methods = [PaymentMethod.Cash, PaymentMethod.Card, PaymentMethod.MPesa, PaymentMethod.EMola];
+
+    private sealed record ChoiceView(string Label, string CssClass, Action Select);
+
+    private enum PosStage
+    {
+        Selling,
+        WalletWaiting,
+        Receipt,
+    }
+
+    private bool _loaded;
+    private bool _shiftOpen;
+    private CounterCatalog _catalog = new([], []);
+    private readonly List<TicketLine> _lines = [];
+    private int _categoryId = AllCategoriesId;
+    private string _search = string.Empty;
+    private string _openingText = "0";
+    private string _freeDescription = string.Empty;
+    private string _freeAmount = string.Empty;
+    private string _customerName = string.Empty;
+    private string _customerPhone = string.Empty;
+    private string _receivedText = string.Empty;
+    private string _walletPhone = string.Empty;
+    private PaymentMethod _method = PaymentMethod.Cash;
+    private PosStage _stage = PosStage.Selling;
+    private string _walletStatus = string.Empty;
+    private string? _error;
+    private CounterReceipt? _receipt;
+
+    private long Total => Ticket.Total(_lines);
+
+    private string TotalText => FormatMoney(Total);
+
+    private bool IsWallet => _method is PaymentMethod.MPesa or PaymentMethod.EMola;
+
+    private IEnumerable<CounterProduct> VisibleProducts =>
+        _catalog.Products
+            .Where(product => _categoryId == AllCategoriesId || product.CategoryId == _categoryId)
+            .Where(product => string.IsNullOrWhiteSpace(_search) || product.Name.Contains(_search.Trim(), StringComparison.OrdinalIgnoreCase));
+
+    private IEnumerable<ChoiceView> Tabs =>
+        _catalog.Categories
+            .Select(category => (category.Name, category.Id))
+            .Prepend((AllCategoriesLabel, AllCategoriesId))
+            .Select(tab => new ChoiceView(tab.Item1, _categoryId == tab.Item2 ? TabActive : TabIdle, () => _categoryId = tab.Item2));
+
+    private IEnumerable<ChoiceView> MethodButtons =>
+        Methods.Select(method => new ChoiceView(StatusLabels.For(method), _method == method ? MethodActive : MethodIdle, () => SelectMethod(method)));
+
+    private string PayLabel => _method switch
+    {
+        PaymentMethod.Cash => Texts.CashPay,
+        PaymentMethod.Card => Texts.CardPay,
+        _ => Texts.WalletPay,
+    };
+
+    private long Received => MoneyInput.ParseOrZero(_receivedText);
+
+    private string ChangeText => CashMath.IsSufficient(Received, Total)
+        ? string.Format(System.Globalization.CultureInfo.InvariantCulture, ChangeFormat, FormatMoney(CashMath.ChangeDue(Received, Total)))
+        : string.Format(System.Globalization.CultureInfo.InvariantCulture, MissingFormat, FormatMoney(Total - Received));
+
+    private string ChangeClass => CashMath.IsSufficient(Received, Total) ? ChangeEnoughClass : ChangeMissingClass;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        await Reload();
+        _loaded = true;
+    }
+
+    private async Task Reload()
+    {
+        _shiftOpen = await Shifts.GetOpenAsync() is not null;
+        _catalog = await Sales.LoadCatalogAsync();
+    }
+
+    private async Task OpenShift()
+    {
+        @if (!MoneyInput.TryParse(_openingText, out var opening))
+        {
+            _error = Texts.InvalidAmount;
+            return;
+        }
+
+        _error = null;
+        await Shifts.OpenAsync(UserId, opening);
+        await Reload();
+    }
+
+    private void SelectMethod(PaymentMethod method)
+    {
+        _method = method;
+        _error = null;
+    }
+
+    private void AddProduct(int productId)
+    {
+        var product = _catalog.Products.FirstOrDefault(candidate => candidate.Id == productId);
+        @if (product is null)
+        {
+            return;
+        }
+
+        var index = _lines.FindIndex(line => line.ProductId == productId);
+        @if (index < 0)
+        {
+            _lines.Add(new TicketLine(product.Id, product.Name, product.PriceMinor, FirstLineQuantity));
+            return;
+        }
+
+        @if (_lines[index].Quantity < product.StockQuantity)
+        {
+            _lines[index] = _lines[index] with { Quantity = _lines[index].Quantity + 1 };
+        }
+    }
+
+    private void ChangeQuantity((int Index, int Delta) change)
+    {
+        var line = _lines[change.Index];
+        var quantity = line.Quantity + change.Delta;
+        @if (quantity <= 0)
+        {
+            _lines.RemoveAt(change.Index);
+            return;
+        }
+
+        var stock = line.IsFreeAmount ? int.MaxValue : _catalog.Products.FirstOrDefault(product => product.Id == line.ProductId)?.StockQuantity ?? 0;
+        _lines[change.Index] = line with { Quantity = Math.Min(quantity, stock) };
+    }
+
+    private void RemoveLine(int index) => _lines.RemoveAt(index);
+
+    private void AddFreeAmount()
+    {
+        @if (!MoneyInput.TryParse(_freeAmount, out var amount) || amount <= 0)
+        {
+            _error = Texts.InvalidAmount;
+            return;
+        }
+
+        _error = null;
+        var description = string.IsNullOrWhiteSpace(_freeDescription) ? Texts.DefaultFreeDescription : _freeDescription.Trim();
+        _lines.Add(new TicketLine(TicketLine.FreeAmountProductId, description, amount, FirstLineQuantity));
+        _freeDescription = string.Empty;
+        _freeAmount = string.Empty;
+    }
+
+    private void FillExact() => _receivedText = (Total / 100m).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);
+
+    private async Task Pay()
+    {
+        _error = null;
+        @if (_lines.Count == 0)
+        {
+            _error = SaleErrors[CounterSaleError.EmptyTicket];
+            return;
+        }
+
+        @if (_method == PaymentMethod.Cash && !CashMath.IsSufficient(Received, Total))
+        {
+            _error = SaleErrors[CounterSaleError.InsufficientCash];
+            return;
+        }
+
+        @if (IsWallet && !await ConfirmWalletAsync())
+        {
+            return;
+        }
+
+        await Register();
+    }
+
+    private async Task<bool> ConfirmWalletAsync()
+    {
+        var phone = PhoneNumber.Normalize(_walletPhone);
+        @if (phone is null)
+        {
+            _error = SaleErrors[CounterSaleError.InvalidWalletPhone];
+            return false;
+        }
+
+        _stage = PosStage.WalletWaiting;
+        _walletStatus = string.Format(System.Globalization.CultureInfo.InvariantCulture, WalletReference, FormatPhone(phone));
+        StateHasChanged();
+        await Task.Delay(CounterWallet.ApprovalDelayMilliseconds / 2);
+        _walletStatus = string.Format(System.Globalization.CultureInfo.InvariantCulture, WalletWaitingFormat, FormatPhone(phone));
+        StateHasChanged();
+        await Task.Delay(CounterWallet.ApprovalDelayMilliseconds / 2);
+
+        @if (CounterWallet.Approves(phone))
+        {
+            _walletStatus = Texts.WalletApproved;
+            StateHasChanged();
+            return true;
+        }
+
+        _stage = PosStage.Selling;
+        _walletPhone = string.Empty;
+        _error = Texts.WalletDeclined;
+        return false;
+    }
+
+    private async Task Register()
+    {
+        var request = new CounterSaleRequest(UserId, _lines.ToList(), _method, _customerName, _customerPhone, _walletPhone, Received);
+        var result = await Sales.RegisterAsync(request);
+        _stage = PosStage.Selling;
+        @if (!result.Succeeded)
+        {
+            _error = SaleErrors[result.Error];
+            await Reload();
+            return;
+        }
+
+        _receipt = result.Receipt;
+        _stage = PosStage.Receipt;
+    }
+
+    private async Task StartNewSale()
+    {
+        _lines.Clear();
+        _receipt = null;
+        _customerName = string.Empty;
+        _customerPhone = string.Empty;
+        _receivedText = string.Empty;
+        _walletPhone = string.Empty;
+        _search = string.Empty;
+        _error = null;
+        _stage = PosStage.Selling;
+        await Reload();
+    }
+}

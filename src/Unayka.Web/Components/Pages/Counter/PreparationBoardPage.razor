@@ -1,0 +1,88 @@
+@page "/balcao/preparacao"
+@layout AdminLayout
+@rendermode InteractiveServer
+@attribute [Authorize(Policy = UnaykaPolicies.Staff)]
+@using Unayka.Core.Counter
+@using Unayka.Web.Components.Counter
+@inherits CounterPageBase
+@implements IDisposable
+@inject ICounterPreparation Orders
+
+<PageTitle>@Texts.PageTitle</PageTitle>
+
+<div class="mx-auto max-w-7xl">
+    <header class="mb-6">
+        <p class="font-script text-3xl text-clay">@Text(Texts.Eyebrow)</p>
+        <h1 class="font-serif text-4xl text-espresso">@Text(Texts.Title)</h1>
+        <p class="mt-1 text-sm text-stone">@Text(Texts.Intro)</p>
+    </header>
+
+    <CounterNav/>
+
+    @if (_board is not null)
+    {
+        <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            @foreach (var column in Columns)
+            {
+                <PreparationColumn Title="@column.Title" Cards="@column.Cards" OnAdvance="Advance"/>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    private const int RefreshSeconds = 5;
+
+    private static readonly (string PageTitle, string Eyebrow, string Title, string Intro) Texts = (
+        "Preparação | Unayka",
+        "Balcão",
+        "Preparação",
+        "Pedidos online e do balcão. A página atualiza sozinha a cada poucos segundos."
+    );
+
+    private static readonly string[] ColumnTitles = ["Novo / Pago", "Em preparação", "Pronto", "Entregue hoje"];
+
+    private PreparationBoard? _board;
+    private Timer? _timer;
+
+    private IEnumerable<(string Title, IReadOnlyList<PreparationCard> Cards)> Columns =>
+        _board is null
+            ? []
+            : [
+                (ColumnTitles[0], _board.Incoming),
+                (ColumnTitles[1], _board.Preparing),
+                (ColumnTitles[2], _board.Ready),
+                (ColumnTitles[3], _board.DeliveredToday),
+            ];
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        _board = await Orders.LoadBoardAsync();
+    }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            return;
+        }
+
+        var period = TimeSpan.FromSeconds(RefreshSeconds);
+        _timer = new Timer(_ => _ = InvokeAsync(Refresh), null, period, period);
+    }
+
+    private async Task Refresh()
+    {
+        _board = await Orders.LoadBoardAsync();
+        StateHasChanged();
+    }
+
+    private async Task Advance(int orderId)
+    {
+        await Orders.AdvanceAsync(orderId, UserId);
+        await Refresh();
+    }
+
+    public void Dispose() => _timer?.Dispose();
+}

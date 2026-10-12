@@ -1,0 +1,48 @@
+@using Unayka.Core.Counter
+
+<button type="button" disabled="@_soldOut" @onclick="Pick" class="@_cssClass">
+    <span class="block aspect-[4/3] w-full overflow-hidden bg-cream">
+        @if (_hasImage)
+        {
+            <img src="@Product.ImageUrl" alt="" loading="lazy" class="h-full w-full object-cover"/>
+        }
+    </span>
+    <span class="block px-3 py-3">
+        <span class="block min-h-10 font-serif text-lg leading-tight text-espresso">@Text(Product.Name)</span>
+        <span class="mt-1 flex items-center justify-between text-sm">
+            <span class="font-medium text-ink">@Text(_price)</span>
+            <span class="text-xs text-stone">@Text(_stock)</span>
+        </span>
+    </span>
+</button>
+
+@code {
+    private const string BaseClass = "overflow-hidden rounded-2xl border border-sand bg-paper text-left transition";
+    private const string ActiveClass = "hover:border-clay hover:shadow-md active:scale-95";
+    private const string SoldOutClass = "cursor-not-allowed opacity-50";
+    private const string StockFormat = "{0} em stock";
+    private const string SoldOutLabel = "Esgotado";
+
+    [Parameter, EditorRequired]
+    public CounterProduct Product { get; set; } = default!;
+
+    [Parameter]
+    public EventCallback<int> OnPick { get; set; }
+
+    private bool _soldOut;
+    private bool _hasImage;
+    private string _price = string.Empty;
+    private string _stock = string.Empty;
+    private string _cssClass = BaseClass;
+
+    protected override void OnParametersSet()
+    {
+        _soldOut = Product.StockQuantity <= 0;
+        _hasImage = Product.ImageUrl.Length > 0;
+        _price = FormatMoney(Product.PriceMinor);
+        _stock = _soldOut ? SoldOutLabel : string.Format(System.Globalization.CultureInfo.InvariantCulture, StockFormat, Product.StockQuantity);
+        _cssClass = $"{BaseClass} {(_soldOut ? SoldOutClass : ActiveClass)}";
+    }
+
+    private Task Pick() => OnPick.InvokeAsync(Product.Id);
+}
