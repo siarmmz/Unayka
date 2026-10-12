@@ -1,0 +1,37 @@
+@if (PageCount > 1)
+{
+    <nav class="flex items-center justify-center gap-3">
+        <button type="button" class="btn-outline px-5 py-2 disabled:pointer-events-none disabled:opacity-40" disabled="@_isFirst" @onclick="GoPrevious">@Text(PreviousLabel)</button>
+        <span class="text-sm text-stone">@Text(_position)</span>
+        <button type="button" class="btn-outline px-5 py-2 disabled:pointer-events-none disabled:opacity-40" disabled="@_isLast" @onclick="GoNext">@Text(NextLabel)</button>
+    </nav>
+}
+
+@code {
+    private const string PreviousLabel = "Anterior";
+    private const string NextLabel = "Seguinte";
+
+    [Parameter, EditorRequired]
+    public int Page { get; set; }
+
+    [Parameter, EditorRequired]
+    public int PageCount { get; set; }
+
+    [Parameter, EditorRequired]
+    public EventCallback<int> OnPage { get; set; }
+
+    private bool _isFirst;
+    private bool _isLast;
+    private string _position = string.Empty;
+
+    protected override void OnParametersSet()
+    {
+        _isFirst = Page <= 1;
+        _isLast = Page >= PageCount;
+        _position = $"{Page} / {PageCount}";
+    }
+
+    private Task GoPrevious() => OnPage.InvokeAsync(Page - 1);
+
+    private Task GoNext() => OnPage.InvokeAsync(Page + 1);
+}

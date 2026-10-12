@@ -1,0 +1,14 @@
+@if (Messages.Count > 0)
+{
+    <div role="alert" class="space-y-1 rounded-xl bg-rose-soft px-4 py-3 text-sm text-red-700">
+        @foreach (var message in Messages)
+        {
+            <p>@Text(message)</p>
+        }
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired]
+    public IReadOnlyList<string> Messages { get; set; } = [];
+}

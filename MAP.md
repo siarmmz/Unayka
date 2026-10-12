@@ -107,6 +107,48 @@ src/Unayka.Web.Test/Pages/LoginFlowTests.cs: login page, antiforgery and sign in
 src/Unayka.Core.Test: tests for configuration and presentation helpers
 src/Unayka.Web.Test: in memory server tests for pages, health and the no loose text rule
 
+# Administration (sprint-l/admin)
+src/Unayka.Core/Administration/AdminCommon.cs: paging, result, local day, money input, slug, search pattern and audit name helpers
+src/Unayka.Core/Administration/OrderStatusRules.cs: allowed order status transitions
+src/Unayka.Core/Administration/DashboardCalculator.cs: pure dashboard figures from order samples
+src/Unayka.Core/Administration/AdminDashboardService.cs: dashboard data query (figures, top products, latest orders, low stock)
+src/Unayka.Core/Administration/AdminOrdersService.cs: order list, detail and audited status changes with stock restore
+src/Unayka.Core/Administration/AdminCatalogModels.cs: product and category rows and edit forms
+src/Unayka.Core/Administration/CatalogValidator.cs: product and category validation
+src/Unayka.Core/Administration/AdminCatalogService.cs: product and category queries and audited commands
+src/Unayka.Core/Administration/AdminCouponsService.cs: coupon list with revenue, form conversions and audited commands
+src/Unayka.Core/Administration/AdminCustomersService.cs: customers with totals, recurrence segment and detail
+src/Unayka.Core/Administration/AdminPaymentsService.cs: payment list with filters and totals per status
+src/Unayka.Core/Administration/AdminAuditService.cs: paged read only audit log
+src/Unayka.Core/Administration/AdministrationServiceExtensions.cs: services.AddUnaykaAdministration()
+src/Unayka.Web/Components/Admin/AdminPageBase.cs: base for admin pages (actor user id, date and channel helpers)
+src/Unayka.Web/Components/Admin/AdminOptions.cs: select options for statuses, channels, kinds
+src/Unayka.Web/Components/Admin/AdminPageHeader.razor: page title with eyebrow and actions
+src/Unayka.Web/Components/Admin/StatTile.razor: KPI tile
+src/Unayka.Web/Components/Admin/SalesChart.razor: Tailwind bar chart of daily sales
+src/Unayka.Web/Components/Admin/AdminPager.razor: previous and next buttons for interactive lists
+src/Unayka.Web/Components/Admin/ErrorList.razor: validation messages
+src/Unayka.Web/Components/Admin/ThumbnailImage.razor: small product image
+src/Unayka.Web/Components/Admin/_Imports.razor: usings for admin components
+src/Unayka.Web/Components/Pages/Admin/_Imports.razor: AdminLayout, AdminPageBase and usings for admin pages
+src/Unayka.Web/Components/Pages/Admin/DashboardPage.razor: /admin dashboard
+src/Unayka.Web/Components/Pages/Admin/OrdersPage.razor: /admin/pedidos list with filters
+src/Unayka.Web/Components/Pages/Admin/OrderDetailPage.razor: /admin/pedidos/{number} detail, payments timeline and status actions
+src/Unayka.Web/Components/Pages/Admin/Products.razor: /admin/produtos list with active toggle
+src/Unayka.Web/Components/Pages/Admin/ProductEdit.razor: /admin/produtos/novo and /admin/produtos/{id} form
+src/Unayka.Web/Components/Pages/Admin/Categories.razor: /admin/categorias list and inline form
+src/Unayka.Web/Components/Pages/Admin/CouponsPage.razor: /admin/cupoes list and inline form
+src/Unayka.Web/Components/Pages/Admin/Customers.razor: /admin/clientes list
+src/Unayka.Web/Components/Pages/Admin/CustomerDetailPage.razor: /admin/clientes/{id} detail with orders
+src/Unayka.Web/Components/Pages/Admin/PaymentsPage.razor: /admin/pagamentos list with filters and totals
+src/Unayka.Web/Components/Pages/Admin/AuditPage.razor: /admin/auditoria read only log
+src/Unayka.Core.Test/Administration/AdminRulesTests.cs: status rules, dashboard, slug, money, coupon and segment tests
+src/Unayka.Core.Test/Administration/AdminServicesTests.cs: order cancel, product save, coupon revenue, customers and low stock tests
+src/Unayka.Core.Test/Administration/TestContextFactory.cs: IDbContextFactory over the in memory test database
+src/Unayka.Web.Test/Pages/AdminPagesTests.cs: staff access and 200 tests for every admin page
+
 ## Interactive render modes
 
 None yet. AddInteractiveServerComponents is enabled in Program.cs; there is no global render mode.
+
+Administration pages (all InteractiveServer, real interactivity with filters, forms and toggles): DashboardPage, OrdersPage, OrderDetailPage, Products, ProductEdit, Categories, CouponsPage, Customers, CustomerDetailPage, PaymentsPage, AuditPage.

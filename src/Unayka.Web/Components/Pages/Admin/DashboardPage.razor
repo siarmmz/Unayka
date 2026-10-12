@@ -1,0 +1,162 @@
+@page "/admin"
+@rendermode InteractiveServer
+@attribute [Authorize(Policy = UnaykaPolicies.Staff)]
+@inject IAdminDashboard Metrics
+
+<PageTitle>@Texts.PageTitle</PageTitle>
+
+<div class="mx-auto max-w-6xl space-y-10">
+    <AdminPageHeader Title="@Texts.Title" Eyebrow="@Texts.Eyebrow" Subtitle="@Texts.Subtitle"/>
+
+    @if (_data is null)
+    {
+        <p class="text-sm text-stone">@Text(Texts.Loading)</p>
+    }
+
+    @if (_data is not null)
+    {
+        <section class="grid grid-cols-2 gap-4 lg:grid-cols-4">
+            @foreach (var tile in _tiles)
+            {
+                <StatTile Label="@tile.Label" Value="@tile.Value" Hint="@tile.Hint"/>
+            }
+        </section>
+
+        <section class="rounded-2xl border border-sand bg-white p-5 shadow-sm sm:p-8">
+            <h2 class="font-serif text-2xl">@Text(Texts.ChartTitle)</h2>
+            <p class="mb-6 text-sm text-stone">@Text(Texts.ChartSubtitle)</p>
+            <SalesChart Days="@_data.Figures.Daily"/>
+        </section>
+
+        <div class="grid gap-6 lg:grid-cols-2">
+            <section class="rounded-2xl border border-sand bg-white p-5 shadow-sm sm:p-8">
+                <h2 class="font-serif text-2xl">@Text(Texts.TopTitle)</h2>
+                @if (_data.TopProducts.Count == 0)
+                {
+                    <p class="mt-4 text-sm text-stone">@Text(Texts.TopEmpty)</p>
+                }
+                <ol class="mt-4 divide-y divide-sand">
+                    @foreach (var product in _data.TopProducts)
+                    {
+                        <li class="flex items-center justify-between gap-4 py-3">
+                            <span class="min-w-0 truncate text-sm">@Text(product.Name)</span>
+                            <span class="shrink-0 text-right text-xs text-stone">@Text(TopProductDetail(product))</span>
+                        </li>
+                    }
+                </ol>
+            </section>
+
+            <section class="rounded-2xl border border-sand bg-white p-5 shadow-sm sm:p-8">
+                <h2 class="font-serif text-2xl">@Text(Texts.LowStockTitle)</h2>
+                @if (_data.LowStock.Count == 0)
+                {
+                    <p class="mt-4 text-sm text-stone">@Text(Texts.LowStockEmpty)</p>
+                }
+                <ul class="mt-4 divide-y divide-sand">
+                    @foreach (var product in _data.LowStock)
+                    {
+                        <li class="flex items-center gap-4 py-3">
+                            <ThumbnailImage Url="@product.ImageUrl" SizeClass="h-10 w-10"/>
+                            <a href="@ToUrl(ProductEditUrl(product.Id))" class="min-w-0 flex-1 truncate text-sm hover:text-clay">@Text(product.Name)</a>
+                            <span class="@StockClass(product.StockQuantity)">@Text(StockLabel(product.StockQuantity))</span>
+                        </li>
+                    }
+                </ul>
+            </section>
+        </div>
+
+        <section class="rounded-2xl border border-sand bg-white p-5 shadow-sm sm:p-8">
+            <div class="flex items-center justify-between gap-4">
+                <h2 class="font-serif text-2xl">@Text(Texts.LatestTitle)</h2>
+                <a href="@ToUrl(Texts.OrdersUrl)" class="text-sm text-clay hover:text-espresso">@Text(Texts.SeeAll)</a>
+            </div>
+            <div class="mt-4 overflow-x-auto">
+                <table class="w-full text-left text-sm">
+                    <thead class="text-xs uppercase tracking-widest text-stone">
+                        <tr>
+                            <th class="py-2 pr-4 font-medium">@Text(Texts.NumberColumn)</th>
+                            <th class="py-2 pr-4 font-medium">@Text(Texts.CustomerColumn)</th>
+                            <th class="py-2 pr-4 font-medium">@Text(Texts.StatusColumn)</th>
+                            <th class="py-2 pr-4 text-right font-medium">@Text(Texts.TotalColumn)</th>
+                            <th class="py-2 font-medium">@Text(Texts.DateColumn)</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-sand">
+                        @foreach (var order in _data.LatestOrders)
+                        {
+                            <tr class="hover:bg-cream/60">
+                                <td class="py-3 pr-4"><a href="@ToUrl(OrderUrl(order.Number))" class="font-medium text-espresso hover:text-clay">@Text(order.Number)</a></td>
+                                <td class="py-3 pr-4">@Text(order.CustomerName)</td>
+                                <td class="py-3 pr-4"><StatusBadge Order="@order.Status"/></td>
+                                <td class="whitespace-nowrap py-3 pr-4 text-right">@Text(FormatMoney(order.TotalMinor))</td>
+                                <td class="whitespace-nowrap py-3 text-stone">@Text(FormatDateTime(order.CreatedAt))</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    }
+</div>
+
+@code {
+    private static class Texts
+    {
+        public const string PageTitle = "Painel | Unayka";
+        public const string Title = "Painel";
+        public const string Eyebrow = "Visão geral";
+        public const string Subtitle = "O ritmo da loja e do balcão, num só lugar.";
+        public const string Loading = "A carregar...";
+        public const string TodayLabel = "Vendas hoje";
+        public const string MonthLabel = "Vendas, últimos 30 dias";
+        public const string PendingLabel = "Pedidos pendentes";
+        public const string AverageLabel = "Ticket médio";
+        public const string PendingHint = "Por pagar, em preparação ou prontos";
+        public const string AverageHint = "Últimos 30 dias";
+        public const string ChartTitle = "Vendas por dia";
+        public const string ChartSubtitle = "Últimos 14 dias, pedidos pagos.";
+        public const string TopTitle = "Produtos mais vendidos";
+        public const string TopEmpty = "Ainda sem vendas neste período.";
+        public const string LowStockTitle = "Stock baixo";
+        public const string LowStockEmpty = "Todos os produtos têm stock suficiente.";
+        public const string LatestTitle = "Últimos pedidos";
+        public const string SeeAll = "Ver todos";
+        public const string NumberColumn = "Pedido";
+        public const string CustomerColumn = "Cliente";
+        public const string StatusColumn = "Estado";
+        public const string TotalColumn = "Total";
+        public const string DateColumn = "Data";
+        public const string OrdersUrl = "/admin/pedidos";
+        public const string OutOfStock = "Esgotado";
+        public const string UnitsLeft = "restantes";
+    }
+
+    private const string OutOfStockClass = "shrink-0 rounded-full bg-rose-soft px-3 py-1 text-xs text-red-700";
+    private const string LowStockClass = "shrink-0 rounded-full bg-amber-50 px-3 py-1 text-xs text-amber-700";
+
+    private DashboardData? _data;
+    private List<(string Label, string Value, string? Hint)> _tiles = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        _data = await Metrics.LoadAsync();
+        _tiles =
+        [
+            (Texts.TodayLabel, FormatMoney(_data.Figures.TodaySalesMinor), null),
+            (Texts.MonthLabel, FormatMoney(_data.Figures.MonthSalesMinor), null),
+            (Texts.PendingLabel, FormatNumber(_data.Figures.PendingOrders), Texts.PendingHint),
+            (Texts.AverageLabel, FormatMoney(_data.Figures.AverageTicketMinor), Texts.AverageHint),
+        ];
+    }
+
+    private static string TopProductDetail(TopProduct product) => $"{FormatNumber(product.Quantity)} un. | {FormatMoney(product.RevenueMinor)}";
+
+    private static string ProductEditUrl(int id) => $"/admin/produtos/{id}";
+
+    private static string OrderUrl(string number) => $"/admin/pedidos/{number}";
+
+    private static string StockClass(int stock) => stock <= 0 ? OutOfStockClass : LowStockClass;
+
+    private static string StockLabel(int stock) => stock <= 0 ? Texts.OutOfStock : $"{FormatNumber(stock)} {Texts.UnitsLeft}";
+}

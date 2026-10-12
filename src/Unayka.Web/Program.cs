@@ -1,4 +1,5 @@
 using Unayka.Core.Accounts;
+using Unayka.Core.Administration;
 using Unayka.Core.Carts;
 using Unayka.Core.Configuration;
 using Unayka.Core.Data;
@@ -22,6 +23,7 @@ builder.Services.AddUnaykaSecurity(builder.Environment.IsDevelopment());
 builder.Services.AddUnaykaData();
 builder.Services.AddUnaykaAccounts();
 builder.Services.AddUnaykaCarts();
+builder.Services.AddUnaykaAdministration();
 
 var app = builder.Build();
 

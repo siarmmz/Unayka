@@ -1,0 +1,307 @@
+@page "/admin/pedidos/{Number}"
+@rendermode InteractiveServer
+@attribute [Authorize(Policy = UnaykaPolicies.Staff)]
+@inject IAdminOrders OrderService
+
+<PageTitle>@Texts.PageTitle</PageTitle>
+
+<div class="mx-auto max-w-6xl space-y-8">
+    @if (_loaded && _order is null)
+    {
+        <EmptyState Title="@Texts.NotFoundTitle" Message="@Texts.NotFoundMessage" ActionLabel="@Texts.BackLabel" ActionUrl="@Texts.ListUrl"/>
+    }
+
+    @if (_order is not null)
+    {
+        <AdminPageHeader Title="@_order.Number" Eyebrow="@Texts.Eyebrow" Subtitle="@_subtitle">
+            <StatusBadge Order="@_order.Status"/>
+            <a href="@ToUrl(Texts.ListUrl)" class="btn-outline px-5 py-2">@Text(Texts.BackLabel)</a>
+        </AdminPageHeader>
+
+        <ErrorList Messages="@_errors"/>
+        @if (_notice is not null)
+        {
+            <p class="rounded-xl bg-sage-soft px-4 py-3 text-sm text-espresso">@Text(_notice)</p>
+        }
+
+        <div class="grid gap-6 lg:grid-cols-3">
+            <div class="space-y-6 lg:col-span-2">
+                <section class="rounded-2xl border border-sand bg-white p-5 shadow-sm sm:p-8">
+                    <h2 class="font-serif text-2xl">@Text(Texts.ItemsTitle)</h2>
+                    <div class="mt-4 overflow-x-auto">
+                        <table class="w-full text-left text-sm">
+                            <thead class="text-xs uppercase tracking-widest text-stone">
+                                <tr>
+                                    <th class="py-2 pr-4 font-medium">@Text(Texts.ProductColumn)</th>
+                                    <th class="py-2 pr-4 text-right font-medium">@Text(Texts.UnitColumn)</th>
+                                    <th class="py-2 pr-4 text-right font-medium">@Text(Texts.QuantityColumn)</th>
+                                    <th class="py-2 text-right font-medium">@Text(Texts.LineTotalColumn)</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-sand">
+                                @foreach (var line in _order.Lines)
+                                {
+                                    <tr>
+                                        <td class="py-3 pr-4">@Text(line.ProductName)</td>
+                                        <td class="whitespace-nowrap py-3 pr-4 text-right">@Text(FormatMoney(line.UnitPriceMinor))</td>
+                                        <td class="py-3 pr-4 text-right">@Text(FormatNumber(line.Quantity))</td>
+                                        <td class="whitespace-nowrap py-3 text-right">@Text(FormatMoney(line.UnitPriceMinor * line.Quantity))</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                    <dl class="mt-6 space-y-2 border-t border-sand pt-4 text-sm">
+                        @foreach (var row in _totals)
+                        {
+                            <div class="@row.CssClass">
+                                <dt>@Text(row.Label)</dt>
+                                <dd>@Text(row.Value)</dd>
+                            </div>
+                        }
+                    </dl>
+                </section>
+
+                <section class="rounded-2xl border border-sand bg-white p-5 shadow-sm sm:p-8">
+                    <h2 class="font-serif text-2xl">@Text(Texts.PaymentsTitle)</h2>
+                    @if (_order.Payments.Count == 0)
+                    {
+                        <p class="mt-4 text-sm text-stone">@Text(Texts.NoPayments)</p>
+                    }
+                    @foreach (var payment in _order.Payments)
+                    {
+                        <article class="mt-5 rounded-xl border border-sand p-4">
+                            <div class="flex flex-wrap items-center justify-between gap-3">
+                                <p class="text-sm font-medium">@Text(PaymentHeadline(payment))</p>
+                                <StatusBadge Payment="@payment.Status"/>
+                            </div>
+                            <p class="mt-1 text-xs text-stone">@Text(PaymentDetail(payment))</p>
+                            @if (payment.FailureReason is not null)
+                            {
+                                <p class="mt-2 text-xs text-red-700">@Text(payment.FailureReason)</p>
+                            }
+                            <ol class="mt-4 space-y-2 border-l border-sand pl-4">
+                                @foreach (var entry in payment.Timeline)
+                                {
+                                    <li class="relative text-xs text-stone">
+                                        <span class="absolute -left-[21px] top-1 h-2 w-2 rounded-full bg-clay"></span>
+                                        <span class="font-medium text-ink">@Text(entry.Kind)</span>
+                                        <span class="ml-2">@Text(FormatDateTime(entry.At))</span>
+                                    </li>
+                                }
+                            </ol>
+                        </article>
+                    }
+                </section>
+            </div>
+
+            <aside class="space-y-6">
+                <section class="rounded-2xl border border-sand bg-white p-5 shadow-sm">
+                    <h2 class="font-serif text-2xl">@Text(Texts.ActionsTitle)</h2>
+                    @if (_actions.Count == 0)
+                    {
+                        <p class="mt-3 text-sm text-stone">@Text(Texts.NoActions)</p>
+                    }
+                    <div class="mt-4 flex flex-col gap-3">
+                        @foreach (var action in _actions)
+                        {
+                            <button type="button" class="@action.CssClass" @onclick="ChangeHandler(action.Target)">@Text(action.Label)</button>
+                        }
+                    </div>
+                    @if (_confirmingCancel)
+                    {
+                        <div class="mt-4 rounded-xl bg-rose-soft p-4 text-sm text-red-700">
+                            <p>@Text(Texts.CancelWarning)</p>
+                            <div class="mt-3 flex gap-3">
+                                <button type="button" class="btn-primary px-5 py-2" @onclick="ConfirmCancelAsync">@Text(Texts.CancelConfirm)</button>
+                                <button type="button" class="btn-outline px-5 py-2" @onclick="DismissCancel">@Text(Texts.CancelDismiss)</button>
+                            </div>
+                        </div>
+                    }
+                </section>
+
+                <section class="rounded-2xl border border-sand bg-white p-5 shadow-sm">
+                    <h2 class="font-serif text-2xl">@Text(Texts.CustomerTitle)</h2>
+                    <dl class="mt-4 space-y-3 text-sm">
+                        @foreach (var row in _customerRows)
+                        {
+                            <div>
+                                <dt class="text-xs uppercase tracking-widest text-stone">@Text(row.Label)</dt>
+                                <dd>@Text(row.Value)</dd>
+                            </div>
+                        }
+                    </dl>
+                </section>
+            </aside>
+        </div>
+    }
+</div>
+
+@code {
+    private static class Texts
+    {
+        public const string PageTitle = "Pedido | Unayka";
+        public const string Eyebrow = "Pedido";
+        public const string ListUrl = "/admin/pedidos";
+        public const string BackLabel = "Voltar aos pedidos";
+        public const string NotFoundTitle = "Pedido não encontrado";
+        public const string NotFoundMessage = "Verifique o número e tente novamente.";
+        public const string ItemsTitle = "Artigos";
+        public const string ProductColumn = "Produto";
+        public const string UnitColumn = "Preço";
+        public const string QuantityColumn = "Qtd.";
+        public const string LineTotalColumn = "Total";
+        public const string SubtotalLabel = "Subtotal";
+        public const string DiscountLabel = "Desconto";
+        public const string DeliveryLabel = "Entrega";
+        public const string TotalLabel = "Total";
+        public const string PaymentsTitle = "Pagamentos";
+        public const string NoPayments = "Ainda sem tentativas de pagamento.";
+        public const string ActionsTitle = "Ações";
+        public const string NoActions = "Este pedido não tem mais ações disponíveis.";
+        public const string CustomerTitle = "Cliente e entrega";
+        public const string NameLabel = "Nome";
+        public const string PhoneLabel = "Telefone";
+        public const string EmailLabel = "Email";
+        public const string ChannelLabel = "Canal";
+        public const string FulfillmentLabel = "Entrega";
+        public const string AddressLabel = "Morada";
+        public const string NotesLabel = "Notas";
+        public const string CouponLabel = "Cupão";
+        public const string Pickup = "Levantamento";
+        public const string Delivery = "Entrega ao domicílio";
+        public const string CancelAction = "Cancelar pedido";
+        public const string CancelWarning = "O pedido será cancelado e o stock devolvido. Esta ação fica registada.";
+        public const string CancelConfirm = "Confirmar";
+        public const string CancelDismiss = "Voltar";
+        public const string Updated = "Estado atualizado.";
+        public const string MoveTo = "Marcar como";
+        public const string NoReference = "sem referência";
+    }
+
+    private const string PrimaryActionClass = "btn-primary w-full";
+    private const string DangerActionClass = "btn-outline w-full";
+    private const string TotalRowClass = "flex justify-between border-t border-sand pt-3 font-serif text-xl text-espresso";
+    private const string PlainRowClass = "flex justify-between text-stone";
+
+    private sealed record ActionButton(OrderStatus Target, string Label, string CssClass);
+
+    private sealed record TotalRow(string Label, string Value, string CssClass);
+
+    [Parameter]
+    public string Number { get; set; } = string.Empty;
+
+    private OrderDetail? _order;
+    private bool _loaded;
+    private bool _confirmingCancel;
+    private string? _notice;
+    private string _subtitle = string.Empty;
+    private IReadOnlyList<string> _errors = [];
+    private List<ActionButton> _actions = [];
+    private List<TotalRow> _totals = [];
+    private List<(string Label, string Value)> _customerRows = [];
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await ReloadAsync();
+    }
+
+    private static string PaymentHeadline(OrderPaymentDetail payment) =>
+        $"{StatusLabels.For(payment.Method)} | {FormatMoney(payment.AmountMinor)}";
+
+    private static string PaymentDetail(OrderPaymentDetail payment) =>
+        $"{payment.Provider} | {payment.ProviderReference ?? Texts.NoReference} | {FormatDateTime(payment.CreatedAt)}";
+
+    private async Task ReloadAsync()
+    {
+        _order = await OrderService.GetAsync(Number);
+        _loaded = true;
+        if (_order is null)
+        {
+            return;
+        }
+
+        _subtitle = FormatDateTime(_order.CreatedAt);
+        _actions = OrderStatusRules.AllowedTargets(_order.Status).Select(ToButton).ToList();
+        _totals = BuildTotals(_order);
+        _customerRows = BuildCustomerRows(_order);
+    }
+
+    private static ActionButton ToButton(OrderStatus target) => target == OrderStatus.Cancelled
+        ? new ActionButton(target, Texts.CancelAction, DangerActionClass)
+        : new ActionButton(target, $"{Texts.MoveTo} {StatusLabels.For(target).Label}", PrimaryActionClass);
+
+    private static List<TotalRow> BuildTotals(OrderDetail order)
+    {
+        var rows = new List<TotalRow> { new(Texts.SubtotalLabel, FormatMoney(order.SubtotalMinor), PlainRowClass) };
+        if (order.DiscountMinor > 0)
+        {
+            rows.Add(new TotalRow(order.CouponCode is null ? Texts.DiscountLabel : $"{Texts.DiscountLabel} ({order.CouponCode})", FormatMoney(-order.DiscountMinor), PlainRowClass));
+        }
+
+        if (order.DeliveryFeeMinor > 0)
+        {
+            rows.Add(new TotalRow(Texts.DeliveryLabel, FormatMoney(order.DeliveryFeeMinor), PlainRowClass));
+        }
+
+        rows.Add(new TotalRow(Texts.TotalLabel, FormatMoney(order.TotalMinor), TotalRowClass));
+        return rows;
+    }
+
+    private static List<(string Label, string Value)> BuildCustomerRows(OrderDetail order)
+    {
+        var rows = new List<(string Label, string Value)>
+        {
+            (Texts.NameLabel, order.CustomerName),
+            (Texts.PhoneLabel, FormatPhone(order.CustomerPhone)),
+        };
+        AddIfPresent(rows, Texts.EmailLabel, order.CustomerEmail);
+        rows.Add((Texts.ChannelLabel, ChannelLabel(order.Channel)));
+        rows.Add((Texts.FulfillmentLabel, order.Fulfillment == FulfillmentKind.Delivery ? Texts.Delivery : Texts.Pickup));
+        AddIfPresent(rows, Texts.AddressLabel, order.DeliveryAddress);
+        AddIfPresent(rows, Texts.NotesLabel, order.Notes);
+        return rows;
+    }
+
+    private static void AddIfPresent(List<(string Label, string Value)> rows, string label, string? value)
+    {
+        if (!string.IsNullOrWhiteSpace(value))
+        {
+            rows.Add((label, value));
+        }
+    }
+
+    private Func<Task> ChangeHandler(OrderStatus target) => () => ChangeAsync(target);
+
+    private async Task ChangeAsync(OrderStatus target)
+    {
+        _notice = null;
+        _errors = [];
+        if (target == OrderStatus.Cancelled)
+        {
+            _confirmingCancel = true;
+            return;
+        }
+
+        await ApplyAsync(target);
+    }
+
+    private async Task ConfirmCancelAsync()
+    {
+        _confirmingCancel = false;
+        await ApplyAsync(OrderStatus.Cancelled);
+    }
+
+    private void DismissCancel()
+    {
+        _confirmingCancel = false;
+    }
+
+    private async Task ApplyAsync(OrderStatus target)
+    {
+        var result = await OrderService.ChangeStatusAsync(ActorUserId, Number, target);
+        _errors = result.Errors;
+        _notice = result.Succeeded ? Texts.Updated : null;
+        await ReloadAsync();
+    }
+}

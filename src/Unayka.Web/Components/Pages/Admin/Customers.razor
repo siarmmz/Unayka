@@ -1,0 +1,122 @@
+@page "/admin/clientes"
+@rendermode InteractiveServer
+@attribute [Authorize(Policy = UnaykaPolicies.Management)]
+@inject IAdminCustomers CustomerService
+
+<PageTitle>@Texts.PageTitle</PageTitle>
+
+<div class="mx-auto max-w-6xl space-y-8">
+    <AdminPageHeader Title="@Texts.Title" Eyebrow="@Texts.Eyebrow" Subtitle="@Texts.Subtitle"/>
+
+    <section class="flex flex-wrap items-end gap-4 rounded-2xl border border-sand bg-white p-5 shadow-sm">
+        <div class="min-w-64 flex-1">
+            <label for="customer-search" class="field-label">@Text(Texts.SearchLabel)</label>
+            <input id="customer-search" type="search" class="field" placeholder="@Texts.SearchPlaceholder" @bind="_search" @bind:event="oninput" @onkeydown="OnSearchKey"/>
+        </div>
+        <button type="button" class="btn-primary px-6 py-2" @onclick="SearchAsync">@Text(Texts.Apply)</button>
+    </section>
+
+    @if (_result is not null && _result.Items.Count == 0)
+    {
+        <EmptyState Title="@Texts.EmptyTitle" Message="@Texts.EmptyMessage"/>
+    }
+
+    @if (_result is not null && _result.Items.Count > 0)
+    {
+        <section class="overflow-hidden rounded-2xl border border-sand bg-white shadow-sm">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-sm">
+                    <thead class="bg-cream text-xs uppercase tracking-widest text-stone">
+                        <tr>
+                            <th class="px-5 py-3 font-medium">@Text(Texts.CustomerColumn)</th>
+                            <th class="px-5 py-3 text-right font-medium">@Text(Texts.OrdersColumn)</th>
+                            <th class="px-5 py-3 text-right font-medium">@Text(Texts.SpentColumn)</th>
+                            <th class="px-5 py-3 font-medium">@Text(Texts.LastColumn)</th>
+                            <th class="px-5 py-3 font-medium">@Text(Texts.SegmentColumn)</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-sand">
+                        @foreach (var customer in _result.Items)
+                        {
+                            <tr class="hover:bg-cream/60">
+                                <td class="px-5 py-3">
+                                    <a href="@ToUrl(DetailUrl(customer.Id))" class="font-medium text-espresso hover:text-clay">@Text(customer.Name)</a>
+                                    <p class="text-xs text-stone">@Text(Contact(customer))</p>
+                                </td>
+                                <td class="px-5 py-3 text-right">@Text(FormatNumber(customer.OrderCount))</td>
+                                <td class="whitespace-nowrap px-5 py-3 text-right">@Text(FormatMoney(customer.TotalSpentMinor))</td>
+                                <td class="whitespace-nowrap px-5 py-3 text-stone">@Text(LastOrder(customer))</td>
+                                <td class="px-5 py-3"><span class="@SegmentClass(customer.Segment)">@Text(CustomerSegments.Label(customer.Segment))</span></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </section>
+        <AdminPager Page="@_result.Page" PageCount="@_result.PageCount" OnPage="LoadPageAsync"/>
+    }
+</div>
+
+@code {
+    private static class Texts
+    {
+        public const string PageTitle = "Clientes | Unayka";
+        public const string Title = "Clientes";
+        public const string Eyebrow = "Relação";
+        public const string Subtitle = "Quem compra, quanto e com que frequência.";
+        public const string SearchLabel = "Pesquisar";
+        public const string SearchPlaceholder = "Nome, telefone ou email";
+        public const string Apply = "Pesquisar";
+        public const string EmptyTitle = "Sem clientes";
+        public const string EmptyMessage = "Nenhum cliente corresponde à pesquisa.";
+        public const string CustomerColumn = "Cliente";
+        public const string OrdersColumn = "Pedidos";
+        public const string SpentColumn = "Total gasto";
+        public const string LastColumn = "Último pedido";
+        public const string SegmentColumn = "Perfil";
+        public const string NoOrder = "Nunca";
+        public const string EnterKey = "Enter";
+    }
+
+    private const string RecurringClass = "rounded-full bg-emerald-50 px-3 py-1 text-xs text-emerald-700";
+    private const string NewClass = "rounded-full bg-sage-soft px-3 py-1 text-xs text-sage";
+    private const string NoPurchasesClass = "rounded-full bg-cream px-3 py-1 text-xs text-stone";
+
+    private string _search = string.Empty;
+    private PagedResult<CustomerRow>? _result;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        await LoadPageAsync(1);
+    }
+
+    private static string DetailUrl(int id) => $"/admin/clientes/{id}";
+
+    private static string Contact(CustomerRow customer) =>
+        string.Join(" | ", new[] { string.IsNullOrEmpty(customer.Phone) ? null : FormatPhone(customer.Phone), customer.Email }.Where(part => !string.IsNullOrEmpty(part)));
+
+    private static string LastOrder(CustomerRow customer) => customer.LastOrderAt is { } at ? FormatDate(at) : Texts.NoOrder;
+
+    private static string SegmentClass(CustomerSegment segment) => segment switch
+    {
+        CustomerSegment.Recurring => RecurringClass,
+        CustomerSegment.New => NewClass,
+        _ => NoPurchasesClass,
+    };
+
+    private Task SearchAsync() => LoadPageAsync(1);
+
+    private async Task OnSearchKey(KeyboardEventArgs args)
+    {
+        if (args.Key == Texts.EnterKey)
+        {
+            await LoadPageAsync(1);
+        }
+    }
+
+    private async Task LoadPageAsync(int page)
+    {
+        _result = await CustomerService.ListAsync(_search, page);
+    }
+}

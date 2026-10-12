@@ -1,0 +1,79 @@
+@page "/admin/auditoria"
+@rendermode InteractiveServer
+@attribute [Authorize(Policy = UnaykaPolicies.Administration)]
+@inject IAdminAudit AuditService
+
+<PageTitle>@Texts.PageTitle</PageTitle>
+
+<div class="mx-auto max-w-6xl space-y-8">
+    <AdminPageHeader Title="@Texts.Title" Eyebrow="@Texts.Eyebrow" Subtitle="@Texts.Subtitle"/>
+
+    @if (_result is not null && _result.Items.Count == 0)
+    {
+        <EmptyState Title="@Texts.EmptyTitle" Message="@Texts.EmptyMessage"/>
+    }
+
+    @if (_result is not null && _result.Items.Count > 0)
+    {
+        <section class="overflow-hidden rounded-2xl border border-sand bg-white shadow-sm">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-sm">
+                    <thead class="bg-cream text-xs uppercase tracking-widest text-stone">
+                        <tr>
+                            <th class="px-5 py-3 font-medium">@Text(Texts.DateColumn)</th>
+                            <th class="px-5 py-3 font-medium">@Text(Texts.ActorColumn)</th>
+                            <th class="px-5 py-3 font-medium">@Text(Texts.ActionColumn)</th>
+                            <th class="px-5 py-3 font-medium">@Text(Texts.EntityColumn)</th>
+                            <th class="px-5 py-3 font-medium">@Text(Texts.SummaryColumn)</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-sand">
+                        @foreach (var entry in _result.Items)
+                        {
+                            <tr class="hover:bg-cream/60">
+                                <td class="whitespace-nowrap px-5 py-3 text-stone">@Text(FormatDateTime(entry.At))</td>
+                                <td class="whitespace-nowrap px-5 py-3">@Text(entry.ActorName)</td>
+                                <td class="whitespace-nowrap px-5 py-3"><span class="rounded-full bg-cream px-3 py-1 text-xs text-stone">@Text(entry.Action)</span></td>
+                                <td class="whitespace-nowrap px-5 py-3 text-stone">@Text(EntityLabel(entry))</td>
+                                <td class="px-5 py-3">@Text(entry.Summary)</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </section>
+        <AdminPager Page="@_result.Page" PageCount="@_result.PageCount" OnPage="LoadPageAsync"/>
+    }
+</div>
+
+@code {
+    private static class Texts
+    {
+        public const string PageTitle = "Auditoria | Unayka";
+        public const string Title = "Auditoria";
+        public const string Eyebrow = "Segurança";
+        public const string Subtitle = "Registo permanente das ações da equipa. Só leitura.";
+        public const string EmptyTitle = "Sem registos";
+        public const string EmptyMessage = "Ainda não há ações registadas.";
+        public const string DateColumn = "Data";
+        public const string ActorColumn = "Quem";
+        public const string ActionColumn = "Ação";
+        public const string EntityColumn = "Entidade";
+        public const string SummaryColumn = "Resumo";
+    }
+
+    private PagedResult<AuditRow>? _result;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        await LoadPageAsync(1);
+    }
+
+    private static string EntityLabel(AuditRow entry) => $"{entry.EntityType} {entry.EntityId}";
+
+    private async Task LoadPageAsync(int page)
+    {
+        _result = await AuditService.ListAsync(page);
+    }
+}
