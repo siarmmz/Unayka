@@ -8,6 +8,17 @@ Only work still to do. A finished item is removed (Git history keeps it). Opus a
 
 ## Next
 
+### R. Data only from the database, leaner Web, real products (awaiting go ahead)
+
+- [ ] R1 (O) Move every hardcoded content out of code: addresses, contacts, home texts, social networks, product data. Seed classes in Core/Data/Seed (CatalogSeed, LocationSeed, DemoOrdersSeed, SiteImages, DigitalSeedFiles) are removed; the committed database.sqlite becomes the only source of demo data. MockPaymentGateway stays only until 5.3.
+- [ ] R2 (S) Social networks managed in the dashboard (name, URL, Bootstrap Icons class, order, active).
+- [ ] R3 (S) Icons only from Bootstrap Icons via CDN link (`bi bi-*`); remove every inline svg and StoreIcon. Card logos (visa, mastercard) stay as images.
+- [ ] R4 (O) Reduce the repository below 100 files: inline single use Web components into their pages (each page owns its @code and rendering), replace helper classes with records or tuples, merge small Core files per feature, drop per page base classes where possible.
+- [ ] R5 (S) Remove the home "Ingredientes naturais" block and any home section that speaks about content not registered in the database.
+- [ ] R6 (O) Recreate every product with real, professional images: teas and coffee (prepared cup, package, jar if applicable), cosmetics (product, ingredients, face or body area applied). No ambiguous items (bags and similar). Books: one cover image, angled so the spine thickness shows, front slightly rotated.
+- [ ] R7 (S) Dashboard navigation is nested per section: tags, categories and similar are created inside the product or category being edited, not on global screens.
+- [ ] R8 (S) Fix buttons whose pressed or active color equals their text color.
+
 ### Payments (PaySuite)
 
 - [ ] 5.1 (H) Read the official PaySuite documentation and record here what was confirmed, including whether cards are supported and how (hosted page, fields, webhook). Until then wallets and cards go through the mock gateway.
