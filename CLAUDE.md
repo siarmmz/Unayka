@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-Project rules version: 7
+Project rules version: 8
 
 Unayka (U, N, A, Y, K, A) is a modern online shop of natural products: teas (coffee is one of them) and natural cosmetics, online and at the counter, in the same system. It is not a salon; never describe it as one. Market: Mozambique, currency MZN, UI in Mozambican Portuguese, payments by mobile wallet via PaySuite. Any spelling such as Unaika, Unaica or Unayca must be read and written as Unayka.
 
@@ -62,7 +62,7 @@ Aliases opus, sonnet and haiku. Opus thinks and decides (architecture, critical 
 
 ### Context files
 
-CLAUDE.md (versioned): rules, version at the top. MAP.md (versioned): numbered list, one line per file as "N. path - what it does", sorted by path and renumbered on every change. It is read before any search on disk and is updated in the same commit whenever a file is added, removed, renamed or changes purpose. TASKS.md (versioned): In progress, Next, On hold (with condition) and Done. PLAN.md (ignored): context between sessions. .claude/local/state.json (ignored): initialization, rules version and skill maintenance. The .claude folder as a whole is ignored.
+CLAUDE.md (versioned): rules, version at the top. MAP.md (versioned): numbered list, one line per file as "N. path - what it does", sorted by path and renumbered on every change. It is read before any search on disk and is updated in the same commit whenever a file is added, removed, renamed or changes purpose. TASKS.md (versioned): only work still to do, in In progress, Next and On hold (with condition); a finished item is removed, never kept as done. PLAN.md (ignored): context between sessions. .claude/local/state.json (ignored): initialization, rules version and skill maintenance. The .claude folder as a whole is ignored.
 
 The whole .claude folder (agents, local state, settings) is ignored by Git. It is never committed. The primary agent always reviews it at the start of each session and checks that it matches this file: agent definitions follow these rules, state.json holds the current claudeMdVersion, and nothing in it contradicts CLAUDE.md. Any mismatch is fixed before other work starts.
 

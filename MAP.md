@@ -9,12 +9,12 @@ Numbered list, one line per file as "N. path - what it does", sorted by path; th
 5. .dockerignore - files excluded from the Docker build context
 6. .editorconfig - C# formatting and naming rules (JetBrains Rider style)
 7. .gitignore - files ignored by Git (includes the whole .claude folder)
-8. CLAUDE.md - project rules and Claude Code workflow (version 7)
+8. CLAUDE.md - project rules and Claude Code workflow (version 8)
 9. Dockerfile - multi stage build (Tailwind styles, .NET publish, ASP.NET runtime) on port 10000
 10. MAP.md - this file map, one line per file, updated whenever a file is added, removed, renamed or changes purpose
 11. PLAN.md - context between sessions (ignored by Git)
 12. README.md - product description, stack, configuration, development, phases and open decisions
-13. TASKS.md - tasks by phase (In progress, Next, On hold, Done)
+13. TASKS.md - open work only (In progress, Next, On hold)
 14. src/Unayka.Core.Test/Accounts/AccountServiceTests.cs - external sign in, account linking and staff sign in tests
 15. src/Unayka.Core.Test/Accounts/PhoneNumberTests.cs - phone normalization tests
 16. src/Unayka.Core.Test/Administration/AdminRulesTests.cs - status rules, dashboard, slug, money, coupon and segment tests
