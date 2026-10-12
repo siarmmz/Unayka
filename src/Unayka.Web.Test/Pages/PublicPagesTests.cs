@@ -11,8 +11,7 @@ public sealed partial class PublicPagesTests(UnaykaWebFactory factory)
     [Theory]
     [InlineData("/")]
     [InlineData("/about")]
-    [InlineData("/location")]
-    [InlineData("/contact")]
+    [InlineData("/contacto")]
     [InlineData("/conta/entrar")]
     public async Task Public_page_responds_with_seo_title_and_description(string path)
     {

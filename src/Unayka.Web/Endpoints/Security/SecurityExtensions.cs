@@ -23,6 +23,7 @@ public static class SecurityExtensions
         "font-src 'self' https://fonts.gstatic.com",
         "img-src 'self' data: https://images.unsplash.com",
         "connect-src 'self' ws: wss:",
+        "frame-src https://www.openstreetmap.org",
         "object-src 'none'",
         "base-uri 'self'",
         "form-action 'self'",

@@ -1,0 +1,48 @@
+@using Unayka.Core.Locations
+
+<article class="space-y-6 rounded-3xl border border-sand bg-paper p-6 sm:p-8">
+    <div class="space-y-2">
+        <h2 class="font-serif text-3xl text-espresso">@Text(Location.Name)</h2>
+        <p class="text-ink">@Text(Location.Address)</p>
+        <p class="text-sm text-stone">@Text(_hoursLabel)</p>
+    </div>
+
+    <ul class="grid gap-3 sm:grid-cols-2">
+        @foreach (var link in _links)
+        {
+            <li>
+                <a href="@ToUrl(link.Url)" class="flex min-h-12 flex-col justify-center rounded-2xl bg-cream px-4 py-2 transition hover:bg-sage-soft">
+                    <span class="text-xs font-medium uppercase tracking-widest text-stone">@Text(link.Label)</span>
+                    <span class="break-all text-espresso">@Text(link.Display)</span>
+                </a>
+            </li>
+        }
+    </ul>
+
+    @if (_mapUrl is not null)
+    {
+        <iframe src="@_mapUrl" title="@_mapTitle" loading="lazy" referrerpolicy="no-referrer" class="h-64 w-full rounded-2xl border border-sand md:h-80"></iframe>
+    }
+</article>
+
+@code {
+    private const string HoursTemplate = "Horário: {0}";
+    private const string MapTitleTemplate = "Mapa de {0}";
+
+    [Parameter, EditorRequired]
+    public LocationSummary Location { get; set; } = default!;
+
+    private IReadOnlyList<ContactLink> _links = [];
+    private string? _mapUrl;
+    private string _hoursLabel = string.Empty;
+    private string _mapTitle = string.Empty;
+
+    protected override void OnParametersSet()
+    {
+        var culture = System.Globalization.CultureInfo.InvariantCulture;
+        _links = Location.Contacts.Select(ContactLinks.For).ToList();
+        _mapUrl = ContactLinks.SafeMapUrl(Location.MapEmbedUrl);
+        _hoursLabel = string.Format(culture, HoursTemplate, Location.OpeningHours);
+        _mapTitle = string.Format(culture, MapTitleTemplate, Location.Name);
+    }
+}
