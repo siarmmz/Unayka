@@ -54,3 +54,6 @@ dotnet_naming_style.prefix_i.capitalization = pascal_case
 [src/*.Test/**/*.cs]
 dotnet_diagnostic.CA1707.severity = none
 dotnet_diagnostic.CA1711.severity = none
+
+[**/Migrations/*.cs]
+generated_code = true

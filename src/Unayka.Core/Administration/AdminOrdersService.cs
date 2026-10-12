@@ -126,13 +126,13 @@ public sealed class AdminOrdersService(IDbContextFactory<UnaykaDbContext> factor
     private static async Task RestoreStockAsync(UnaykaDbContext db, Order order, CancellationToken cancellationToken)
     {
         var productIds = order.Items.Select(item => item.ProductId).ToList();
-        var products = await db.Products.Where(product => productIds.Contains(product.Id)).ToListAsync(cancellationToken);
-        foreach (var item in order.Items)
+        var stocks = await db.LocationStocks.Where(stock => productIds.Contains(stock.ProductId)).ToListAsync(cancellationToken);
+        foreach (var item in order.Items.Where(item => item.LocationId is not null))
         {
-            var product = products.FirstOrDefault(candidate => candidate.Id == item.ProductId);
-            if (product is not null)
+            var stock = stocks.FirstOrDefault(candidate => candidate.ProductId == item.ProductId && candidate.LocationId == item.LocationId);
+            if (stock is not null)
             {
-                product.StockQuantity += item.Quantity;
+                stock.Quantity += item.Quantity;
             }
         }
     }

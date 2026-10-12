@@ -39,31 +39,45 @@ public sealed class CatalogQuery(UnaykaDbContext db) : ICatalogQuery
             .Select(ProductCardModel.FromProduct)
             .ToListAsync(cancellationToken);
 
-    public async Task<IReadOnlyList<CategorySummary>> CategoriesAsync(CategoryKind? kind = null, CancellationToken cancellationToken = default) =>
-        await db.Categories
+    public async Task<IReadOnlyList<SectionSummary>> SectionsAsync(CancellationToken cancellationToken = default)
+    {
+        var sections = await db.Sections
             .AsNoTracking()
-            .Where(category => kind == null || category.Kind == kind)
-            .OrderBy(category => category.SortOrder)
-            .Select(category => new CategorySummary(
-                category.Slug,
-                category.Name,
-                category.Description,
-                category.Kind,
-                category.ImageUrl,
-                category.Products.Count(product => product.IsActive)))
+            .Include(section => section.Categories.Where(category => category.Status == CatalogStatus.Active).OrderBy(category => category.SortOrder))
+            .Include(section => section.Tags.OrderBy(tag => tag.SortOrder))
+            .Where(section => section.Status == CatalogStatus.Active)
+            .OrderBy(section => section.SortOrder)
+            .AsSplitQuery()
+            .ToListAsync(cancellationToken);
+        var counts = await CountByCategoryAsync(cancellationToken);
+        return sections.Select(section => ToSummary(section, counts)).ToList();
+    }
+
+    public async Task<SectionSummary?> FindSectionAsync(string slug, CancellationToken cancellationToken = default) =>
+        (await SectionsAsync(cancellationToken)).FirstOrDefault(section => section.Slug == slug);
+
+    public async Task<IReadOnlyList<ProductCardModel>> BySectionAsync(string sectionSlug, int count, CancellationToken cancellationToken = default) =>
+        await Active()
+            .Where(product => product.Category!.Section!.Slug == sectionSlug)
+            .OrderByDescending(product => product.IsFeatured)
+            .ThenByDescending(product => product.SalesCount)
+            .ThenBy(product => product.Name)
+            .Take(count)
+            .Select(ProductCardModel.FromProduct)
+            .ToListAsync(cancellationToken);
+
+    public async Task<IReadOnlyList<CategorySummary>> CategoriesAsync(string? sectionSlug = null, CancellationToken cancellationToken = default) =>
+        await ActiveCategories()
+            .Where(category => sectionSlug == null || category.Section!.Slug == sectionSlug)
+            .OrderBy(category => category.Section!.SortOrder)
+            .ThenBy(category => category.SortOrder)
+            .Select(ToCategorySummary)
             .ToListAsync(cancellationToken);
 
     public async Task<CategorySummary?> FindCategoryAsync(string slug, CancellationToken cancellationToken = default) =>
-        await db.Categories
-            .AsNoTracking()
+        await ActiveCategories()
             .Where(category => category.Slug == slug)
-            .Select(category => new CategorySummary(
-                category.Slug,
-                category.Name,
-                category.Description,
-                category.Kind,
-                category.ImageUrl,
-                category.Products.Count(product => product.IsActive)))
+            .Select(ToCategorySummary)
             .FirstOrDefaultAsync(cancellationToken);
 
     public async Task<ProductPage> SearchAsync(ProductSearch search, CancellationToken cancellationToken = default)
@@ -83,9 +97,11 @@ public sealed class CatalogQuery(UnaykaDbContext db) : ICatalogQuery
     public async Task<ProductDetail?> FindProductAsync(string slug, CancellationToken cancellationToken = default)
     {
         var product = await Active()
-            .Include(candidate => candidate.Category)
+            .Include(candidate => candidate.Category!.Section)
             .Include(candidate => candidate.Media)
             .Include(candidate => candidate.Facts)
+            .Include(candidate => candidate.Tags)
+            .Include(candidate => candidate.Stocks).ThenInclude(stock => stock.Location)
             .AsSplitQuery()
             .FirstOrDefaultAsync(candidate => candidate.Slug == slug, cancellationToken);
         return product is null ? null : ToDetail(product);
@@ -106,13 +122,53 @@ public sealed class CatalogQuery(UnaykaDbContext db) : ICatalogQuery
     }
 
     private IQueryable<Product> Active() =>
-        db.Products.AsNoTracking().Where(product => product.IsActive);
+        db.Products.AsNoTracking().Where(ProductVisibility.IsPublic);
+
+    private IQueryable<Category> ActiveCategories() =>
+        db.Categories.AsNoTracking().Where(category =>
+            category.Status == CatalogStatus.Active && category.Section!.Status == CatalogStatus.Active);
+
+    private static readonly Expression<Func<Category, CategorySummary>> ToCategorySummary = category => new CategorySummary(
+        category.Slug,
+        category.Name,
+        category.Description,
+        category.Section!.Slug,
+        category.ImageUrl,
+        category.Products.Count(product => product.Status == CatalogStatus.Active));
+
+    private async Task<Dictionary<int, int>> CountByCategoryAsync(CancellationToken cancellationToken) =>
+        await Active()
+            .GroupBy(product => product.CategoryId)
+            .Select(group => new { CategoryId = group.Key, Count = group.Count() })
+            .ToDictionaryAsync(row => row.CategoryId, row => row.Count, cancellationToken);
+
+    private static SectionSummary ToSummary(Section section, Dictionary<int, int> counts)
+    {
+        var categories = section.Categories
+            .Select(category => new CategorySummary(
+                category.Slug, category.Name, category.Description, section.Slug, category.ImageUrl, counts.GetValueOrDefault(category.Id)))
+            .ToList();
+        return new SectionSummary(
+            section.Slug,
+            section.Name,
+            section.Description,
+            section.ImageUrl,
+            categories.Sum(category => category.ProductCount),
+            categories,
+            section.Tags.Select(tag => new TagSummary(tag.Slug, tag.Name)).ToList());
+    }
 
     private static IQueryable<Product> ApplyFilters(IQueryable<Product> products, ProductSearch search)
     {
-        if (search.Kind is { } kind)
+        if (!string.IsNullOrWhiteSpace(search.SectionSlug))
         {
-            products = products.Where(product => product.Category!.Kind == kind);
+            products = products.Where(product => product.Category!.Section!.Slug == search.SectionSlug);
+        }
+
+        foreach (var tagSlug in search.TagSlugs ?? [])
+        {
+            var slug = tagSlug;
+            products = products.Where(product => product.Tags.Any(tag => tag.Slug == slug));
         }
 
         if (!string.IsNullOrWhiteSpace(search.CategorySlug))
@@ -193,11 +249,15 @@ public sealed class CatalogQuery(UnaykaDbContext db) : ICatalogQuery
             product.PriceMinor,
             product.CompareAtPriceMinor,
             product.Badge,
-            product.StockQuantity,
+            product.IsNew,
+            ProductStock.Total(product),
             product.Category!.Slug,
             product.Category.Name,
-            product.Category.Kind,
+            product.Category.Section!.Slug,
+            product.Category.Section.Name,
+            product.Kind,
             images,
-            groups);
+            groups,
+            product.Tags.OrderBy(tag => tag.SortOrder).Select(tag => new TagSummary(tag.Slug, tag.Name)).ToList());
     }
 }

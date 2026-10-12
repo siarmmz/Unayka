@@ -2,7 +2,11 @@ using Unayka.Core.Catalog;
 
 namespace Unayka.Core.Data.Seed;
 
-public sealed record SeedCategory(string Slug, string Name, string Description, CategoryKind Kind, string ImageId);
+public sealed record SeedSection(string Slug, string Name, string Description, string ImageId);
+
+public sealed record SeedTag(string SectionSlug, string Slug, string Name);
+
+public sealed record SeedCategory(string Slug, string Name, string Description, string SectionSlug, string ImageId);
 
 public sealed record SeedProduct(
     string Slug,
@@ -17,7 +21,8 @@ public sealed record SeedProduct(
     int Stock,
     int Sales,
     string[] PhotoIds,
-    string[] Facts);
+    string[] Facts,
+    ProductKind Kind = ProductKind.Physical);
 
 public static class CatalogSeed
 {
@@ -28,11 +33,21 @@ public static class CatalogSeed
     private const string Hair = "cabelo";
     private const string Body = "corpo-e-banho";
     private const string Teas = "chas-naturais";
-    private const string NewBadge = "Novo";
+    public const string EbookSlug = "e-book-receitas-com-cha";
+    private const string Ebooks = "e-books";
+    private const string Calming = "calmante";
+    private const string CaffeineFree = "sem-cafeina";
+    private const string Energizing = "energizante";
+    private const string Moisturizing = "hidratante";
+    private const string SensitiveSkin = "pele-sensivel";
+    private const string Exfoliating = "esfoliante";
+    private const string Recipes = "receitas";
+    public const string NewBadge = "Novo";
     private const string BestSellerBadge = "Mais vendido";
     private const string NutritionGroup = "Tabela nutricional";
     private const string CompositionGroup = "Composição";
     private const string UsageGroup = "Modo de utilização";
+    private const string FileGroup = "Ficheiro";
 
     private static readonly string[] CoffeePhotoIds =
     [
@@ -59,21 +74,78 @@ public static class CatalogSeed
         "1600857062241-98e5dba7f214",
     ];
 
+    private static readonly string[] BookPhotoIds =
+    [
+        "1544947950-fa07a98d237f", "1512820790803-83ca734da794", "1495446815901-a7297e633e8d",
+    ];
+
     private static readonly string[] TeaPhotoIds =
     [
         "1627435601361-ec25f5b1d0e5", "1571934811356-5cc061b6821f", "1597481499750-3e6b22637e12",
         "1576092768241-dec231879fc3", "1594631252845-29fc4cc8cde9", "1558160074-4d7d8bdf4256",
     ];
 
+    public static readonly IReadOnlyList<SeedSection> Sections =
+    [
+        new(SectionSlugs.Teas, "Chás", "Chás, cafés e infusões naturais, secos e embalados com cuidado.", "1627435601361-ec25f5b1d0e5"),
+        new(SectionSlugs.Cosmetics, "Cosméticos naturais", "Cuidados de pele, cabelo e corpo feitos com ingredientes naturais.", "1556228720-195a672e8a03"),
+        new(SectionSlugs.Books, "Livros", "Livros digitais com receitas e rituais para o dia a dia.", "1544947950-fa07a98d237f"),
+    ];
+
+    public static readonly IReadOnlyList<SeedTag> Tags =
+    [
+        new(SectionSlugs.Teas, Calming, "Calmante"),
+        new(SectionSlugs.Teas, CaffeineFree, "Sem cafeína"),
+        new(SectionSlugs.Teas, Energizing, "Energizante"),
+        new(SectionSlugs.Cosmetics, Moisturizing, "Hidratante"),
+        new(SectionSlugs.Cosmetics, SensitiveSkin, "Pele sensível"),
+        new(SectionSlugs.Cosmetics, Exfoliating, "Esfoliante"),
+        new(SectionSlugs.Books, Recipes, "Receitas"),
+    ];
+
+    public static readonly IReadOnlyDictionary<string, string[]> ProductTags = new Dictionary<string, string[]>
+    {
+        ["espresso-da-casa"] = [Energizing],
+        ["cappuccino-cremoso"] = [Energizing],
+        ["latte-de-baunilha"] = [Energizing],
+        ["mocha-de-chocolate"] = [Energizing],
+        ["cold-brew-classico"] = [Energizing],
+        ["latte-gelado-de-caramelo"] = [Energizing],
+        ["frappe-de-avela"] = [Energizing],
+        ["espresso-tonico"] = [Energizing],
+        ["cafe-em-grao-gorongosa"] = [Energizing],
+        ["cafe-moido-torra-media"] = [Energizing],
+        ["blend-espresso-unayka"] = [Energizing],
+        ["capsulas-compativeis-10"] = [Energizing],
+        ["cha-de-moringa"] = [CaffeineFree],
+        ["cha-de-hibisco"] = [CaffeineFree],
+        ["cha-de-capim-principe"] = [Calming, CaffeineFree],
+        ["serum-hidratante-hialuronico"] = [Moisturizing],
+        ["creme-facial-karite"] = [Moisturizing, SensitiveSkin],
+        ["gel-de-limpeza-suave"] = [SensitiveSkin],
+        ["protetor-solar-facial-fps50"] = [SensitiveSkin],
+        ["champo-nutritivo-coco"] = [Moisturizing],
+        ["condicionador-karite"] = [Moisturizing],
+        ["mascara-capilar-reparadora"] = [Moisturizing],
+        ["oleo-de-argao-50ml"] = [Moisturizing],
+        ["manteiga-corporal-karite"] = [Moisturizing],
+        ["sabonete-artesanal-de-cafe"] = [Exfoliating],
+        ["esfoliante-de-cafe-e-coco"] = [Exfoliating],
+        ["coffret-banho-e-corpo"] = [Moisturizing],
+        ["pomada-de-moringa-e-karite"] = [Moisturizing, SensitiveSkin],
+        [EbookSlug] = [Recipes],
+    };
+
     public static readonly IReadOnlyList<SeedCategory> Categories =
     [
-        new(Teas, "Chás naturais", "Chás de plantas, secas ao sol e embaladas à mão.", CategoryKind.Tea, "1627435601361-ec25f5b1d0e5"),
-        new(HotCoffee, "Cafés quentes", "Espressos e bebidas de leite preparados na hora.", CategoryKind.Tea, "1509042239860-f550ce710b93"),
-        new(IcedCoffee, "Cafés gelados", "Bebidas frescas para os dias de calor.", CategoryKind.Tea, "1507133750040-4a8f57021571"),
-        new(Beans, "Grãos e moídos", "Café para preparar em casa, em grão, moído ou em cápsulas.", CategoryKind.Tea, "1559056199-641a0ac8b55e"),
-        new(Skin, "Pomadas e cremes", "Pomadas e cremes feitos de manteigas e óleos naturais.", CategoryKind.Cosmetic, "1556228720-195a672e8a03"),
-        new(Hair, "Cabelo", "Lavagem, nutrição e reparação para todos os tipos de cabelo.", CategoryKind.Cosmetic, "1611432579402-7037e3e2c1e4"),
-        new(Body, "Corpo e banho", "Texturas ricas e aromas suaves para o momento do banho.", CategoryKind.Cosmetic, "1544161515-4ab6ce6db874"),
+        new(Teas, "Chás naturais", "Chás de plantas, secas ao sol e embaladas à mão.", SectionSlugs.Teas, "1627435601361-ec25f5b1d0e5"),
+        new(HotCoffee, "Cafés quentes", "Espressos e bebidas de leite preparados na hora.", SectionSlugs.Teas, "1509042239860-f550ce710b93"),
+        new(IcedCoffee, "Cafés gelados", "Bebidas frescas para os dias de calor.", SectionSlugs.Teas, "1507133750040-4a8f57021571"),
+        new(Beans, "Grãos e moídos", "Café para preparar em casa, em grão, moído ou em cápsulas.", SectionSlugs.Teas, "1559056199-641a0ac8b55e"),
+        new(Skin, "Pomadas e cremes", "Pomadas e cremes feitos de manteigas e óleos naturais.", SectionSlugs.Cosmetics, "1556228720-195a672e8a03"),
+        new(Hair, "Cabelo", "Lavagem, nutrição e reparação para todos os tipos de cabelo.", SectionSlugs.Cosmetics, "1611432579402-7037e3e2c1e4"),
+        new(Body, "Corpo e banho", "Texturas ricas e aromas suaves para o momento do banho.", SectionSlugs.Cosmetics, "1544161515-4ab6ce6db874"),
+        new(Ebooks, "E-books", "Livros em formato digital para descarregar logo após a compra.", SectionSlugs.Books, "1544947950-fa07a98d237f"),
     ];
 
     public static readonly IReadOnlyList<SeedProduct> Products =
@@ -218,6 +290,12 @@ public static class CatalogSeed
             "Capim príncipe cultivado em Moçambique, cortado e seco lentamente. Um chá de aroma cítrico que acalma depois das refeições.",
             240, null, null, false, 110, 120, [TeaPhotoIds[5], TeaPhotoIds[2], TeaPhotoIds[3]],
             Nutrition("1 chávena, 250 ml", 1, "0 g", "0,2 g", "0 g", "0 g", "0 mg")),
+        new(EbookSlug, "E-book Receitas com Chá", Ebooks,
+            "Quarenta receitas de infusões, bolos e sobremesas com chá.",
+            "Um livro digital com quarenta receitas simples para cozinhar e beber com chá: infusões quentes e geladas, bolos, sobremesas e rituais para cada hora do dia. Ficheiro em PDF, disponível para descarregar depois do pagamento.",
+            350, 450, NewBadge, true, 0, 45, Photos(BookPhotoIds, 0, 1, 2),
+            [$"{FileGroup}|Formato|PDF", $"{FileGroup}|Páginas|48"],
+            ProductKind.Digital),
     ];
 
     private static string[] Photos(string[] pool, params int[] indexes) =>

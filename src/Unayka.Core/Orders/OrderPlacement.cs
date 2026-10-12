@@ -3,7 +3,9 @@ using Microsoft.EntityFrameworkCore;
 using Unayka.Core.Accounts;
 using Unayka.Core.Audit;
 using Unayka.Core.Carts;
+using Unayka.Core.Catalog;
 using Unayka.Core.Data;
+using Unayka.Core.Locations;
 using Unayka.Core.Payments;
 
 namespace Unayka.Core.Orders;
@@ -20,6 +22,7 @@ public sealed class OrderPlacement(
     private const int MaxEmailLength = 120;
     private const int MaxAddressLength = 300;
     private const int MaxNotesLength = 500;
+    private const int DigitalLocation = 0;
 
     public async Task<PlaceOrderResult> PlaceAsync(PlaceOrderRequest request, CancellationToken cancellationToken = default)
     {
@@ -41,13 +44,13 @@ public sealed class OrderPlacement(
         }
 
         await using var transaction = await database.Database.BeginTransactionAsync(cancellationToken);
-        var shortage = await ReserveStockAsync(cart, cancellationToken);
-        if (shortage is not null)
+        var reservation = await ReserveStockAsync(cart, cancellationToken);
+        if (reservation.Shortage is not null)
         {
-            return Fail(PlaceOrderOutcome.OutOfStock, shortage);
+            return Fail(PlaceOrderOutcome.OutOfStock, reservation.Shortage);
         }
 
-        var order = await CreateOrderAsync(request, cart, cancellationToken);
+        var order = await CreateOrderAsync(request, cart, reservation.Items, cancellationToken);
         await payments.StartAsync(order, request.PaymentMethod, request.PaymentMethod.IsWallet() ? PhoneNumber.Normalize(request.WalletPhone) : null, cancellationToken);
         await carts.ClearAsync(request.CartId!.Value, cancellationToken);
         await audit.WriteAsync(
@@ -91,29 +94,65 @@ public sealed class OrderPlacement(
     private static bool IsValidEmail(string value) =>
         value.Trim().Length <= MaxEmailLength && MailAddress.TryCreate(value.Trim(), out var address) && address.Address == value.Trim();
 
-    private async Task<string?> ReserveStockAsync(CartView cart, CancellationToken cancellationToken)
+    private async Task<Reservation> ReserveStockAsync(CartView cart, CancellationToken cancellationToken)
     {
         var ids = cart.Lines.Select(line => line.ProductId).ToList();
-        var products = await database.Products.Where(product => ids.Contains(product.Id)).ToListAsync(cancellationToken);
-        var unavailable = cart.Lines.FirstOrDefault(line =>
-            products.FirstOrDefault(candidate => candidate.Id == line.ProductId) is not { IsActive: true } product
-            || product.StockQuantity < line.Quantity);
-        if (unavailable is not null)
+        var products = await database.Products
+            .Include(product => product.Stocks).ThenInclude(stock => stock.Location)
+            .Where(ProductVisibility.IsPublic)
+            .Where(product => ids.Contains(product.Id))
+            .ToListAsync(cancellationToken);
+        var plans = cart.Lines
+            .Select(line => (Line: line, Product: products.FirstOrDefault(candidate => candidate.Id == line.ProductId)))
+            .Select(pair => (pair.Line, pair.Product, Allocations: pair.Product is null ? null : Allocate(pair.Product, pair.Line.Quantity)))
+            .ToList();
+        var unavailable = plans.FirstOrDefault(plan => plan.Allocations is null);
+        if (unavailable.Line is not null)
         {
-            return unavailable.Name;
+            return new Reservation([], unavailable.Line.Name);
         }
 
-        foreach (var line in cart.Lines)
-        {
-            var product = products.First(candidate => candidate.Id == line.ProductId);
-            product.StockQuantity -= line.Quantity;
-            product.SalesCount += line.Quantity;
-        }
-
-        return null;
+        return new Reservation(plans.SelectMany(plan => Reserve(plan.Line, plan.Product!, plan.Allocations!)).ToList(), null);
     }
 
-    private async Task<Order> CreateOrderAsync(PlaceOrderRequest request, CartView cart, CancellationToken cancellationToken)
+    private static IReadOnlyList<StockAllocation>? Allocate(Product product, int quantity) =>
+        product.Kind == ProductKind.Digital
+            ? [new StockAllocation(DigitalLocation, quantity)]
+            : StockAllocator.Allocate(ActiveStocks(product), quantity);
+
+    private static List<LocationStock> ActiveStocks(Product product) =>
+        product.Stocks
+            .Where(stock => stock.Location?.Status == CatalogStatus.Active)
+            .OrderBy(stock => stock.Location!.SortOrder)
+            .ToList();
+
+    private static IEnumerable<OrderItem> Reserve(CartLineView line, Product product, IReadOnlyList<StockAllocation> allocations)
+    {
+        product.SalesCount += line.Quantity;
+        foreach (var allocation in allocations)
+        {
+            var isDigital = product.Kind == ProductKind.Digital;
+            if (!isDigital)
+            {
+                product.Stocks.First(stock => stock.LocationId == allocation.LocationId).Quantity -= allocation.Quantity;
+            }
+
+            yield return new OrderItem
+            {
+                ProductId = product.Id,
+                LocationId = isDigital ? null : allocation.LocationId,
+                Kind = product.Kind,
+                ProductName = line.Name,
+                ImageUrl = line.ImageUrl,
+                UnitPriceMinor = line.UnitPriceMinor,
+                Quantity = allocation.Quantity,
+            };
+        }
+    }
+
+    private sealed record Reservation(IReadOnlyList<OrderItem> Items, string? Shortage);
+
+    private async Task<Order> CreateOrderAsync(PlaceOrderRequest request, CartView cart, IReadOnlyList<OrderItem> items, CancellationToken cancellationToken)
     {
         var now = time.GetUtcNow();
         var deliveryFee = OrderPricing.DeliveryFor(request.Fulfillment);
@@ -136,15 +175,7 @@ public sealed class OrderPlacement(
             CouponCode = cart.CouponCode,
             CreatedAt = now,
             UpdatedAt = now,
-            Items = cart.Lines
-                .Select(line => new OrderItem
-                {
-                    ProductId = line.ProductId,
-                    ProductName = line.Name,
-                    UnitPriceMinor = line.UnitPriceMinor,
-                    Quantity = line.Quantity,
-                })
-                .ToList(),
+            Items = items.ToList(),
         };
         database.Orders.Add(order);
         await RegisterCouponUseAsync(cart.CouponCode, cancellationToken);

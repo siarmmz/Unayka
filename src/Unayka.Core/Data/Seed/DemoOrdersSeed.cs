@@ -55,7 +55,7 @@ public static class DemoOrdersSeed
             return;
         }
 
-        var products = await database.Products.OrderBy(product => product.Id).ToListAsync();
+        var products = await database.Products.Include(product => product.Stocks).Include(product => product.Media).OrderBy(product => product.Id).ToListAsync();
         var customers = await database.Users
             .Where(user => user.Role == Accounts.UserRole.Customer && user.Phone != null)
             .OrderBy(user => user.Id)
@@ -119,7 +119,10 @@ public static class DemoOrdersSeed
             .Select(line => new OrderItem
             {
                 ProductId = line.Item1.Id,
+                LocationId = line.Item1.Kind == ProductKind.Digital ? null : line.Item1.Stocks.MinBy(stock => stock.LocationId)?.LocationId,
+                Kind = line.Item1.Kind,
                 ProductName = line.Item1.Name,
+                ImageUrl = line.Item1.Media.OrderBy(media => media.SortOrder).Select(media => media.Url).FirstOrDefault() ?? string.Empty,
                 UnitPriceMinor = line.Item1.PriceMinor,
                 Quantity = line.Item2,
             })

@@ -91,8 +91,7 @@
         (string Eyebrow, string Title, string Text, string ActionLabel)[] Slides,
         string MoreLabel,
         (string Eyebrow, string Title, string Subtitle) Featured,
-        (string Eyebrow, string Title, string Subtitle) Teas,
-        (string Eyebrow, string Title, string Subtitle) Cosmetics,
+        string SectionEyebrow,
         (string Eyebrow, string Title, (string Title, string Text)[] Items) Steps,
         (string Eyebrow, string Title, string[] Paragraphs, string ActionLabel, string ImageAlt) Story,
         (string Eyebrow, string Title, string Text, string ActionLabel) Contact,
@@ -106,8 +105,7 @@
         ],
         "Ver mais",
         ("Os favoritos da casa", "Destaques", "Os produtos que os nossos clientes mais procuram."),
-        ("Da planta à chávena", "Chás", "Chás de plantas, infusões e os nossos cafés."),
-        ("Feito de natureza", "Cosméticos naturais", "Pomadas, cremes e óleos para a pele e o cabelo."),
+        "Da nossa loja",
         (
             "Simples",
             "Como funciona",
@@ -142,26 +140,22 @@
 
     protected override async Task OnInitializedAsync()
     {
-        string[] slideUrls = [StoreUrls.Teas, StoreUrls.Cosmetics, StoreUrls.Shop];
+        string[] slideUrls = [StoreUrls.Section(SectionSlugs.Teas), StoreUrls.Section(SectionSlugs.Cosmetics), StoreUrls.Shop];
         _slides = Data.Slides
             .Select((slide, index) => new Slide(index == 0 ? string.Empty : null, slide.Eyebrow, slide.Title, slide.Text, slide.ActionLabel, ToUrl(slideUrls[index]), ToUrl(SlideImages[index])))
             .ToList();
-        _rows =
-        [
-            new Row(Data.Featured.Eyebrow, Data.Featured.Title, Data.Featured.Subtitle, StoreUrls.Shop, false, await Catalog.FeaturedAsync(RowItemCount)),
-            new Row(Data.Teas.Eyebrow, Data.Teas.Title, Data.Teas.Subtitle, StoreUrls.Teas, true, await TopAsync(CategoryKind.Tea)),
-            new Row(Data.Cosmetics.Eyebrow, Data.Cosmetics.Title, Data.Cosmetics.Subtitle, StoreUrls.Cosmetics, false, await TopAsync(CategoryKind.Cosmetic)),
-        ];
+        var sections = await Catalog.SectionsAsync();
+        var sectionRows = new List<Row>();
+        foreach (var section in sections)
+        {
+            sectionRows.Add(new Row(Data.SectionEyebrow, section.Name, section.Description, StoreUrls.Section(section.Slug), sectionRows.Count % 2 == 0, await Catalog.BySectionAsync(section.Slug, RowItemCount)));
+        }
+
+        _rows = [new Row(Data.Featured.Eyebrow, Data.Featured.Title, Data.Featured.Subtitle, StoreUrls.Shop, false, await Catalog.FeaturedAsync(RowItemCount)), .. sectionRows.Where(row => row.Items.Count > 0)];
         _steps = Data.Steps.Items.Select((step, index) => new Step((index + 1).ToString(System.Globalization.CultureInfo.InvariantCulture), step.Title, step.Text)).ToList();
         _storyUrl = ToUrl(SiteImages.StoryUrl);
         _aboutUrl = ToUrl(AboutPath);
         _contactUrl = ToUrl(ContactPath);
         _structuredData = StoreStructuredData.Store(StoreStructuredData.Root(Navigation.BaseUri), SiteImages.HeroUrl, Data.StoreDescription, Data.OpeningHours);
-    }
-
-    private async Task<IReadOnlyList<ProductCardModel>> TopAsync(CategoryKind kind)
-    {
-        var page = await Catalog.SearchAsync(new ProductSearch(Kind: kind, Sort: ProductSort.BestSellers));
-        return page.Items.Take(RowItemCount).ToList();
     }
 }

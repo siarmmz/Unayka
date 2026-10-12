@@ -5,6 +5,7 @@ using Unayka.Core.Carts;
 using Unayka.Core.Catalog;
 using Unayka.Core.Counter;
 using Unayka.Core.Coupons;
+using Unayka.Core.Locations;
 using Unayka.Core.Orders;
 using Unayka.Core.Payments;
 
@@ -12,6 +13,13 @@ namespace Unayka.Core.Data;
 
 public sealed class UnaykaDbContext(DbContextOptions<UnaykaDbContext> options) : DbContext(options)
 {
+    public DbSet<Section> Sections => Set<Section>();
+    public DbSet<Tag> Tags => Set<Tag>();
+    public DbSet<DigitalAsset> DigitalAssets => Set<DigitalAsset>();
+    public DbSet<Location> Locations => Set<Location>();
+    public DbSet<LocationContact> LocationContacts => Set<LocationContact>();
+    public DbSet<LocationStock> LocationStocks => Set<LocationStock>();
+    public DbSet<DigitalDownloadGrant> DigitalDownloadGrants => Set<DigitalDownloadGrant>();
     public DbSet<Category> Categories => Set<Category>();
     public DbSet<Product> Products => Set<Product>();
     public DbSet<ProductMedia> ProductMedia => Set<ProductMedia>();
@@ -47,6 +55,34 @@ public sealed class UnaykaDbContext(DbContextOptions<UnaykaDbContext> options) :
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.Entity<Section>(entity =>
+        {
+            entity.HasIndex(section => section.Slug).IsUnique();
+            entity.HasMany(section => section.Categories).WithOne(category => category.Section)
+                .HasForeignKey(category => category.SectionId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasMany(section => section.Tags).WithOne(tag => tag.Section)
+                .HasForeignKey(tag => tag.SectionId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<Tag>().HasIndex(tag => new { tag.SectionId, tag.Slug }).IsUnique();
+
+        modelBuilder.Entity<Location>(entity =>
+        {
+            entity.HasIndex(location => location.Slug).IsUnique();
+            entity.HasMany(location => location.Contacts).WithOne().HasForeignKey(contact => contact.LocationId);
+        });
+
+        modelBuilder.Entity<LocationStock>(entity =>
+        {
+            entity.HasKey(stock => new { stock.ProductId, stock.LocationId });
+            entity.HasOne(stock => stock.Product).WithMany(product => product.Stocks)
+                .HasForeignKey(stock => stock.ProductId).OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(stock => stock.Location).WithMany()
+                .HasForeignKey(stock => stock.LocationId).OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<DigitalDownloadGrant>().HasIndex(grant => new { grant.OrderItemId, grant.UserId }).IsUnique();
+
         modelBuilder.Entity<Category>(entity =>
         {
             entity.HasIndex(category => category.Slug).IsUnique();
@@ -59,6 +95,8 @@ public sealed class UnaykaDbContext(DbContextOptions<UnaykaDbContext> options) :
             entity.HasIndex(product => product.Slug).IsUnique();
             entity.HasMany(product => product.Media).WithOne().HasForeignKey(media => media.ProductId);
             entity.HasMany(product => product.Facts).WithOne().HasForeignKey(fact => fact.ProductId);
+            entity.HasMany(product => product.DigitalAssets).WithOne().HasForeignKey(asset => asset.ProductId);
+            entity.HasMany(product => product.Tags).WithMany(tag => tag.Products).UsingEntity("ProductTag");
         });
 
         modelBuilder.Entity<User>(entity =>

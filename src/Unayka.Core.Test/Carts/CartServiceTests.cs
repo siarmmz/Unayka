@@ -1,5 +1,6 @@
 using Unayka.Core.Carts;
 using Unayka.Core.Coupons;
+using Unayka.Core.Test.Data;
 using Unayka.Core.Test.Orders;
 
 namespace Unayka.Core.Test.Carts;
@@ -43,8 +44,7 @@ public sealed class CartServiceTests : IDisposable
     public async Task Quantity_is_limited_by_stock()
     {
         var product = await _fixture.FirstProductAsync();
-        product.StockQuantity = 3;
-        await _fixture.Db.SaveChangesAsync();
+        await TestStock.SetTotalAsync(_fixture.Db, product.Id, 3);
 
         var change = await _fixture.Carts.AddAsync(null, null, product.Id, 10);
         var view = await _fixture.Carts.GetAsync(change.CartId);
@@ -57,8 +57,7 @@ public sealed class CartServiceTests : IDisposable
     public async Task Out_of_stock_product_is_not_added()
     {
         var product = await _fixture.FirstProductAsync();
-        product.StockQuantity = 0;
-        await _fixture.Db.SaveChangesAsync();
+        await TestStock.SetTotalAsync(_fixture.Db, product.Id, 0);
 
         var change = await _fixture.Carts.AddAsync(null, null, product.Id, 1);
 

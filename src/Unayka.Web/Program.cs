@@ -5,6 +5,7 @@ using Unayka.Core.Catalog;
 using Unayka.Core.Configuration;
 using Unayka.Core.Counter;
 using Unayka.Core.Data;
+using Unayka.Core.Locations;
 using Unayka.Core.Orders;
 using Unayka.Web.Components;
 using Unayka.Web.Endpoints;
@@ -29,6 +30,7 @@ builder.Services.AddUnaykaAccounts();
 builder.Services.AddUnaykaCarts();
 builder.Services.AddUnaykaCatalog();
 builder.Services.AddUnaykaCounter();
+builder.Services.AddUnaykaLocations();
 builder.Services.AddUnaykaOrders();
 builder.Services.AddUnaykaAdministration();
 

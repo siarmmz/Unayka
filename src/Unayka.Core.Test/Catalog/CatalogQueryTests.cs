@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using Unayka.Core.Catalog;
 using Unayka.Core.Data.Seed;
 using Unayka.Core.Test.Data;
@@ -23,7 +24,7 @@ public sealed class CatalogQueryTests : IDisposable
         var first = await _query.SearchAsync(new ProductSearch());
         var second = await _query.SearchAsync(new ProductSearch(Page: 2));
 
-        Assert.Equal(28, first.TotalCount);
+        Assert.Equal(29, first.TotalCount);
         Assert.Equal(3, first.PageCount);
         Assert.Equal(CatalogQuery.PageSize, first.Items.Count);
         Assert.Empty(first.Items.Select(item => item.Slug).Intersect(second.Items.Select(item => item.Slug)));
@@ -39,10 +40,10 @@ public sealed class CatalogQueryTests : IDisposable
     }
 
     [Fact]
-    public async Task Search_filters_by_kind()
+    public async Task Search_filters_by_section()
     {
-        var teas = await _query.SearchAsync(new ProductSearch(Kind: CategoryKind.Tea, Sort: ProductSort.BestSellers));
-        var categories = (await _query.CategoriesAsync(CategoryKind.Tea)).Select(category => category.Name).ToHashSet();
+        var teas = await _query.SearchAsync(new ProductSearch(SectionSlug: SectionSlugs.Teas, Sort: ProductSort.BestSellers));
+        var categories = (await _query.CategoriesAsync(SectionSlugs.Teas)).Select(category => category.Name).ToHashSet();
 
         Assert.NotEmpty(teas.Items);
         Assert.All(teas.Items, item => Assert.Contains(item.CategoryName, categories));
@@ -51,7 +52,7 @@ public sealed class CatalogQueryTests : IDisposable
     [Fact]
     public async Task Search_filters_by_category_and_price_range()
     {
-        var category = (await _query.CategoriesAsync(CategoryKind.Cosmetic))[0];
+        var category = (await _query.CategoriesAsync(SectionSlugs.Cosmetics))[0];
         var ranged = await _query.SearchAsync(new ProductSearch(CategorySlug: category.Slug, MinPriceMinor: 0, MaxPriceMinor: 50000));
 
         Assert.All(ranged.Items, item =>
@@ -91,16 +92,105 @@ public sealed class CatalogQueryTests : IDisposable
     }
 
     [Fact]
-    public async Task Search_excludes_inactive_products()
+    public async Task Search_excludes_inactive_and_archived_products()
     {
-        var target = _database.Context.Products.OrderBy(product => product.Id).First();
-        target.IsActive = false;
+        var targets = _database.Context.Products.OrderBy(product => product.Id).Take(2).ToList();
+        targets[0].Status = CatalogStatus.Inactive;
+        targets[1].Status = CatalogStatus.Archived;
         await _database.Context.SaveChangesAsync();
 
         var result = await _query.SearchAsync(new ProductSearch());
 
         Assert.Equal(27, result.TotalCount);
-        Assert.Null(await _query.FindProductAsync(target.Slug));
+        Assert.Null(await _query.FindProductAsync(targets[0].Slug));
+        Assert.Null(await _query.FindProductAsync(targets[1].Slug));
+        Assert.DoesNotContain(await _query.NewArrivalsAsync(100), item => item.Slug == targets[0].Slug || item.Slug == targets[1].Slug);
+    }
+
+    [Fact]
+    public async Task Products_of_inactive_sections_and_categories_are_hidden()
+    {
+        var cosmetics = await _database.Context.Sections.SingleAsync(section => section.Slug == SectionSlugs.Cosmetics);
+        cosmetics.Status = CatalogStatus.Inactive;
+        var hotCoffee = await _database.Context.Categories.SingleAsync(category => category.Slug == "cafes-quentes");
+        hotCoffee.Status = CatalogStatus.Archived;
+        await _database.Context.SaveChangesAsync();
+
+        var result = await _query.SearchAsync(new ProductSearch());
+        var sections = await _query.SectionsAsync();
+
+        Assert.DoesNotContain(result.Items, item => item.CategoryName == hotCoffee.Name);
+        Assert.DoesNotContain(sections, section => section.Slug == SectionSlugs.Cosmetics);
+        Assert.DoesNotContain(sections.SelectMany(section => section.Categories), category => category.Slug == hotCoffee.Slug);
+        Assert.Null(await _query.FindCategoryAsync(hotCoffee.Slug));
+        Assert.Empty((await _query.SearchAsync(new ProductSearch(SectionSlug: SectionSlugs.Cosmetics))).Items);
+        Assert.Null(await _query.FindProductAsync("serum-hidratante-hialuronico"));
+    }
+
+    [Fact]
+    public async Task Sections_list_active_categories_and_tags_in_sort_order()
+    {
+        var sections = await _query.SectionsAsync();
+
+        Assert.Equal([SectionSlugs.Teas, SectionSlugs.Cosmetics, SectionSlugs.Books], sections.Select(section => section.Slug));
+        Assert.All(sections, section => Assert.NotEmpty(section.Categories));
+        Assert.Contains(sections[0].Tags, tag => tag.Slug == "calmante");
+        Assert.Equal(29, sections.Sum(section => section.ProductCount));
+    }
+
+    [Fact]
+    public async Task Search_filters_by_tag_inside_a_section()
+    {
+        var result = await _query.SearchAsync(new ProductSearch(SectionSlug: SectionSlugs.Teas, TagSlugs: ["sem-cafeina"]));
+        var both = await _query.SearchAsync(new ProductSearch(SectionSlug: SectionSlugs.Teas, TagSlugs: ["sem-cafeina", "calmante"]));
+
+        Assert.Equal(3, result.TotalCount);
+        Assert.Equal(["cha-de-capim-principe"], both.Items.Select(item => item.Slug));
+    }
+
+    [Fact]
+    public async Task Stock_level_sums_every_active_location()
+    {
+        var product = await _database.Context.Products.SingleAsync(candidate => candidate.Slug == "espresso-da-casa");
+        var total = await _database.Context.LocationStocks.Where(stock => stock.ProductId == product.Id).SumAsync(stock => stock.Quantity);
+
+        var detail = await _query.FindProductAsync(product.Slug);
+
+        Assert.Equal(200, total);
+        Assert.Equal(total, detail!.StockQuantity);
+    }
+
+    [Fact]
+    public async Task Stock_ignores_inactive_locations_and_marks_out_of_stock()
+    {
+        var product = await _database.Context.Products.Include(candidate => candidate.Stocks).ThenInclude(stock => stock.Location).SingleAsync(candidate => candidate.Slug == "cappuccino-cremoso");
+        foreach (var stock in product.Stocks.Where(stock => stock.LocationId != product.Stocks[0].LocationId))
+        {
+            stock.Quantity = 0;
+        }
+
+        product.Stocks[0].Location!.Status = CatalogStatus.Inactive;
+        await _database.Context.SaveChangesAsync();
+
+        var detail = await _query.FindProductAsync(product.Slug);
+        var card = (await _query.SearchAsync(new ProductSearch(Query: "cappuccino"))).Items.Single();
+
+        Assert.Equal(0, detail!.StockQuantity);
+        Assert.False(card.InStock);
+    }
+
+    [Fact]
+    public async Task Digital_products_are_always_available()
+    {
+        var detail = await _query.FindProductAsync("e-book-receitas-com-cha");
+        var card = (await _query.SearchAsync(new ProductSearch(SectionSlug: SectionSlugs.Books))).Items.Single();
+
+        Assert.Equal(ProductKind.Digital, detail!.Kind);
+        Assert.Equal(ProductStock.Unlimited, detail.StockQuantity);
+        Assert.True(card.InStock);
+        Assert.Equal(ProductKind.Digital, card.Kind);
+        Assert.True(card.IsNew);
+        Assert.NotEmpty(card.ImageUrls);
     }
 
     [Fact]
@@ -128,8 +218,8 @@ public sealed class CatalogQueryTests : IDisposable
     {
         var categories = await _query.CategoriesAsync();
 
-        Assert.Equal(7, categories.Count);
-        Assert.Equal(28, categories.Sum(category => category.ProductCount));
+        Assert.Equal(8, categories.Count);
+        Assert.Equal(29, categories.Sum(category => category.ProductCount));
         Assert.Null(await _query.FindCategoryAsync("does-not-exist"));
     }
 

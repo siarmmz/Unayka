@@ -13,6 +13,7 @@ public static class CatalogLinks
     public const string MinKey = "de";
     public const string MaxKey = "ate";
     public const string PageKey = "page";
+    public const string TagKey = "etiqueta";
 
     private const long MinorUnitsPerUnit = 100;
 
@@ -25,14 +26,15 @@ public static class CatalogLinks
         new("vendidos", "Mais vendidos", ProductSort.BestSellers),
     ];
 
-    public static ProductSearch Parse(string uri, CategoryKind? kind, string? categorySlug)
+    public static ProductSearch Parse(string uri, string? sectionSlug, string? categorySlug)
     {
         var query = QueryHelpers.ParseQuery(new Uri(uri).Query);
         var sortValue = query.TryGetValue(SortKey, out var rawSort) ? rawSort.ToString() : string.Empty;
         return new ProductSearch(
             query.TryGetValue(QueryKey, out var text) ? text.ToString().Trim() : null,
-            kind,
+            sectionSlug,
             categorySlug,
+            query.TryGetValue(TagKey, out var tags) ? tags.OfType<string>().Where(tag => tag.Length > 0).Distinct().ToList() : null,
             ReadMinor(query, MinKey),
             ReadMinor(query, MaxKey),
             SortOptions.FirstOrDefault(option => option.Value == sortValue)?.Sort ?? ProductSort.Relevance,
@@ -43,11 +45,27 @@ public static class CatalogLinks
     {
         var parts = new List<string>();
         AddIf(parts, QueryKey, search.Query);
+        foreach (var tag in search.TagSlugs ?? [])
+        {
+            AddIf(parts, TagKey, tag);
+        }
+
         AddIf(parts, MinKey, search.MinPriceMinor is { } min ? (min / MinorUnitsPerUnit).ToString(CultureInfo.InvariantCulture) : null);
         AddIf(parts, MaxKey, search.MaxPriceMinor is { } max ? (max / MinorUnitsPerUnit).ToString(CultureInfo.InvariantCulture) : null);
         AddIf(parts, SortKey, search.Sort == ProductSort.Relevance ? null : SortOptions.First(option => option.Sort == search.Sort).Value);
         AddIf(parts, PageKey, includePage && search.Page > 1 ? search.Page.ToString(CultureInfo.InvariantCulture) : null);
         return parts.Count == 0 ? basePath : $"{basePath}?{string.Join('&', parts)}";
+    }
+
+    public static ProductSearch ToggleTag(ProductSearch search, string tagSlug)
+    {
+        var tags = (search.TagSlugs ?? []).ToList();
+        if (!tags.Remove(tagSlug))
+        {
+            tags.Add(tagSlug);
+        }
+
+        return search with { TagSlugs = tags, Page = 1 };
     }
 
     public static IReadOnlyList<(string Name, string Value)> PriceFields(ProductSearch search)

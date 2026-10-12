@@ -2,7 +2,7 @@ using System.Linq.Expressions;
 
 namespace Unayka.Core.Catalog;
 
-/// <summary>Data shown on a product card in listings.</summary>
+/// <summary>Data shown on a product card in listings. ImageUrls are ordered for the card cross fade.</summary>
 public sealed record ProductCardModel(
     int Id,
     string Slug,
@@ -11,7 +11,10 @@ public sealed record ProductCardModel(
     long PriceMinor,
     long? CompareAtPriceMinor,
     string ImageUrl,
+    IReadOnlyList<string> ImageUrls,
     string? Badge,
+    bool IsNew,
+    ProductKind Kind,
     bool InStock)
 {
     public static readonly Expression<Func<Product, ProductCardModel>> FromProduct = product => new ProductCardModel(
@@ -22,6 +25,10 @@ public sealed record ProductCardModel(
         product.PriceMinor,
         product.CompareAtPriceMinor,
         product.Media.OrderBy(media => media.SortOrder).Select(media => media.Url).FirstOrDefault() ?? string.Empty,
+        product.Media.OrderBy(media => media.SortOrder).Select(media => media.Url).ToList(),
         product.Badge,
-        product.StockQuantity > 0);
+        product.IsNew,
+        product.Kind,
+        product.Kind == ProductKind.Digital
+        || product.Stocks.Any(stock => stock.Quantity > 0 && stock.Location!.Status == CatalogStatus.Active));
 }

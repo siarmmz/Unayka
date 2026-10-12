@@ -71,6 +71,19 @@
                     <label for="product-badge" class="field-label">@Text(Texts.BadgeLabel)</label>
                     <input id="product-badge" type="text" maxlength="30" class="field" @bind="_form.Badge"/>
                 </div>
+                <div>
+                    <label for="product-kind" class="field-label">@Text(Texts.KindLabel)</label>
+                    <select id="product-kind" class="field" @bind="_form.Kind">
+                        @foreach (var option in AdminOptions.ProductKinds)
+                        {
+                            <option value="@option.Value">@Text(option.Label)</option>
+                        }
+                    </select>
+                </div>
+                <label class="flex items-center gap-3 text-sm">
+                    <input type="checkbox" class="h-4 w-4 accent-clay" @bind="_form.IsNew"/>
+                    <span>@Text(Texts.NewFlagLabel)</span>
+                </label>
                 <label class="flex items-center gap-3 text-sm">
                     <input type="checkbox" class="h-4 w-4 accent-clay" @bind="_form.IsFeatured"/>
                     <span>@Text(Texts.FeaturedLabel)</span>
@@ -175,7 +188,9 @@
         public const string DescriptionLabel = "Descrição";
         public const string PriceLabel = "Preço (MZN)";
         public const string CompareLabel = "Preço anterior (MZN)";
-        public const string StockLabel = "Stock";
+        public const string StockLabel = "Stock na primeira loja";
+        public const string KindLabel = "Tipo de produto";
+        public const string NewFlagLabel = "Marcar como novo";
         public const string BadgeLabel = "Etiqueta";
         public const string FeaturedLabel = "Em destaque";
         public const string ActiveLabel = "Visível na loja";

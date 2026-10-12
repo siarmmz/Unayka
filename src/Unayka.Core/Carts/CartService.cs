@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Unayka.Core.Catalog;
 using Unayka.Core.Data;
 
 namespace Unayka.Core.Carts;
@@ -34,16 +35,17 @@ public sealed class CartService(UnaykaDbContext database, TimeProvider time) : I
         Guid? cartId, int? userId, int productId, int quantity, CancellationToken cancellationToken = default)
     {
         var product = await database.Products.AsNoTracking()
-            .Where(candidate => candidate.Id == productId && candidate.IsActive)
-            .Select(candidate => new { candidate.StockQuantity })
-            .FirstOrDefaultAsync(cancellationToken);
+            .Include(candidate => candidate.Stocks).ThenInclude(stock => stock.Location)
+            .Where(ProductVisibility.IsPublic)
+            .FirstOrDefaultAsync(candidate => candidate.Id == productId, cancellationToken);
         if (product is null)
         {
             return new CartChangeResult(cartId ?? Guid.Empty, CartChange.UnknownProduct);
         }
 
         var cart = await FindOrCreateAsync(cartId, userId, cancellationToken);
-        if (product.StockQuantity <= 0)
+        var available = ProductStock.Total(product);
+        if (available <= 0)
         {
             await database.SaveChangesAsync(cancellationToken);
             return new CartChangeResult(cart.Id, CartChange.OutOfStock);
@@ -52,7 +54,7 @@ public sealed class CartService(UnaykaDbContext database, TimeProvider time) : I
         var line = await database.CartItems.FirstOrDefaultAsync(
             item => item.CartId == cart.Id && item.ProductId == productId, cancellationToken);
         var wanted = (line?.Quantity ?? 0) + Math.Max(quantity, 1);
-        var allowed = Math.Min(wanted, Math.Min(product.StockQuantity, MaxQuantityPerLine));
+        var allowed = Math.Min(wanted, Math.Min(available, MaxQuantityPerLine));
         if (line is null)
         {
             database.CartItems.Add(new CartItem { CartId = cart.Id, ProductId = productId, Quantity = allowed });
@@ -75,14 +77,14 @@ public sealed class CartService(UnaykaDbContext database, TimeProvider time) : I
             return;
         }
 
-        var line = await database.CartItems.Include(item => item.Product)
+        var line = await database.CartItems.Include(item => item.Product).ThenInclude(product => product!.Stocks).ThenInclude(stock => stock.Location)
             .FirstOrDefaultAsync(item => item.CartId == cartId && item.ProductId == productId, cancellationToken);
         if (line?.Product is null)
         {
             return;
         }
 
-        line.Quantity = Math.Max(1, Math.Min(quantity, Math.Min(line.Product.StockQuantity, MaxQuantityPerLine)));
+        line.Quantity = Math.Max(1, Math.Min(quantity, Math.Min(ProductStock.Total(line.Product), MaxQuantityPerLine)));
         await TouchAsync(cartId, cancellationToken);
     }
 
@@ -183,15 +185,22 @@ public sealed class CartService(UnaykaDbContext database, TimeProvider time) : I
                 item.Product.Name,
                 item.Product.CategoryId,
                 item.Product.PriceMinor,
-                item.Product.StockQuantity,
-                item.Product.IsActive,
+                item.Product.Kind,
+                IsPublic = item.Product.Status == CatalogStatus.Active
+                           && item.Product.Category!.Status == CatalogStatus.Active
+                           && item.Product.Category.Section!.Status == CatalogStatus.Active,
+                LocationStock = item.Product.Stocks.Where(stock => stock.Location!.Status == CatalogStatus.Active).Sum(stock => stock.Quantity),
                 Image = item.Product.Media.OrderBy(media => media.SortOrder).Select(media => media.Url).FirstOrDefault(),
             })
             .ToListAsync(cancellationToken);
         return rows
-            .Select(row => new CartLineView(
-                row.ProductId, row.Slug, row.Name, row.Image ?? string.Empty, row.CategoryId,
-                row.PriceMinor, row.Quantity, row.StockQuantity, row.IsActive && row.StockQuantity > 0))
+            .Select(row =>
+            {
+                var stock = row.Kind == ProductKind.Digital ? ProductStock.Unlimited : row.LocationStock;
+                return new CartLineView(
+                    row.ProductId, row.Slug, row.Name, row.Image ?? string.Empty, row.CategoryId,
+                    row.PriceMinor, row.Quantity, stock, row.IsPublic && stock > 0);
+            })
             .ToList();
     }
 }

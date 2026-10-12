@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Unayka.Core.Audit;
 using Unayka.Core.Catalog;
 using Unayka.Core.Data;
+using Unayka.Core.Locations;
 
 namespace Unayka.Core.Administration;
 
@@ -21,6 +22,9 @@ public interface IAdminCatalog
 
     /// <summary>Lists every category with its product count.</summary>
     Task<IReadOnlyList<CategoryRow>> ListCategoriesAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>Lists sections for selects.</summary>
+    Task<IReadOnlyList<SectionOption>> ListSectionOptionsAsync(CancellationToken cancellationToken = default);
 
     /// <summary>Lists categories for selects.</summary>
     Task<IReadOnlyList<CategoryOption>> ListCategoryOptionsAsync(CancellationToken cancellationToken = default);
@@ -56,8 +60,8 @@ public sealed class AdminCatalogService(IDbContextFactory<UnaykaDbContext> facto
                 product.Category!.Name,
                 product.PriceMinor,
                 product.CompareAtPriceMinor,
-                product.StockQuantity,
-                product.IsActive,
+                product.Stocks.Sum(stock => stock.Quantity),
+                product.Status == CatalogStatus.Active,
                 product.IsFeatured,
                 product.Media.OrderBy(media => media.SortOrder).Select(media => media.Url).FirstOrDefault()))
             .ToListAsync(cancellationToken);
@@ -70,9 +74,10 @@ public sealed class AdminCatalogService(IDbContextFactory<UnaykaDbContext> facto
         var product = await db.Products.AsNoTracking()
             .Include(candidate => candidate.Media)
             .Include(candidate => candidate.Facts)
+            .Include(candidate => candidate.Stocks)
             .AsSplitQuery()
             .FirstOrDefaultAsync(candidate => candidate.Id == id, cancellationToken);
-        return product is null ? null : ToForm(product);
+        return product is null ? null : ToForm(product, await FirstLocationIdAsync(db, cancellationToken));
     }
 
     public async Task<AdminResult> SaveProductAsync(int? actorUserId, ProductForm form, CancellationToken cancellationToken = default)
@@ -96,7 +101,7 @@ public sealed class AdminCatalogService(IDbContextFactory<UnaykaDbContext> facto
         }
 
         var product = form.Id is { } id
-            ? await db.Products.Include(candidate => candidate.Media).Include(candidate => candidate.Facts).FirstOrDefaultAsync(candidate => candidate.Id == id, cancellationToken)
+            ? await db.Products.Include(candidate => candidate.Media).Include(candidate => candidate.Facts).Include(candidate => candidate.Stocks).FirstOrDefaultAsync(candidate => candidate.Id == id, cancellationToken)
             : null;
         if (form.Id is not null && product is null)
         {
@@ -110,7 +115,7 @@ public sealed class AdminCatalogService(IDbContextFactory<UnaykaDbContext> facto
             db.Products.Add(product);
         }
 
-        Apply(form, product);
+        Apply(form, product, await FirstLocationIdAsync(db, cancellationToken));
         await db.SaveChangesAsync(cancellationToken);
         await audit.WriteAsync(
             actorUserId,
@@ -131,7 +136,7 @@ public sealed class AdminCatalogService(IDbContextFactory<UnaykaDbContext> facto
             return AdminResult.Fail("Produto não encontrado.");
         }
 
-        product.IsActive = isActive;
+        product.Status = isActive ? CatalogStatus.Active : CatalogStatus.Inactive;
         await db.SaveChangesAsync(cancellationToken);
         await audit.WriteAsync(
             actorUserId,
@@ -149,7 +154,16 @@ public sealed class AdminCatalogService(IDbContextFactory<UnaykaDbContext> facto
         return await db.Categories.AsNoTracking()
             .OrderBy(category => category.SortOrder)
             .ThenBy(category => category.Name)
-            .Select(category => new CategoryRow(category.Id, category.Name, category.Slug, category.Kind, category.Products.Count, category.SortOrder, category.ImageUrl))
+            .Select(category => new CategoryRow(category.Id, category.Name, category.Slug, category.Section!.Name, category.Products.Count, category.SortOrder, category.ImageUrl))
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<SectionOption>> ListSectionOptionsAsync(CancellationToken cancellationToken = default)
+    {
+        await using var db = await factory.CreateDbContextAsync(cancellationToken);
+        return await db.Sections.AsNoTracking()
+            .OrderBy(section => section.SortOrder)
+            .Select(section => new SectionOption(section.Id, section.Name))
             .ToListAsync(cancellationToken);
     }
 
@@ -172,7 +186,7 @@ public sealed class AdminCatalogService(IDbContextFactory<UnaykaDbContext> facto
                 Id = category.Id,
                 Name = category.Name,
                 Slug = category.Slug,
-                Kind = category.Kind,
+                SectionId = category.SectionId,
                 Description = category.Description,
                 ImageUrl = category.ImageUrl,
                 SortOrder = category.SortOrder,
@@ -185,6 +199,11 @@ public sealed class AdminCatalogService(IDbContextFactory<UnaykaDbContext> facto
         form.Slug = form.Slug.Trim().ToLowerInvariant();
         var errors = CatalogValidator.ValidateCategory(form);
         await using var db = await factory.CreateDbContextAsync(cancellationToken);
+        if (form.SectionId > 0 && !await db.Sections.AnyAsync(section => section.Id == form.SectionId, cancellationToken))
+        {
+            errors.Add("A secção escolhida não existe.");
+        }
+
         if (await db.Categories.AnyAsync(category => category.Slug == form.Slug && category.Id != (form.Id ?? 0), cancellationToken))
         {
             errors.Add("Já existe uma categoria com este endereço (slug).");
@@ -210,7 +229,7 @@ public sealed class AdminCatalogService(IDbContextFactory<UnaykaDbContext> facto
 
         category.Name = form.Name.Trim();
         category.Slug = form.Slug;
-        category.Kind = form.Kind;
+        category.SectionId = form.SectionId;
         category.Description = form.Description.Trim();
         category.ImageUrl = form.ImageUrl.Trim();
         category.SortOrder = form.SortOrder;
@@ -225,7 +244,7 @@ public sealed class AdminCatalogService(IDbContextFactory<UnaykaDbContext> facto
         return AdminResult.Ok(category.Id);
     }
 
-    private static void Apply(ProductForm form, Product product)
+    private static void Apply(ProductForm form, Product product, int? stockLocationId)
     {
         product.Name = form.Name.Trim();
         product.Slug = form.Slug;
@@ -236,8 +255,10 @@ public sealed class AdminCatalogService(IDbContextFactory<UnaykaDbContext> facto
         product.CompareAtPriceMinor = form.CompareAtPrice is { } compare ? MoneyInput.ToMinor(compare) : null;
         product.Badge = string.IsNullOrWhiteSpace(form.Badge) ? null : form.Badge.Trim();
         product.IsFeatured = form.IsFeatured;
-        product.IsActive = form.IsActive;
-        product.StockQuantity = form.StockQuantity;
+        product.IsNew = form.IsNew;
+        product.Kind = form.Kind;
+        product.Status = form.IsActive ? CatalogStatus.Active : CatalogStatus.Inactive;
+        ApplyStock(product, stockLocationId, form.StockQuantity);
 
         product.Media.Clear();
         product.Media.AddRange(form.Media.Select(media => new ProductMedia
@@ -253,7 +274,31 @@ public sealed class AdminCatalogService(IDbContextFactory<UnaykaDbContext> facto
             .Select(fact => new ProductFact { Group = fact.Group.Trim(), Label = fact.Label.Trim(), Value = fact.Value.Trim(), SortOrder = fact.SortOrder }));
     }
 
-    private static ProductForm ToForm(Product product) => new()
+    private static void ApplyStock(Product product, int? locationId, int quantity)
+    {
+        if (locationId is not { } id || product.Kind == ProductKind.Digital)
+        {
+            return;
+        }
+
+        var stock = product.Stocks.FirstOrDefault(candidate => candidate.LocationId == id);
+        if (stock is null)
+        {
+            product.Stocks.Add(new LocationStock { LocationId = id, Quantity = quantity });
+            return;
+        }
+
+        stock.Quantity = quantity;
+    }
+
+    private static async Task<int?> FirstLocationIdAsync(UnaykaDbContext db, CancellationToken cancellationToken) =>
+        await db.Locations.AsNoTracking()
+            .Where(location => location.Status == CatalogStatus.Active)
+            .OrderBy(location => location.SortOrder)
+            .Select(location => (int?)location.Id)
+            .FirstOrDefaultAsync(cancellationToken);
+
+    private static ProductForm ToForm(Product product, int? stockLocationId) => new()
     {
         Id = product.Id,
         Name = product.Name,
@@ -264,9 +309,11 @@ public sealed class AdminCatalogService(IDbContextFactory<UnaykaDbContext> facto
         Price = MoneyInput.ToAmount(product.PriceMinor),
         CompareAtPrice = product.CompareAtPriceMinor is { } compare ? MoneyInput.ToAmount(compare) : null,
         Badge = product.Badge,
+        Kind = product.Kind,
         IsFeatured = product.IsFeatured,
-        IsActive = product.IsActive,
-        StockQuantity = product.StockQuantity,
+        IsNew = product.IsNew,
+        IsActive = product.Status == CatalogStatus.Active,
+        StockQuantity = product.Stocks.FirstOrDefault(stock => stock.LocationId == stockLocationId)?.Quantity ?? 0,
         Media = product.Media.OrderBy(media => media.SortOrder)
             .Select(media => new ProductMediaForm { Kind = media.Kind, Url = media.Url, Alt = media.Alt, SortOrder = media.SortOrder }).ToList(),
         Facts = product.Facts.OrderBy(fact => fact.SortOrder)

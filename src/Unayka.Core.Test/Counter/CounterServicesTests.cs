@@ -45,7 +45,8 @@ public sealed class CounterServicesTests : IDisposable
     public async Task Cash_sale_of_a_coffee_creates_a_preparing_order_with_change_and_stock_movement()
     {
         await _shifts.OpenAsync(CashierId, 50_000);
-        var product = await FirstProductAsync(CategoryKind.Tea);
+        var product = await FirstProductAsync(SectionSlugs.Teas);
+        var stockBefore = await TestStock.TotalAsync(_database.Create(), product.Id);
         var request = new CounterSaleRequest(CashierId, [new TicketLine(product.Id, "x", 1, 2)], PaymentMethod.Cash, string.Empty, string.Empty, null, product.PriceMinor * 2 + 5_000);
 
         var result = await _sales.RegisterAsync(request);
@@ -57,8 +58,7 @@ public sealed class CounterServicesTests : IDisposable
         Assert.Equal(OrderChannel.Counter, order.Channel);
         Assert.Equal(PaymentStatus.Paid, order.Payments.Single().Status);
         Assert.Equal(product.PriceMinor * 2, order.TotalMinor);
-        var stock = await _database.Create().Products.Where(p => p.Id == product.Id).Select(p => p.StockQuantity).SingleAsync();
-        Assert.Equal(product.StockQuantity - 2, stock);
+        Assert.Equal(stockBefore - 2, await TestStock.TotalAsync(_database.Create(), product.Id));
         Assert.True(await _database.Context.AuditEntries.AnyAsync(entry => entry.Action == "order.counter"));
     }
 
@@ -66,7 +66,7 @@ public sealed class CounterServicesTests : IDisposable
     public async Task Cosmetic_only_ticket_is_delivered_immediately_and_numbers_continue_the_sequence()
     {
         await _shifts.OpenAsync(CashierId, 0);
-        var product = await FirstProductAsync(CategoryKind.Cosmetic);
+        var product = await FirstProductAsync(SectionSlugs.Cosmetics);
         var request = new CounterSaleRequest(CashierId, [new TicketLine(product.Id, "x", 1, 1)], PaymentMethod.Card, "Ana", string.Empty, null, 0);
 
         var result = await _sales.RegisterAsync(request);
@@ -79,7 +79,7 @@ public sealed class CounterServicesTests : IDisposable
     public async Task Cash_below_total_and_invalid_wallet_phone_are_rejected()
     {
         await _shifts.OpenAsync(CashierId, 0);
-        var product = await FirstProductAsync(CategoryKind.Tea);
+        var product = await FirstProductAsync(SectionSlugs.Teas);
         var line = new TicketLine(product.Id, "x", 1, 1);
 
         var cash = await _sales.RegisterAsync(new CounterSaleRequest(CashierId, [line], PaymentMethod.Cash, string.Empty, string.Empty, null, 1));
@@ -124,12 +124,12 @@ public sealed class CounterServicesTests : IDisposable
 
     private async Task<CounterSaleRequest> CashRequestAsync(int quantity, long received)
     {
-        var product = await FirstProductAsync(CategoryKind.Tea);
+        var product = await FirstProductAsync(SectionSlugs.Teas);
         return new CounterSaleRequest(CashierId, [new TicketLine(product.Id, "x", 1, quantity)], PaymentMethod.Cash, string.Empty, string.Empty, null, received);
     }
 
-    private Task<Product> FirstProductAsync(CategoryKind kind) =>
-        _database.Context.Products.Include(p => p.Category).OrderBy(p => p.Id).FirstAsync(p => p.Category!.Kind == kind && p.StockQuantity > 5);
+    private Task<Product> FirstProductAsync(string sectionSlug) =>
+        _database.Context.Products.OrderBy(p => p.Id).FirstAsync(p => p.Category!.Section!.Slug == sectionSlug && p.Stocks.Sum(stock => stock.Quantity) > 5);
 
     private sealed class TestFactory(TestDatabase database) : IDbContextFactory<UnaykaDbContext>
     {

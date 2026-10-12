@@ -31,8 +31,8 @@ public sealed class SeedTests : IDisposable
         await DatabaseSeeder.SeedAsync(_database.Context, _options, TimeProvider.System);
 
         var products = await _database.Context.Products.Include(product => product.Media).Include(product => product.Facts).ToListAsync();
-        Assert.Equal(7, await _database.Context.Categories.CountAsync());
-        Assert.Equal(28, products.Count);
+        Assert.Equal(8, await _database.Context.Categories.CountAsync());
+        Assert.Equal(29, products.Count);
         Assert.All(products, product =>
         {
             Assert.InRange(product.Media.Count, 2, 4);
@@ -48,7 +48,7 @@ public sealed class SeedTests : IDisposable
 
         var newest = await _database.Context.Products.OrderByDescending(product => product.CreatedAt).Select(product => product.Slug).FirstAsync();
 
-        Assert.Equal("cha-de-capim-principe", newest);
+        Assert.Equal("e-book-receitas-com-cha", newest);
     }
 
     [Fact]
@@ -71,7 +71,7 @@ public sealed class SeedTests : IDisposable
 
         Assert.False(await _database.Context.Users.AnyAsync());
         Assert.False(await _database.Context.Orders.AnyAsync());
-        Assert.Equal(28, await _database.Context.Products.CountAsync());
+        Assert.Equal(29, await _database.Context.Products.CountAsync());
     }
 
     [Fact]

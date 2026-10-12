@@ -69,12 +69,11 @@
 
     private sealed record SortChoice(string Value, string Label, bool Selected);
 
-    private static readonly (string KindTitle, string AllLabel, string TeaLabel, string CosmeticLabel, string CategoryTitle, string SearchPlaceholder, string SortLabel, string ApplyLabel, string EmptyTitle, string EmptyMessage, string EmptyAction) Data = (
+    private static readonly (string SectionTitle, string AllLabel, string CategoryTitle, string TagTitle, string SearchPlaceholder, string SortLabel, string ApplyLabel, string EmptyTitle, string EmptyMessage, string EmptyAction) Data = (
         "Coleção",
         "Tudo",
-        "Chás e cafés",
-        "Cosméticos",
         "Tipo",
+        "Etiquetas",
         "Pesquisar produtos",
         "Ordenar por",
         "Aplicar",
@@ -86,7 +85,7 @@
     public string BasePath { get; set; } = string.Empty;
 
     [Parameter]
-    public CategoryKind? Kind { get; set; }
+    public string? SectionSlug { get; set; }
 
     [Parameter]
     public string? CategorySlug { get; set; }
@@ -102,9 +101,10 @@
 
     protected override async Task OnParametersSetAsync()
     {
-        _search = CatalogLinks.Parse(Navigation.Uri, Kind, CategorySlug);
+        _search = CatalogLinks.Parse(Navigation.Uri, SectionSlug, CategorySlug);
         _page = await Catalog.SearchAsync(_search);
-        var categories = await Catalog.CategoriesAsync(Kind);
+        var sections = await Catalog.SectionsAsync();
+        var categories = await Catalog.CategoriesAsync(SectionSlug);
         _formAction = ToUrl(BasePath);
         _paginationBase = CatalogLinks.Build(BasePath, _search);
         _summary = BuildSummary();
@@ -112,9 +112,14 @@
         _sortOptions = CatalogLinks.SortOptions.Select(option => new SortChoice(option.Value, option.Label, option.Sort == _search.Sort)).ToList();
         _filterGroups =
         [
-            new FilterGroup(Data.KindTitle, BuildKindLinks()),
+            new FilterGroup(Data.SectionTitle, BuildSectionLinks(sections)),
             new FilterGroup(Data.CategoryTitle, BuildCategoryLinks(categories)),
         ];
+        var tags = sections.FirstOrDefault(section => section.Slug == SectionSlug)?.Tags ?? [];
+        if (tags.Count > 0)
+        {
+            _filterGroups.Add(new FilterGroup(Data.TagTitle, BuildTagLinks(tags)));
+        }
     }
 
     private string BuildSummary()
@@ -123,23 +128,31 @@
         return string.IsNullOrWhiteSpace(_search.Query) ? count : $"{count} para \"{_search.Query}\"";
     }
 
-    private List<FilterLink> BuildKindLinks()
+    private List<FilterLink> BuildSectionLinks(IReadOnlyList<SectionSummary> sections)
     {
-        var carried = _search with { Page = 1 };
-        var noKindSelected = Kind is null && CategorySlug is null;
-        return
-        [
-            new FilterLink(Data.AllLabel, ToUrl(CatalogLinks.Build(StoreUrls.AllProducts, carried)), ChipFor(noKindSelected)),
-            new FilterLink(Data.TeaLabel, ToUrl(CatalogLinks.Build(StoreUrls.Teas, carried)), ChipFor(Kind == CategoryKind.Tea && CategorySlug is null)),
-            new FilterLink(Data.CosmeticLabel, ToUrl(CatalogLinks.Build(StoreUrls.Cosmetics, carried)), ChipFor(Kind == CategoryKind.Cosmetic && CategorySlug is null)),
-        ];
+        var carried = _search with { Page = 1, TagSlugs = null };
+        var noSectionSelected = SectionSlug is null && CategorySlug is null;
+        var links = new List<FilterLink> { new(Data.AllLabel, ToUrl(CatalogLinks.Build(StoreUrls.AllProducts, carried)), ChipFor(noSectionSelected)) };
+        links.AddRange(sections.Select(section => new FilterLink(
+            section.Name,
+            ToUrl(CatalogLinks.Build(StoreUrls.Section(section.Slug), carried)),
+            ChipFor(section.Slug == SectionSlug && CategorySlug is null))));
+        return links;
     }
+
+    private List<FilterLink> BuildTagLinks(IReadOnlyList<TagSummary> tags) =>
+        tags
+            .Select(tag => new FilterLink(
+                tag.Name,
+                ToUrl(CatalogLinks.Build(BasePath, CatalogLinks.ToggleTag(_search, tag.Slug))),
+                ChipFor(_search.TagSlugs?.Contains(tag.Slug) == true)))
+            .ToList();
 
     private List<FilterLink> BuildCategoryLinks(IReadOnlyList<CategorySummary> categories) =>
         categories
             .Select(category => new FilterLink(
                 category.Name,
-                ToUrl(CatalogLinks.Build(StoreUrls.Category(category.Slug), _search with { Page = 1 })),
+                ToUrl(CatalogLinks.Build(StoreUrls.Category(category.Slug), _search with { Page = 1, TagSlugs = null })),
                 ChipFor(category.Slug == CategorySlug)))
             .ToList();
 

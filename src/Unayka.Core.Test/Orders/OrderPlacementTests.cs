@@ -1,6 +1,8 @@
 using Microsoft.EntityFrameworkCore;
+using Unayka.Core.Catalog;
 using Unayka.Core.Orders;
 using Unayka.Core.Payments;
+using Unayka.Core.Test.Data;
 
 namespace Unayka.Core.Test.Orders;
 
@@ -16,7 +18,7 @@ public sealed class OrderPlacementTests : IDisposable
     public async Task Placing_an_order_snapshots_lines_and_reserves_stock()
     {
         var product = await _fixture.FirstProductAsync();
-        var stockBefore = product.StockQuantity;
+        var stockBefore = await TestStock.TotalAsync(_fixture.Db, product.Id);
         var cart = await _fixture.Carts.AddAsync(null, null, product.Id, 2);
         await _fixture.Carts.ApplyCouponAsync(cart.CartId, "BEMVINDO10");
 
@@ -35,10 +37,45 @@ public sealed class OrderPlacementTests : IDisposable
         Assert.Equal(subtotal - subtotal / 10 + OrderPricing.DeliveryFeeMinor, order.TotalMinor);
         Assert.Equal(product.Name, order.Items.Single().ProductName);
         Assert.Equal(PaymentStatus.Pending, order.Payments.Single().Status);
-        Assert.Equal(stockBefore - 2, (await _fixture.Db.Products.SingleAsync(candidate => candidate.Id == product.Id)).StockQuantity);
+        Assert.Equal(stockBefore - 2, await TestStock.TotalAsync(_fixture.Db, product.Id));
+        Assert.Equal(ProductKind.Physical, order.Items.Single().Kind);
+        Assert.NotNull(order.Items.Single().LocationId);
         Assert.Equal(1, (await _fixture.Db.Coupons.SingleAsync(coupon => coupon.Code == "BEMVINDO10")).UsedCount);
         Assert.True((await _fixture.Carts.GetAsync(cart.CartId)).IsEmpty);
         Assert.True(await _fixture.Db.AuditEntries.AnyAsync(entry => entry.Action == "order.placed" && entry.EntityId == result.OrderNumber));
+    }
+
+    [Fact]
+    public async Task Digital_lines_skip_stock_and_have_no_location()
+    {
+        var ebook = await _fixture.Db.Products.SingleAsync(candidate => candidate.Slug == "e-book-receitas-com-cha");
+        var cart = await _fixture.Carts.AddAsync(null, null, ebook.Id, 1);
+
+        var result = await _fixture.Placement.PlaceAsync(Request(cart.CartId, FulfillmentKind.Pickup, null));
+
+        Assert.True(result.Succeeded);
+        var item = (await _fixture.Db.Orders.Include(order => order.Items).SingleAsync(order => order.Number == result.OrderNumber)).Items.Single();
+        Assert.Equal(ProductKind.Digital, item.Kind);
+        Assert.Null(item.LocationId);
+        Assert.False(string.IsNullOrEmpty(item.ImageUrl));
+    }
+
+    [Fact]
+    public async Task A_line_larger_than_any_single_location_is_split_across_locations()
+    {
+        var product = await _fixture.FirstProductAsync();
+        var stocks = await _fixture.Db.LocationStocks.Where(stock => stock.ProductId == product.Id).OrderBy(stock => stock.LocationId).ToListAsync();
+        stocks[0].Quantity = 3;
+        stocks[1].Quantity = 4;
+        await _fixture.Db.SaveChangesAsync();
+        var cart = await _fixture.Carts.AddAsync(null, null, product.Id, 6);
+
+        var result = await _fixture.Placement.PlaceAsync(Request(cart.CartId, FulfillmentKind.Pickup, null));
+
+        Assert.True(result.Succeeded);
+        var items = (await _fixture.Db.Orders.Include(order => order.Items).SingleAsync(order => order.Number == result.OrderNumber)).Items;
+        Assert.Equal([3, 3], items.OrderBy(item => item.LocationId).Select(item => item.Quantity));
+        Assert.Equal(1, await TestStock.TotalAsync(_fixture.Db, product.Id));
     }
 
     [Fact]
@@ -74,8 +111,7 @@ public sealed class OrderPlacementTests : IDisposable
     {
         var product = await _fixture.FirstProductAsync();
         var cart = await _fixture.Carts.AddAsync(null, null, product.Id, 2);
-        product.StockQuantity = 1;
-        await _fixture.Db.SaveChangesAsync();
+        await TestStock.SetTotalAsync(_fixture.Db, product.Id, 1);
         var ordersBefore = await _fixture.Db.Orders.CountAsync();
 
         var result = await _fixture.Placement.PlaceAsync(Request(cart.CartId, FulfillmentKind.Pickup, null));

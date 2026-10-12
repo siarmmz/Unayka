@@ -21,6 +21,7 @@ public static class CatalogValidator
     {
         var errors = new List<string>();
         AddIf(errors, string.IsNullOrWhiteSpace(form.Name), "Indique o nome da categoria.");
+        AddIf(errors, form.SectionId <= 0, "Escolha uma secção.");
         AddIf(errors, !Slugs.IsValid(form.Slug), "O endereço (slug) só pode ter letras minúsculas, números e hífens.");
         AddIf(errors, !string.IsNullOrWhiteSpace(form.ImageUrl) && !IsUsableImageUrl(form.ImageUrl), "O endereço da imagem não é válido.");
         return errors;

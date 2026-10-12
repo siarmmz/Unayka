@@ -25,11 +25,11 @@
                     <input id="category-slug" type="text" maxlength="80" class="field" @bind="_form.Slug" @bind:after="OnSlugEdited"/>
                 </div>
                 <div>
-                    <label for="category-kind" class="field-label">@Text(Texts.KindLabel)</label>
-                    <select id="category-kind" class="field" @bind="_form.Kind">
-                        @foreach (var option in AdminOptions.CategoryKinds)
+                    <label for="category-section" class="field-label">@Text(Texts.SectionLabel)</label>
+                    <select id="category-section" class="field" @bind="_form.SectionId">
+                        @foreach (var option in _sections)
                         {
-                            <option value="@option.Value">@Text(option.Label)</option>
+                            <option value="@option.Id">@Text(option.Name)</option>
                         }
                     </select>
                 </div>
@@ -75,7 +75,7 @@
                     <div class="space-y-3 p-5">
                         <div class="flex items-start justify-between gap-3">
                             <h2 class="font-serif text-2xl">@Text(category.Name)</h2>
-                            <span class="rounded-full bg-cream px-3 py-1 text-xs text-stone">@Text(KindLabel(category.Kind))</span>
+                            <span class="rounded-full bg-cream px-3 py-1 text-xs text-stone">@Text(category.SectionName)</span>
                         </div>
                         <p class="text-xs text-stone">@Text(CategoryDetail(category))</p>
                         <button type="button" class="text-sm text-clay hover:text-espresso" @onclick="EditHandler(category.Id)">@Text(Texts.Edit)</button>
@@ -98,7 +98,7 @@
         public const string EditTitle = "Editar categoria";
         public const string NameLabel = "Nome";
         public const string SlugLabel = "Endereço (slug)";
-        public const string KindLabel = "Tipo";
+        public const string SectionLabel = "Secção";
         public const string OrderLabel = "Ordem";
         public const string ImageLabel = "Endereço da imagem";
         public const string DescriptionLabel = "Descrição";
@@ -113,6 +113,7 @@
     }
 
     private IReadOnlyList<CategoryRow> _rows = [];
+    private IReadOnlyList<SectionOption> _sections = [];
     private CategoryForm? _form;
     private IReadOnlyList<string> _errors = [];
     private string _formTitle = Texts.NewTitle;
@@ -125,9 +126,6 @@
         await ReloadAsync();
     }
 
-    private static string KindLabel(Core.Catalog.CategoryKind kind) =>
-        AdminOptions.CategoryKinds.First(option => option.Value == kind.ToString()).Label;
-
     private static string CategoryDetail(CategoryRow category) =>
         $"{FormatNumber(category.ProductCount)} {Texts.Products} | {Texts.Order} {FormatNumber(category.SortOrder)} | {category.Slug}";
 
@@ -136,11 +134,12 @@
     private async Task ReloadAsync()
     {
         _rows = await Catalog.ListCategoriesAsync();
+        _sections = await Catalog.ListSectionOptionsAsync();
     }
 
     private void StartNew()
     {
-        _form = new CategoryForm { SortOrder = _rows.Count + 1 };
+        _form = new CategoryForm { SortOrder = _rows.Count + 1, SectionId = _sections.FirstOrDefault()?.Id ?? 0 };
         _formTitle = Texts.NewTitle;
         _slugEdited = false;
         _errors = [];

@@ -8,7 +8,7 @@ namespace Unayka.Core.Counter;
 public sealed record CounterProduct(int Id, string Name, int CategoryId, long PriceMinor, string ImageUrl, int StockQuantity);
 
 /// <summary>Category tab of the point of sale grid.</summary>
-public sealed record CounterCategory(int Id, string Name, CategoryKind Kind);
+public sealed record CounterCategory(int Id, string Name);
 
 /// <summary>Products and categories available for sale at the counter.</summary>
 public sealed record CounterCatalog(IReadOnlyList<CounterCategory> Categories, IReadOnlyList<CounterProduct> Products);

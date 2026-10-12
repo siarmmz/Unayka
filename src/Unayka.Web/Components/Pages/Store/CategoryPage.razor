@@ -8,13 +8,11 @@
 
     <PageHero Title="@_category.Name" Eyebrow="@_eyebrow" Subtitle="@_category.Description" ImageUrl="@_category.ImageUrl"/>
 
-    <CatalogView BasePath="@_basePath" Kind="_category.Kind" CategorySlug="@_category.Slug"/>
+    <CatalogView BasePath="@_basePath" SectionSlug="@_category.SectionSlug" CategorySlug="@_category.Slug"/>
 }
 
 @code {
     private const string TitleSuffix = " | Unayka";
-    private const string TeaEyebrow = "Chás";
-    private const string CosmeticEyebrow = "Cosméticos";
 
     [Parameter]
     public string Slug { get; set; } = string.Empty;
@@ -34,7 +32,7 @@
         }
 
         _seoTitle = _category.Name + TitleSuffix;
-        _eyebrow = _category.Kind == CategoryKind.Tea ? TeaEyebrow : CosmeticEyebrow;
+        _eyebrow = (await Catalog.FindSectionAsync(_category.SectionSlug))?.Name ?? string.Empty;
         _basePath = StoreUrls.Category(_category.Slug);
     }
 }

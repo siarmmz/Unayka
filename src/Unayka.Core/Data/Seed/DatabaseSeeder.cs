@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Unayka.Core.Accounts;
 using Unayka.Core.Catalog;
 using Unayka.Core.Coupons;
+using Unayka.Core.Locations;
 
 namespace Unayka.Core.Data.Seed;
 
@@ -13,6 +14,11 @@ public static class DatabaseSeeder
     private const long FixedCouponMinor = 5000;
     private const long FixedCouponMinSubtotalMinor = 30000;
     private const long MinorUnitsPerUnit = 100;
+    private const int OnlySecondLocationStep = 5;
+    private const int OnlyFirstLocationStep = 7;
+    private const int OnlyFirstLocationOffset = 3;
+    private const int FirstLocationSharePercent = 60;
+    private const int PercentBase = 100;
 
     private static readonly string[] MediaLabels = ["preparado", "embalagem", "ingredientes", "galeria"];
 
@@ -30,18 +36,37 @@ public static class DatabaseSeeder
 
     private static async Task SeedCatalogAsync(UnaykaDbContext database, DateTimeOffset now)
     {
-        if (await database.Categories.AnyAsync())
+        if (await database.Sections.AnyAsync())
         {
             return;
         }
 
-        var categories = CatalogSeed.Categories
-            .Select((seed, index) => new Category
+        var locations = await SeedLocationsAsync(database);
+        var sections = CatalogSeed.Sections
+            .Select((seed, index) => new Section
             {
                 Slug = seed.Slug,
                 Name = seed.Name,
                 Description = seed.Description,
-                Kind = seed.Kind,
+                ImageUrl = UnsplashImage.Url(seed.ImageId),
+                SortOrder = index,
+            })
+            .ToList();
+        database.Sections.AddRange(sections);
+        await database.SaveChangesAsync();
+
+        var sectionIds = sections.ToDictionary(section => section.Slug, section => section.Id);
+        var tags = CatalogSeed.Tags
+            .Select((seed, index) => new Tag { SectionId = sectionIds[seed.SectionSlug], Slug = seed.Slug, Name = seed.Name, SortOrder = index })
+            .ToList();
+        database.Tags.AddRange(tags);
+        var categories = CatalogSeed.Categories
+            .Select((seed, index) => new Category
+            {
+                SectionId = sectionIds[seed.SectionSlug],
+                Slug = seed.Slug,
+                Name = seed.Name,
+                Description = seed.Description,
                 ImageUrl = UnsplashImage.Url(seed.ImageId),
                 SortOrder = index,
             })
@@ -50,13 +75,76 @@ public static class DatabaseSeeder
         await database.SaveChangesAsync();
 
         var categoryIds = categories.ToDictionary(category => category.Slug, category => category.Id);
-        var products = CatalogSeed.Products.Select((seed, index) => CreateProduct(seed, index, categoryIds, now));
+        var tagsBySlug = tags.ToDictionary(tag => tag.Slug);
+        var products = CatalogSeed.Products.Select((seed, index) => CreateProduct(seed, index, categoryIds, tagsBySlug, locations, now));
         database.Products.AddRange(products);
         await database.SaveChangesAsync();
     }
 
+    private static async Task<List<Location>> SeedLocationsAsync(UnaykaDbContext database)
+    {
+        var locations = LocationSeed.Locations
+            .Select((seed, index) => new Location
+            {
+                Slug = seed.Slug,
+                Name = seed.Name,
+                City = seed.City,
+                Address = seed.Address,
+                OpeningHours = seed.OpeningHours,
+                Latitude = seed.Latitude,
+                Longitude = seed.Longitude,
+                MapEmbedUrl = seed.MapEmbedUrl,
+                SortOrder = index,
+                Contacts = seed.Contacts
+                    .Select((contact, position) => new LocationContact
+                    {
+                        Kind = contact.Kind,
+                        Label = contact.Label,
+                        Value = contact.Value,
+                        SortOrder = position,
+                    })
+                    .ToList(),
+            })
+            .ToList();
+        database.Locations.AddRange(locations);
+        await database.SaveChangesAsync();
+        return locations;
+    }
+
+    private static List<LocationStock> StockFor(SeedProduct seed, int index, IReadOnlyList<Location> locations)
+    {
+        if (seed.Kind == ProductKind.Digital)
+        {
+            return [];
+        }
+
+        var first = locations[0];
+        var second = locations[1];
+        if (index % OnlySecondLocationStep == OnlySecondLocationStep - 1)
+        {
+            return [new LocationStock { LocationId = second.Id, Quantity = seed.Stock }];
+        }
+
+        if (index % OnlyFirstLocationStep == OnlyFirstLocationOffset)
+        {
+            return [new LocationStock { LocationId = first.Id, Quantity = seed.Stock }];
+        }
+
+        var atFirst = seed.Stock * FirstLocationSharePercent / PercentBase;
+        return
+        [
+            new LocationStock { LocationId = first.Id, Quantity = atFirst },
+            new LocationStock { LocationId = second.Id, Quantity = seed.Stock - atFirst },
+        ];
+    }
+
     private static Product CreateProduct(
-        SeedProduct seed, int index, Dictionary<string, int> categoryIds, DateTimeOffset now) =>
+        SeedProduct seed,
+        int index,
+        Dictionary<string, int> categoryIds,
+        Dictionary<string, Tag> tagsBySlug,
+        IReadOnlyList<Location> locations,
+        DateTimeOffset now) =>
         new()
         {
             Slug = seed.Slug,
@@ -67,8 +155,12 @@ public static class DatabaseSeeder
             CompareAtPriceMinor = seed.CompareAtPriceMzn * MinorUnitsPerUnit,
             CategoryId = categoryIds[seed.CategorySlug],
             Badge = seed.Badge,
+            Kind = seed.Kind,
             IsFeatured = seed.IsFeatured,
-            StockQuantity = seed.Stock,
+            IsNew = seed.Badge == CatalogSeed.NewBadge,
+            Stocks = StockFor(seed, index, locations),
+            Tags = CatalogSeed.ProductTags.GetValueOrDefault(seed.Slug, []).Select(slug => tagsBySlug[slug]).ToList(),
+            DigitalAssets = seed.Kind == ProductKind.Digital ? [DigitalSeedFiles.CreateEbookAsset()] : [],
             SalesCount = seed.Sales,
             CreatedAt = now.AddDays(-(CatalogSeed.Products.Count - index)),
             Media = seed.PhotoIds

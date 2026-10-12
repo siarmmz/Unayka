@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Unayka.Core.Catalog;
 using Unayka.Core.Data;
 using Unayka.Core.Orders;
 
@@ -80,14 +81,16 @@ public sealed class AdminDashboardService(IDbContextFactory<UnaykaDbContext> fac
 
     private static async Task<IReadOnlyList<LowStockProduct>> LoadLowStockAsync(UnaykaDbContext db, CancellationToken cancellationToken) =>
         await db.Products.AsNoTracking()
-            .Where(product => product.IsActive && product.StockQuantity <= LowStockThreshold)
-            .OrderBy(product => product.StockQuantity)
+            .Where(product => product.Status == CatalogStatus.Active
+                              && product.Kind == ProductKind.Physical
+                              && product.Stocks.Sum(stock => stock.Quantity) <= LowStockThreshold)
+            .OrderBy(product => product.Stocks.Sum(stock => stock.Quantity))
             .ThenBy(product => product.Name)
             .Take(LowStockCount)
             .Select(product => new LowStockProduct(
                 product.Id,
                 product.Name,
-                product.StockQuantity,
+                product.Stocks.Sum(stock => stock.Quantity),
                 product.Media.OrderBy(media => media.SortOrder).Select(media => media.Url).FirstOrDefault()))
             .ToListAsync(cancellationToken);
 }

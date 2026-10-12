@@ -1,4 +1,5 @@
 @using Unayka.Web.Components.Checkout
+@inject ICatalogQuery Catalog
 <footer class="mt-24 border-t border-sand bg-cream text-stone">
     <div class="container-page grid gap-12 py-16 md:grid-cols-2 lg:grid-cols-6">
         <div class="lg:col-span-2">
@@ -13,7 +14,7 @@
             </ul>
         </div>
 
-        @foreach (var column in Data.Columns)
+        @foreach (var column in _columns)
         {
             <div>
                 <p class="mb-4 text-xs font-medium uppercase tracking-widest text-clay">@Text(column.Title)</p>
@@ -43,10 +44,12 @@
 </footer>
 
 @code {
-    private static readonly (string BrandName, string Tagline, string WalletNote, string ContactTitle, string[] ContactLines, (string Title, (string Label, string Url)[] Links)[] Columns) Data = (
+    private static readonly (string BrandName, string Tagline, string WalletNote, string ShopTitle, string AllProductsLabel, string ContactTitle, string[] ContactLines, (string Title, (string Label, string Url)[] Links)[] Columns) Data = (
         "Unayka",
         "Chás e cosméticos naturais. Compre online, levante na loja ou receba em casa.",
         "Pague com M-Pesa, e-Mola, mKesh ou cartão Visa e Mastercard.",
+        "Loja",
+        "Todos os produtos",
         "Contacto",
         [
             "Avenida 24 de Julho, Maputo",
@@ -56,16 +59,19 @@
             "Domingo, 9h às 14h",
         ],
         [
-            ("Loja", [("Todos os produtos", StoreUrls.AllProducts), ("Chás", StoreUrls.Teas), ("Cosméticos naturais", StoreUrls.Cosmetics)]),
             ("Unayka", [("Sobre nós", "/about"), ("Localização", "/location")]),
             ("Ajuda", [("Contacto", "/contact"), ("A minha conta", StoreUrls.Account), ("Carrinho", StoreUrls.Cart)]),
         ]
     );
 
     private string _copyright = string.Empty;
+    private List<(string Title, (string Label, string Url)[] Links)> _columns = [];
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
+        var sections = await Catalog.SectionsAsync();
+        var shopLinks = sections.Select(section => (section.Name, StoreUrls.Section(section.Slug))).Prepend((Data.AllProductsLabel, StoreUrls.AllProducts)).ToArray();
+        _columns = [(Data.ShopTitle, shopLinks), .. Data.Columns];
         _copyright = $"© {DateTime.UtcNow.Year} Unayka. Todos os direitos reservados.";
     }
 }

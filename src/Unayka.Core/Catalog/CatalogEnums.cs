@@ -1,9 +1,16 @@
 namespace Unayka.Core.Catalog;
 
-public enum CategoryKind
+public enum ProductKind
 {
-    Tea,
-    Cosmetic,
+    Physical,
+    Digital,
+}
+
+public enum CatalogStatus
+{
+    Active,
+    Inactive,
+    Archived,
 }
 
 public enum ProductMediaKind

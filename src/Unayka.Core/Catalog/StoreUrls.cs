@@ -4,8 +4,6 @@ public static class StoreUrls
 {
     public const string Shop = "/loja";
     public const string AllProducts = "/loja/todos";
-    public const string Teas = "/loja/chas";
-    public const string Cosmetics = "/loja/cosmeticos";
     public const string Cart = "/carrinho";
     public const string Checkout = "/checkout";
     public const string Account = "/conta";
@@ -14,6 +12,8 @@ public static class StoreUrls
     public const string Admin = "/admin";
 
     public static string Product(string slug) => $"/produto/{slug}";
+
+    public static string Section(string slug) => $"{Shop}/{slug}";
 
     public static string Category(string slug) => $"/loja/categoria/{slug}";
 

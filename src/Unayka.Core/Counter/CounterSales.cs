@@ -4,6 +4,7 @@ using Unayka.Core.Accounts;
 using Unayka.Core.Audit;
 using Unayka.Core.Catalog;
 using Unayka.Core.Data;
+using Unayka.Core.Locations;
 using Unayka.Core.Orders;
 using Unayka.Core.Payments;
 using Unayka.Core.Presentation;
@@ -19,11 +20,14 @@ public sealed class CounterSales(IDbContextFactory<UnaykaDbContext> factory, IOr
     {
         await using var database = await factory.CreateDbContextAsync(cancellationToken);
         var categories = await database.Categories.AsNoTracking()
-            .OrderBy(category => category.SortOrder)
-            .Select(category => new CounterCategory(category.Id, category.Name, category.Kind))
+            .Where(category => category.Status == CatalogStatus.Active && category.Section!.Status == CatalogStatus.Active)
+            .OrderBy(category => category.Section!.SortOrder)
+            .ThenBy(category => category.SortOrder)
+            .Select(category => new CounterCategory(category.Id, category.Name))
             .ToListAsync(cancellationToken);
         var products = await database.Products.AsNoTracking()
-            .Where(product => product.IsActive)
+            .Where(ProductVisibility.IsPublic)
+            .Where(product => product.Kind == ProductKind.Physical)
             .OrderBy(product => product.Name)
             .Select(product => new CounterProduct(
                 product.Id,
@@ -31,7 +35,7 @@ public sealed class CounterSales(IDbContextFactory<UnaykaDbContext> factory, IOr
                 product.CategoryId,
                 product.PriceMinor,
                 product.Media.OrderBy(media => media.SortOrder).Select(media => media.Url).FirstOrDefault() ?? string.Empty,
-                product.StockQuantity))
+                product.Stocks.Where(stock => stock.Location!.Status == CatalogStatus.Active).Sum(stock => stock.Quantity)))
             .ToListAsync(cancellationToken);
         return new CounterCatalog(categories, products);
     }
@@ -51,7 +55,10 @@ public sealed class CounterSales(IDbContextFactory<UnaykaDbContext> factory, IOr
         }
 
         var productIds = request.Lines.Where(line => !line.IsFreeAmount).Select(line => line.ProductId).Distinct().ToList();
-        var products = await database.Products.Include(product => product.Category)
+        var products = await database.Products
+            .Include(product => product.Category).ThenInclude(category => category!.Section)
+            .Include(product => product.Stocks).ThenInclude(stock => stock.Location)
+            .Include(product => product.Media)
             .Where(product => productIds.Contains(product.Id))
             .ToDictionaryAsync(product => product.Id, cancellationToken);
         if (productIds.Any(id => !products.ContainsKey(id)))
@@ -72,15 +79,10 @@ public sealed class CounterSales(IDbContextFactory<UnaykaDbContext> factory, IOr
         }
 
         var now = time.GetUtcNow();
-        var needsPreparation = lines.Any(line => !line.IsFreeAmount && products[line.ProductId].Category?.Kind == CategoryKind.Tea);
-        var order = BuildOrder(request, lines, total, PreparationFlow.InitialStatus(needsPreparation), await orderNumbers.NextAsync(cancellationToken), now);
+        var needsPreparation = lines.Any(line => !line.IsFreeAmount && products[line.ProductId].Category?.Section?.Slug == SectionSlugs.Teas);
+        var items = lines.SelectMany(line => line.IsFreeAmount ? [ToFreeAmountItem(line)] : Reserve(line, products[line.ProductId])).ToList();
+        var order = BuildOrder(request, items, total, PreparationFlow.InitialStatus(needsPreparation), await orderNumbers.NextAsync(cancellationToken), now);
         database.Orders.Add(order);
-        foreach (var line in lines.Where(line => !line.IsFreeAmount))
-        {
-            var product = products[line.ProductId];
-            product.StockQuantity -= line.Quantity;
-            product.SalesCount += line.Quantity;
-        }
 
         await database.SaveChangesAsync(cancellationToken);
         await audit.WriteAsync(request.CashierId, "order.counter", OrderEntity, order.Id.ToString(CultureInfo.InvariantCulture), $"{order.Number} {Formatters.FormatMoney(total)} {StatusLabels.For(request.Method)}", cancellationToken);
@@ -108,11 +110,51 @@ public sealed class CounterSales(IDbContextFactory<UnaykaDbContext> factory, IOr
     }
 
     private static bool HasUnavailableProduct(IEnumerable<TicketLine> lines, Dictionary<int, Product> products) =>
-        lines.Where(line => !line.IsFreeAmount).Any(line => !products.TryGetValue(line.ProductId, out var product) || !product.IsActive || product.StockQuantity < line.Quantity);
+        lines.Where(line => !line.IsFreeAmount).Any(line => !products.TryGetValue(line.ProductId, out var product) || !IsSellable(product) || ProductStock.Total(product) < line.Quantity);
+
+    private static bool IsSellable(Product product) =>
+        product.Kind == ProductKind.Physical
+        && product.Status == CatalogStatus.Active
+        && product.Category?.Status == CatalogStatus.Active
+        && product.Category.Section?.Status == CatalogStatus.Active;
+
+    private static OrderItem ToFreeAmountItem(TicketLine line) => new()
+    {
+        ProductId = line.ProductId,
+        Kind = ProductKind.Physical,
+        ProductName = line.Name.Trim(),
+        UnitPriceMinor = line.UnitPriceMinor,
+        Quantity = line.Quantity,
+    };
+
+    private static IEnumerable<OrderItem> Reserve(TicketLine line, Product product)
+    {
+        product.SalesCount += line.Quantity;
+        var image = product.Media.OrderBy(media => media.SortOrder).Select(media => media.Url).FirstOrDefault() ?? string.Empty;
+        var stocks = product.Stocks.Where(stock => stock.Location?.Status == CatalogStatus.Active).OrderBy(stock => stock.Location!.SortOrder).ToList();
+        var allocations = StockAllocator.Allocate(stocks, line.Quantity) ?? [];
+        foreach (var allocation in allocations)
+        {
+            stocks.First(stock => stock.LocationId == allocation.LocationId).Quantity -= allocation.Quantity;
+        }
+
+        return allocations.Select(allocation => ToItem(line, product, image, allocation.LocationId, allocation.Quantity));
+    }
+
+    private static OrderItem ToItem(TicketLine line, Product product, string image, int? locationId, int quantity) => new()
+    {
+        ProductId = product.Id,
+        LocationId = locationId,
+        Kind = product.Kind,
+        ProductName = line.Name.Trim(),
+        ImageUrl = image,
+        UnitPriceMinor = line.UnitPriceMinor,
+        Quantity = quantity,
+    };
 
     private static CounterSaleResult Failure(CounterSaleError error) => new(null, error);
 
-    private static Order BuildOrder(CounterSaleRequest request, List<TicketLine> lines, long total, OrderStatus status, string number, DateTimeOffset now) => new()
+    private static Order BuildOrder(CounterSaleRequest request, List<OrderItem> items, long total, OrderStatus status, string number, DateTimeOffset now) => new()
     {
         Number = number,
         CustomerName = string.IsNullOrWhiteSpace(request.CustomerName) ? DefaultCustomerName : request.CustomerName.Trim(),
@@ -124,7 +166,7 @@ public sealed class CounterSales(IDbContextFactory<UnaykaDbContext> factory, IOr
         TotalMinor = total,
         CreatedAt = now,
         UpdatedAt = now,
-        Items = lines.Select(line => new OrderItem { ProductId = line.ProductId, ProductName = line.Name.Trim(), UnitPriceMinor = line.UnitPriceMinor, Quantity = line.Quantity }).ToList(),
+        Items = items,
         Payments = [BuildPayment(request, total, now)],
     };
 

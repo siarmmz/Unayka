@@ -4,6 +4,7 @@ using Unayka.Core.Administration;
 using Unayka.Core.Audit;
 using Unayka.Core.Catalog;
 using Unayka.Core.Data;
+using Unayka.Core.Locations;
 using Unayka.Core.Orders;
 using Unayka.Core.Test.Data;
 
@@ -27,7 +28,7 @@ public sealed class AdminServicesTests : IDisposable
 
         Assert.True(result.Succeeded);
         await using var db = _database.Create();
-        Assert.Equal(10, (await db.Products.SingleAsync(product => product.Id == productId)).StockQuantity);
+        Assert.Equal(10, await TestStock.TotalAsync(db, productId));
         Assert.Equal(OrderStatus.Cancelled, (await db.Orders.SingleAsync()).Status);
         var entry = await db.AuditEntries.SingleAsync();
         Assert.Equal(5, entry.ActorUserId);
@@ -138,9 +139,10 @@ public sealed class AdminServicesTests : IDisposable
         var categoryId = await SeedCategoryAsync();
         await using (var db = _database.Create())
         {
+            var location = new Location { Slug = "loja", Name = "Loja" };
             db.Products.AddRange(
-                new Product { Name = "Baixo", Slug = "baixo", CategoryId = categoryId, StockQuantity = 2, PriceMinor = 100, CreatedAt = Now },
-                new Product { Name = "Cheio", Slug = "cheio", CategoryId = categoryId, StockQuantity = 50, PriceMinor = 100, CreatedAt = Now });
+                new Product { Name = "Baixo", Slug = "baixo", CategoryId = categoryId, Stocks = [new LocationStock { Location = location, Quantity = 2 }], PriceMinor = 100, CreatedAt = Now },
+                new Product { Name = "Cheio", Slug = "cheio", CategoryId = categoryId, Stocks = [new LocationStock { Location = location, Quantity = 50 }], PriceMinor = 100, CreatedAt = Now });
             await db.SaveChangesAsync();
         }
 
@@ -156,7 +158,7 @@ public sealed class AdminServicesTests : IDisposable
     private async Task<int> SeedCategoryAsync()
     {
         await using var db = _database.Create();
-        var category = new Category { Name = "Cafés", Slug = "cafes" };
+        var category = new Category { Name = "Cafés", Slug = "cafes", Section = new Section { Name = "Chás", Slug = "chas" } };
         db.Categories.Add(category);
         await db.SaveChangesAsync();
         return category.Id;
@@ -166,11 +168,12 @@ public sealed class AdminServicesTests : IDisposable
     {
         var categoryId = await SeedCategoryAsync();
         await using var db = _database.Create();
-        var product = new Product { Name = "Café", Slug = "cafe", CategoryId = categoryId, StockQuantity = stock, PriceMinor = 1000, CreatedAt = Now };
+        var location = new Location { Slug = "loja", Name = "Loja" };
+        var product = new Product { Name = "Café", Slug = "cafe", CategoryId = categoryId, Stocks = [new LocationStock { Location = location, Quantity = stock }], PriceMinor = 1000, CreatedAt = Now };
         db.Products.Add(product);
         await db.SaveChangesAsync();
         var order = NewOrder("UN-000001", status, 1000L * quantity, null);
-        order.Items.Add(new OrderItem { ProductId = product.Id, ProductName = product.Name, UnitPriceMinor = 1000, Quantity = quantity });
+        order.Items.Add(new OrderItem { ProductId = product.Id, LocationId = location.Id, ProductName = product.Name, UnitPriceMinor = 1000, Quantity = quantity });
         db.Orders.Add(order);
         await db.SaveChangesAsync();
         return (product.Id, order.Number);

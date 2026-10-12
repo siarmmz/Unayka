@@ -23,8 +23,19 @@ public static class DataServiceExtensions
     {
         await using var scope = services.CreateAsyncScope();
         var database = scope.ServiceProvider.GetRequiredService<UnaykaDbContext>();
-        await database.Database.EnsureCreatedAsync();
+        await MigrateAsync(database);
         await DatabaseSeeder.SeedAsync(database, SeedOptions.FromEnvironment(), scope.ServiceProvider.GetRequiredService<TimeProvider>());
+    }
+
+    private static async Task MigrateAsync(UnaykaDbContext database)
+    {
+        if (AppEnvConfig.UsePostgres)
+        {
+            await database.Database.EnsureCreatedAsync();
+            return;
+        }
+
+        await database.Database.MigrateAsync();
     }
 
     public static void ConfigureProvider(DbContextOptionsBuilder options)
