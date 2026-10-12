@@ -24,7 +24,7 @@ Avoid comments. Write one only when there is real risk of confusion, short. Simp
 
 ## Clean code
 
-Intention revealing names, small single purpose functions, no magic numbers or strings, no dead code, no duplication, early returns, dependencies by interface and injection. Prefer record, tuples and lists. Classes only when the framework requires it. C# formatting follows JetBrains Rider via .editorconfig, applied before finishing each task. Directory.Build.props enables nullable, analyzers and TreatWarningsAsErrors.
+Intention revealing names, small single purpose functions, no magic numbers or strings, no dead code, no duplication, early returns, dependencies by interface and injection. Prefer record, tuples and lists. Classes only when the framework requires it. C# formatting follows JetBrains Rider via .editorconfig, applied before finishing each task. Each project file enables nullable, analyzers and TreatWarningsAsErrors; there is no Directory.Build.props.
 
 ## Blazor
 

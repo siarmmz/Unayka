@@ -13,7 +13,7 @@ None.
 - [x] 0.1 (O) Review and confirm this phase plan and the split by feature folder
 - [x] 0.2 (S) Initialize Git repository, .gitignore, .dockerignore and .editorconfig (JetBrains Rider style)
 - [x] 0.3 (S) Create solution src/Unayka.slnx with Unayka.Core, Unayka.Web, Unayka.Core.Test and Unayka.Web.Test
-- [x] 0.4 (S) Create Directory.Build.props (nullable, analyzers, TreatWarningsAsErrors)
+- [x] 0.4 (S) Enable nullable, analyzers and TreatWarningsAsErrors in each project file (no Directory.Build.props)
 - [x] 0.5 (H) Generate initial MAP.md from the created structure
 
 ### Phase 1: foundation and public pages

@@ -8,7 +8,6 @@ RUN tailwindcss -i ./src/Unayka.Web/wwwroot/styles/globals.css -o ./src/Unayka.W
 
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
-COPY src/Directory.Build.props ./src/
 COPY .editorconfig ./
 COPY src/Unayka.Core/Unayka.Core.csproj ./src/Unayka.Core/
 COPY src/Unayka.Web/Unayka.Web.csproj ./src/Unayka.Web/

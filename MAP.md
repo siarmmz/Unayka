@@ -15,7 +15,6 @@ PLAN.md: context between sessions (ignored by Git)
 Dockerfile: multi stage build (Tailwind styles, .NET publish, ASP.NET runtime) on port 10000
 .dockerignore: files excluded from the Docker build context
 .editorconfig: C# formatting and naming rules (JetBrains Rider style)
-src/Directory.Build.props: shared build settings (net10.0, nullable, analyzers, warnings as errors)
 src/Unayka.slnx: solution with Core, Web and the two test projects
 src/Unayka.Core/Configuration/AppEnvConfig.cs: single typed reader of environment variables with production validation
 src/Unayka.Core/Presentation/SafeText.cs: HTML escaping of visible text with a small inline tag allowlist
