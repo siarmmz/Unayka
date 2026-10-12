@@ -28,6 +28,29 @@
   --font-sans: "Inter", "Helvetica Neue", "Segoe UI", Arial, sans-serif;
   --font-serif: "Cormorant Garamond", "Georgia", "Times New Roman", serif;
   --font-script: "Caveat", "Segoe Script", "Brush Script MT", cursive;
+  --animate-swipe-nudge: swipe-nudge 1.6s ease-in-out infinite;
+  --animate-swipe-hint: swipe-hint 4s ease-in-out 1s both;
+
+  @keyframes swipe-nudge {
+    0%,
+    100% {
+      transform: translateX(-0.5rem);
+    }
+    50% {
+      transform: translateX(0.5rem);
+    }
+  }
+
+  @keyframes swipe-hint {
+    0%,
+    100% {
+      opacity: 0;
+    }
+    15%,
+    80% {
+      opacity: 1;
+    }
+  }
 }
 
 @layer base {
@@ -40,6 +63,12 @@
   h3,
   h4 {
     @apply font-serif text-accent-strong;
+  }
+
+  button:not(:disabled),
+  summary,
+  [role="button"] {
+    @apply cursor-pointer;
   }
 
   ::selection {

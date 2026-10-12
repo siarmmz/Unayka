@@ -264,40 +264,41 @@ Numbered list, one line per file as "N. path - what it does", sorted by path; th
 260. src/Unayka.Web/Components/Shared/SectionHeading.razor - eyebrow, title and subtitle
 261. src/Unayka.Web/Components/Shared/SeoComponent.razor - head title, description, canonical, Open Graph and structured data
 262. src/Unayka.Web/Components/Shared/StatusBadge.razor - colored order or payment status label
-263. src/Unayka.Web/Components/Store/CartNotice.cs - query flag for the added to cart confirmation
-264. src/Unayka.Web/Components/Store/CatalogLinks.cs - catalog query string parsing and URL building, sort options and price ranges
-265. src/Unayka.Web/Components/Store/CatalogView.razor - filters (section, category, tag chips), search and sort form, product grid, pagination
-266. src/Unayka.Web/Components/Store/ProductGallery.razor - CSS only product gallery with thumbnails
-267. src/Unayka.Web/Components/Store/ProductRail.razor - auto scrolling, swipeable product row (unayka-rail)
-268. src/Unayka.Web/Components/Store/ProductRowSection.razor - titled product row with "Ver mais" link, shared by home and /loja
-269. src/Unayka.Web/Components/Store/ShareButton.razor - Partilhar with Web Share API and WhatsApp, Facebook, copy link fallbacks
-270. src/Unayka.Web/Components/Store/StoreIcon.razor - inline SVG icon by name
-271. src/Unayka.Web/Components/Store/StoreIcons.cs - SVG path data for store icons
-272. src/Unayka.Web/Components/Store/StoreProductCard.razor - product card with cross fading images, Novo and Destaque badges, share and add to cart
-273. src/Unayka.Web/Components/Store/StoreStructuredData.cs - schema.org Product and Store JSON-LD builders
-274. src/Unayka.Web/Endpoints/Account/AccountEndpoints.cs - external sign in start and completion (mocked locally), staff sign in and sign out
-275. src/Unayka.Web/Endpoints/Cart/CartCookies.cs - unayka_cart cookie read/write and user id claim helper
-276. src/Unayka.Web/Endpoints/Cart/CartEndpoints.cs - POST /carrinho/adicionar, comprar-agora, atualizar, remover, cupao
-277. src/Unayka.Web/Endpoints/Checkout/CheckoutEndpoints.cs - MapCheckoutEndpoints and POST /checkout/confirmar
-278. src/Unayka.Web/Endpoints/Checkout/PlacedOrdersCookie.cs - protected cookie with the order numbers placed in this browser
-279. src/Unayka.Web/Endpoints/Downloads/DownloadEndpoints.cs - GET /conta/descargas/{orderItemId} for signed in buyers
-280. src/Unayka.Web/Endpoints/HealthEndpoint.cs - /health reporting active database and storage
-281. src/Unayka.Web/Endpoints/Locations/LocationEndpoints.cs - /contact, /location and /localizacao 301 redirects to /contacto
-282. src/Unayka.Web/Endpoints/Security/ExternalAuthentication.cs - external cookie scheme and Google/Facebook handlers when keys exist
-283. src/Unayka.Web/Endpoints/Security/RateLimitPolicies.cs - rate limit policy names (login, checkout, webhook)
-284. src/Unayka.Web/Endpoints/Security/SecurityExtensions.cs - cookie auth, policies, antiforgery, data protection, rate limiting, security headers
-285. src/Unayka.Web/Program.cs - app startup, loads .env first, validates configuration, feature service lines (AddUnayka*), database migrate (SQLite) or create (Postgres) and seed, security pipeline, feature endpoint lines (Map*Endpoints), Razor components
-286. src/Unayka.Web/Unayka.Web.csproj - Web project (Blazor only)
-287. src/Unayka.Web/wwwroot/images/pay/ - M-Pesa, e-Mola, mKesh, Visa and Mastercard icons
-288. src/Unayka.Web/wwwroot/scripts/carousel.js - hero swipe and autoplay, unayka-rail, unayka-fade shared timer, unayka-collapse and unayka-share elements
-289. src/Unayka.Web/wwwroot/styles/globals.css - Tailwind entry with semantic color tokens (accent, surface, ink, brand), fonts and base layer
+263. src/Unayka.Web/Components/Shared/SwipeHint.razor - animated swipe icon shown on hover and on load over moving carousels
+264. src/Unayka.Web/Components/Store/CartNotice.cs - query flag for the added to cart confirmation
+265. src/Unayka.Web/Components/Store/CatalogLinks.cs - catalog query string parsing and URL building, sort options and price ranges
+266. src/Unayka.Web/Components/Store/CatalogView.razor - filters (section, category, tag chips), search and sort form, product grid, pagination
+267. src/Unayka.Web/Components/Store/ProductGallery.razor - CSS only product gallery with thumbnails
+268. src/Unayka.Web/Components/Store/ProductRail.razor - endless looping product row with arrows when it has more than two items, static row otherwise
+269. src/Unayka.Web/Components/Store/ProductRowSection.razor - titled product row with "Ver mais" link, shared by home and /loja
+270. src/Unayka.Web/Components/Store/ShareButton.razor - Partilhar with Web Share API and WhatsApp, Facebook, copy link fallbacks
+271. src/Unayka.Web/Components/Store/StoreIcon.razor - inline SVG icon by name
+272. src/Unayka.Web/Components/Store/StoreIcons.cs - SVG path data for store icons
+273. src/Unayka.Web/Components/Store/StoreProductCard.razor - product card with cross fading images, Novo and Destaque badges, share and add to cart
+274. src/Unayka.Web/Components/Store/StoreStructuredData.cs - schema.org Product and Store JSON-LD builders
+275. src/Unayka.Web/Endpoints/Account/AccountEndpoints.cs - external sign in start and completion (mocked locally), staff sign in and sign out
+276. src/Unayka.Web/Endpoints/Cart/CartCookies.cs - unayka_cart cookie read/write and user id claim helper
+277. src/Unayka.Web/Endpoints/Cart/CartEndpoints.cs - POST /carrinho/adicionar, comprar-agora, atualizar, remover, cupao
+278. src/Unayka.Web/Endpoints/Checkout/CheckoutEndpoints.cs - MapCheckoutEndpoints and POST /checkout/confirmar
+279. src/Unayka.Web/Endpoints/Checkout/PlacedOrdersCookie.cs - protected cookie with the order numbers placed in this browser
+280. src/Unayka.Web/Endpoints/Downloads/DownloadEndpoints.cs - GET /conta/descargas/{orderItemId} for signed in buyers
+281. src/Unayka.Web/Endpoints/HealthEndpoint.cs - /health reporting active database and storage
+282. src/Unayka.Web/Endpoints/Locations/LocationEndpoints.cs - /contact, /location and /localizacao 301 redirects to /contacto
+283. src/Unayka.Web/Endpoints/Security/ExternalAuthentication.cs - external cookie scheme and Google/Facebook handlers when keys exist
+284. src/Unayka.Web/Endpoints/Security/RateLimitPolicies.cs - rate limit policy names (login, checkout, webhook)
+285. src/Unayka.Web/Endpoints/Security/SecurityExtensions.cs - cookie auth, policies, antiforgery, data protection, rate limiting, security headers
+286. src/Unayka.Web/Program.cs - app startup, loads .env first, validates configuration, feature service lines (AddUnayka*), database migrate (SQLite) or create (Postgres) and seed, security pipeline, feature endpoint lines (Map*Endpoints), Razor components
+287. src/Unayka.Web/Unayka.Web.csproj - Web project (Blazor only)
+288. src/Unayka.Web/wwwroot/images/pay/ - M-Pesa, e-Mola, mKesh, Visa and Mastercard icons
+289. src/Unayka.Web/wwwroot/scripts/carousel.js - hero swipe, arrows and autoplay, endless unayka-rail, unayka-fade one at a time crossfade, unayka-collapse and unayka-share elements
+290. src/Unayka.Web/wwwroot/styles/globals.css - Tailwind entry with semantic color tokens (accent, surface, ink, brand), fonts and base layer
 
 ## Interactive render modes
 
 No global render mode; AddInteractiveServerComponents is enabled in Program.cs.
 
-1. src/Unayka.Web/Components/Pages/Counter/PointOfSale.razor - /balcao, InteractiveServer: live ticket, payment status and receipt
-2. src/Unayka.Web/Components/Pages/Counter/CashShifts.razor - /balcao/caixa, InteractiveServer: live difference while counting the drawer
-3. src/Unayka.Web/Components/Pages/Counter/PreparationBoardPage.razor - /balcao/preparacao, InteractiveServer: board refreshed by a timer
-4. src/Unayka.Web/Components/Checkout/OrderStatusLive.razor - InteractiveServer: polls payment status every 2 seconds and retries without reload
-5. src/Unayka.Web/Components/Pages/Admin/ - InteractiveServer on every administration page for filters, forms and toggles
+291. src/Unayka.Web/Components/Pages/Counter/PointOfSale.razor - /balcao, InteractiveServer: live ticket, payment status and receipt
+292. src/Unayka.Web/Components/Pages/Counter/CashShifts.razor - /balcao/caixa, InteractiveServer: live difference while counting the drawer
+293. src/Unayka.Web/Components/Pages/Counter/PreparationBoardPage.razor - /balcao/preparacao, InteractiveServer: board refreshed by a timer
+294. src/Unayka.Web/Components/Checkout/OrderStatusLive.razor - InteractiveServer: polls payment status every 2 seconds and retries without reload
+295. src/Unayka.Web/Components/Pages/Admin/ - InteractiveServer on every administration page for filters, forms and toggles

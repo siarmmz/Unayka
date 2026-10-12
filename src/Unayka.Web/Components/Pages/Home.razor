@@ -4,7 +4,7 @@
 
 <SeoComponent Title="@Data.Seo.Title" Description="@Data.Seo.Description" StructuredDataJson="@_structuredData"/>
 
-<unayka-carousel class="relative block touch-pan-y select-none h-[78vh] min-h-[32rem] overflow-hidden bg-surface-alt">
+<unayka-carousel class="group/swipe relative block cursor-grab touch-pan-y select-none active:cursor-grabbing h-[78vh] min-h-[32rem] overflow-hidden bg-surface-alt">
     @foreach (var slide in _slides)
     {
         <div data-slide class="@SlideClass" data-active="@slide.ActiveMarker">
@@ -20,10 +20,17 @@
             </div>
         </div>
     }
+    <SwipeHint Position="bottom-24 right-6 md:right-10"/>
+    <button type="button" data-hero-previous aria-label="@Data.PreviousLabel" class="@HeroArrowClass left-4">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+    </button>
+    <button type="button" data-hero-next aria-label="@Data.NextLabel" class="@HeroArrowClass right-4">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+    </button>
     <div class="absolute bottom-6 left-1/2 z-20 flex -translate-x-1/2 gap-1 rounded-full bg-surface/85 px-2 shadow-sm">
         @foreach (var slide in _slides)
         {
-            <button type="button" data-bullet aria-label="@slide.Eyebrow" class="group/bullet flex h-11 items-center px-1.5">
+            <button type="button" data-bullet aria-label="@slide.Eyebrow" class="group/bullet flex h-11 cursor-pointer items-center px-1.5">
                 <span class="block h-2.5 w-2.5 rounded-full bg-accent-strong/35 transition-all duration-500 group-hover/bullet:bg-accent-strong/60 group-aria-[current=true]/bullet:w-8 group-aria-[current=true]/bullet:bg-accent-strong"></span>
             </button>
         }
@@ -80,6 +87,8 @@
     private const string ContactPath = "/contacto";
     private const string SlideClass = "group absolute inset-0 isolate opacity-0 transition-opacity duration-1000 ease-in-out data-[previous]:opacity-100 data-[active]:z-10 data-[active]:opacity-100";
 
+    private const string HeroArrowClass = "absolute top-1/2 z-20 hidden h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full bg-surface/85 text-accent-strong opacity-0 shadow-md transition hover:scale-110 hover:bg-accent-strong hover:text-surface focus-visible:opacity-100 group-hover/swipe:opacity-100 md:flex";
+
     private sealed record Slide(string? ActiveMarker, string Eyebrow, string Title, string Text, string ActionLabel, string Url, string ImageUrl);
 
     private sealed record Row(string Eyebrow, string Title, string Subtitle, string Url, bool Tinted, IReadOnlyList<ProductCardModel> Items);
@@ -90,6 +99,8 @@
         (
         (string Eyebrow, string Title, string Text, string ActionLabel)[] Slides,
         string MoreLabel,
+        string PreviousLabel,
+        string NextLabel,
         (string Eyebrow, string Title, string Subtitle) Featured,
         string SectionEyebrow,
         (string Eyebrow, string Title, (string Title, string Text)[] Items) Steps,
@@ -104,6 +115,8 @@
             ("Compra fácil", "Encomende do telemóvel em poucos passos", "Pague com M-Pesa, e-Mola, mKesh ou cartão e levante na loja ou receba em casa.", "Ir à loja"),
         ],
         "Ver mais",
+        "Imagem anterior",
+        "Imagem seguinte",
         ("Os favoritos da casa", "Destaques", "Os produtos que os nossos clientes mais procuram."),
         "Da nossa loja",
         (

@@ -35,6 +35,8 @@ class UnaykaCarousel extends HTMLElement {
         this.bullets = [...this.querySelectorAll("[data-bullet]")];
         this.index = 0;
         this.bullets.forEach((bullet, index) => bullet.addEventListener("click", () => this.show(index, true)));
+        this.querySelector("[data-hero-previous]")?.addEventListener("click", () => this.show(this.index - 1, true));
+        this.querySelector("[data-hero-next]")?.addEventListener("click", () => this.show(this.index + 1, true));
         this.addEventListener("mouseenter", () => this.stop());
         this.addEventListener("mouseleave", () => this.start());
         this.addEventListener("focusin", () => this.stop());
@@ -99,10 +101,6 @@ class UnaykaRail extends HTMLElement {
     connectedCallback() {
         this.track = this.querySelector("[data-rail-track]");
         this.originals = [...this.track.children];
-        if (this.originals.length < 2) {
-            this.querySelectorAll("[data-rail-previous], [data-rail-next]").forEach(button => button.remove());
-            return;
-        }
         this.hovered = false;
         this.pausedUntil = 0;
         this.buildLoop();
@@ -149,7 +147,7 @@ class UnaykaRail extends HTMLElement {
             this.track.append(...cloneSet());
         }
         this.setWidth = setWidth;
-        this.homeLeft = setWidth * sidesNeeded;
+        this.homeLeft = setWidth * sidesNeeded - Math.max(0, (this.track.clientWidth - setWidth) / 2);
         this.track.scrollLeft = this.homeLeft;
     }
 
