@@ -1,6 +1,8 @@
 using System.Globalization;
 using System.Text;
 using System.Text.RegularExpressions;
+using Unayka.Core.Audit;
+using Unayka.Core.Catalog;
 using Unayka.Core.Orders;
 
 namespace Unayka.Core.Administration;
@@ -103,9 +105,24 @@ public static class AdminAuditActions
 {
     public const string ProductCreated = "product.created";
     public const string ProductUpdated = "product.updated";
-    public const string ProductToggled = "product.toggled";
     public const string CategoryCreated = "category.created";
     public const string CategoryUpdated = "category.updated";
+    public const string ProductDeleted = "product.deleted";
+    public const string ProductStatusChanged = "product.status_changed";
+    public const string ProductFileChanged = "product.file_changed";
+    public const string CategoryDeleted = "category.deleted";
+    public const string CategoryStatusChanged = "category.status_changed";
+    public const string SectionCreated = "section.created";
+    public const string SectionUpdated = "section.updated";
+    public const string SectionDeleted = "section.deleted";
+    public const string SectionStatusChanged = "section.status_changed";
+    public const string TagCreated = "tag.created";
+    public const string TagUpdated = "tag.updated";
+    public const string TagDeleted = "tag.deleted";
+    public const string LocationCreated = "location.created";
+    public const string LocationUpdated = "location.updated";
+    public const string LocationDeleted = "location.deleted";
+    public const string LocationStatusChanged = "location.status_changed";
     public const string CouponCreated = "coupon.created";
     public const string CouponUpdated = "coupon.updated";
     public const string CouponToggled = "coupon.toggled";
@@ -116,6 +133,25 @@ public static class AdminEntityTypes
 {
     public const string Product = "Product";
     public const string Category = "Category";
+    public const string Section = "Section";
+    public const string Tag = "Tag";
+    public const string Location = "Location";
     public const string Coupon = "Coupon";
     public const string Order = "Order";
+}
+
+public static class StatusNames
+{
+    public static string For(CatalogStatus status) => status switch
+    {
+        CatalogStatus.Active => "ativo",
+        CatalogStatus.Inactive => "inativo",
+        _ => "arquivado",
+    };
+}
+
+public static class AuditLogExtensions
+{
+    public static Task WriteEntityAsync(this IAuditLog audit, int? actorUserId, string action, string entityType, int entityId, string summary, CancellationToken cancellationToken = default) =>
+        audit.WriteAsync(actorUserId, action, entityType, entityId.ToString(CultureInfo.InvariantCulture), summary, cancellationToken);
 }

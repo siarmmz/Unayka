@@ -9,6 +9,8 @@ public static class AdministrationServiceExtensions
         services.AddScoped<IAdminDashboard, AdminDashboardService>();
         services.AddScoped<IAdminOrders, AdminOrdersService>();
         services.AddScoped<IAdminCatalog, AdminCatalogService>();
+        services.AddScoped<IAdminTaxonomy, AdminTaxonomyService>();
+        services.AddScoped<IAdminLocations, AdminLocationsService>();
         services.AddScoped<IAdminCoupons, AdminCouponsService>();
         services.AddScoped<IAdminCustomers, AdminCustomersService>();
         services.AddScoped<IAdminPayments, AdminPaymentsService>();

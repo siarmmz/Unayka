@@ -1,22 +1,27 @@
 @page "/admin/produtos"
+@page "/admin/produtos/{ViewSlug}"
 @rendermode InteractiveServer
 @attribute [Authorize(Policy = UnaykaPolicies.Management)]
 @inject IAdminCatalog Catalog
 
 <PageTitle>@Texts.PageTitle</PageTitle>
 
-<div class="mx-auto max-w-6xl space-y-8">
+<div class="mx-auto max-w-6xl space-y-6">
     <AdminPageHeader Title="@Texts.Title" Eyebrow="@Texts.Eyebrow" Subtitle="@Texts.Subtitle">
         <a href="@ToUrl(Texts.NewUrl)" class="btn-primary px-6 py-2">@Text(Texts.NewLabel)</a>
     </AdminPageHeader>
 
-    <section class="flex flex-wrap items-end gap-4 rounded-2xl border border-sand bg-white p-5 shadow-sm">
-        <div class="min-w-64 flex-1">
+    <AdminTabs Tabs="Tabs" ActiveUrl="@_activeUrl"/>
+
+    <section class="flex flex-wrap items-end gap-4 rounded-2xl border border-sand bg-paper p-5 shadow-sm">
+        <div class="min-w-48 flex-1">
             <label for="product-search" class="field-label">@Text(Texts.SearchLabel)</label>
             <input id="product-search" type="search" class="field" placeholder="@Texts.SearchPlaceholder" @bind="_search" @bind:event="oninput" @onkeydown="OnSearchKey"/>
         </div>
         <button type="button" class="btn-primary px-6 py-2" @onclick="SearchAsync">@Text(Texts.Apply)</button>
     </section>
+
+    <ErrorList Messages="@_errors"/>
 
     @if (_result is not null && _result.Items.Count == 0)
     {
@@ -25,40 +30,37 @@
 
     @if (_result is not null && _result.Items.Count > 0)
     {
-        <section class="overflow-hidden rounded-2xl border border-sand bg-white shadow-sm">
-            <div class="overflow-x-auto">
-                <table class="w-full text-left text-sm">
-                    <thead class="bg-cream text-xs uppercase tracking-widest text-stone">
-                        <tr>
-                            <th class="px-5 py-3 font-medium">@Text(Texts.ProductColumn)</th>
-                            <th class="px-5 py-3 font-medium">@Text(Texts.CategoryColumn)</th>
-                            <th class="px-5 py-3 text-right font-medium">@Text(Texts.PriceColumn)</th>
-                            <th class="px-5 py-3 text-right font-medium">@Text(Texts.StockColumn)</th>
-                            <th class="px-5 py-3 font-medium">@Text(Texts.ActiveColumn)</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-sand">
-                        @foreach (var product in _result.Items)
-                        {
-                            <tr class="hover:bg-cream/60">
-                                <td class="px-5 py-3">
-                                    <div class="flex items-center gap-4">
-                                        <ThumbnailImage Url="@product.ImageUrl"/>
-                                        <a href="@ToUrl(EditUrl(product.Id))" class="font-medium text-espresso hover:text-clay">@Text(product.Name)</a>
-                                    </div>
-                                </td>
-                                <td class="px-5 py-3 text-stone">@Text(product.CategoryName)</td>
-                                <td class="whitespace-nowrap px-5 py-3 text-right">@Text(FormatMoney(product.PriceMinor))</td>
-                                <td class="px-5 py-3 text-right"><span class="@StockClass(product.StockQuantity)">@Text(FormatNumber(product.StockQuantity))</span></td>
-                                <td class="px-5 py-3">
-                                    <button type="button" role="switch" aria-checked="@product.IsActive" aria-label="@Texts.ToggleLabel" class="@SwitchClass(product.IsActive)" @onclick="ToggleHandler(product)">
-                                        <span class="@KnobClass(product.IsActive)"></span>
-                                    </button>
-                                </td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
+        <section class="overflow-hidden rounded-2xl border border-sand bg-paper shadow-sm">
+            <div class="hidden grid-cols-12 gap-4 bg-cream px-4 py-3 text-xs uppercase tracking-widest text-stone md:grid">
+                <span class="col-span-4">@Text(Texts.ProductColumn)</span>
+                <span class="col-span-2">@Text(Texts.CategoryColumn)</span>
+                <span class="col-span-1 text-right">@Text(Texts.PriceColumn)</span>
+                <span class="col-span-1 text-right">@Text(Texts.StockColumn)</span>
+                <span class="col-span-1">@Text(Texts.StatusColumn)</span>
+                <span class="col-span-3">@Text(Texts.ActionsColumn)</span>
+            </div>
+            <div class="divide-y divide-sand">
+                @foreach (var product in _result.Items)
+                {
+                    <article class="grid gap-3 p-4 md:grid-cols-12 md:items-center md:gap-4">
+                        <div class="flex items-center gap-4 md:col-span-4">
+                            <ThumbnailImage Url="@product.ImageUrl"/>
+                            <div class="min-w-0">
+                                <a href="@ToUrl(EditUrl(product.Id))" class="block truncate font-medium text-espresso hover:text-clay">@Text(product.Name)</a>
+                                <p class="text-xs text-clay">@Text(FlagsText(product))</p>
+                            </div>
+                        </div>
+                        <p class="text-sm text-stone md:col-span-2">@Text(product.CategoryName)</p>
+                        <p class="whitespace-nowrap text-sm md:col-span-1 md:text-right">@Text(FormatMoney(product.PriceMinor))</p>
+                        <p class="text-sm text-stone md:col-span-1 md:text-right">@Text(StockText(product))</p>
+                        <div class="md:col-span-1"><CatalogStatusBadge Status="@product.Status"/></div>
+                        <div class="md:col-span-3">
+                            <StatusActions Status="@product.Status" CanDelete="@product.CanDelete" OnStatus="StatusHandler(product)" OnDelete="DeleteHandler(product)">
+                                <a href="@ToUrl(EditUrl(product.Id))" class="text-clay hover:text-espresso">@Text(Texts.Edit)</a>
+                            </StatusActions>
+                        </div>
+                    </article>
+                }
             </div>
         </section>
         <AdminPager Page="@_result.Page" PageCount="@_result.PageCount" OnPage="LoadPageAsync"/>
@@ -78,40 +80,76 @@
         public const string SearchPlaceholder = "Nome ou endereço do produto";
         public const string Apply = "Pesquisar";
         public const string EmptyTitle = "Sem produtos";
-        public const string EmptyMessage = "Nenhum produto corresponde à pesquisa.";
+        public const string EmptyMessage = "Nenhum produto nesta lista.";
         public const string ProductColumn = "Produto";
         public const string CategoryColumn = "Categoria";
         public const string PriceColumn = "Preço";
         public const string StockColumn = "Stock";
-        public const string ActiveColumn = "Ativo";
-        public const string ToggleLabel = "Ativar ou desativar";
+        public const string StatusColumn = "Estado";
+        public const string ActionsColumn = "Ações";
+        public const string Edit = "Editar";
+        public const string Digital = "Digital";
+        public const string NewFlag = "Novo";
+        public const string FeaturedFlag = "Destaque";
+        public const string FlagSeparator = " | ";
         public const string EnterKey = "Enter";
+        public const string BaseUrl = "/admin/produtos";
     }
 
-    private const string SwitchOnClass = "relative inline-flex h-6 w-11 items-center rounded-full bg-sage transition";
-    private const string SwitchOffClass = "relative inline-flex h-6 w-11 items-center rounded-full bg-sand transition";
-    private const string KnobOnClass = "inline-block h-5 w-5 translate-x-5 rounded-full bg-white shadow transition";
-    private const string KnobOffClass = "inline-block h-5 w-5 translate-x-0.5 rounded-full bg-white shadow transition";
-    private const string LowStockClass = "rounded-full bg-amber-50 px-3 py-1 text-xs text-amber-700";
-    private const string NormalStockClass = "text-stone";
-    private const int LowStock = AdminDashboardService.LowStockThreshold;
+    private static readonly IReadOnlyList<(string Label, string Url)> Tabs =
+    [
+        ("Todos", Texts.BaseUrl),
+        ("Novos", $"{Texts.BaseUrl}/novos"),
+        ("Destaques", $"{Texts.BaseUrl}/destaques"),
+        ("Inativos", $"{Texts.BaseUrl}/inativos"),
+        ("Arquivados", $"{Texts.BaseUrl}/arquivados"),
+    ];
+
+    private static readonly Dictionary<string, ProductListView> ViewsBySlug = new()
+    {
+        ["novos"] = ProductListView.New,
+        ["destaques"] = ProductListView.Featured,
+        ["inativos"] = ProductListView.Inactive,
+        ["arquivados"] = ProductListView.Archived,
+    };
+
+    [Parameter]
+    public string? ViewSlug { get; set; }
 
     private string _search = string.Empty;
+    private string _activeUrl = Texts.BaseUrl;
+    private ProductListView _view;
     private PagedResult<ProductRow>? _result;
+    private IReadOnlyList<string> _errors = [];
 
-    protected override async Task OnInitializedAsync()
+    protected override async Task OnParametersSetAsync()
     {
-        await base.OnInitializedAsync();
+        _view = ViewSlug is not null && ViewsBySlug.TryGetValue(ViewSlug, out var view) ? view : ProductListView.All;
+        _activeUrl = _view == ProductListView.All ? Texts.BaseUrl : $"{Texts.BaseUrl}/{ViewSlug}";
+        _errors = [];
         await LoadPageAsync(1);
     }
 
-    private static string EditUrl(int id) => $"/admin/produtos/{id}";
+    private static string EditUrl(int id) => $"{Texts.BaseUrl}/{id}";
 
-    private static string SwitchClass(bool isActive) => isActive ? SwitchOnClass : SwitchOffClass;
+    private static string StockText(ProductRow product) =>
+        product.Kind == ProductKind.Digital ? Texts.Digital : FormatNumber(product.StockQuantity);
 
-    private static string KnobClass(bool isActive) => isActive ? KnobOnClass : KnobOffClass;
+    private static string FlagsText(ProductRow product)
+    {
+        var flags = new List<string>();
+        if (product.IsNew)
+        {
+            flags.Add(Texts.NewFlag);
+        }
 
-    private static string StockClass(int stock) => stock <= LowStock ? LowStockClass : NormalStockClass;
+        if (product.IsFeatured)
+        {
+            flags.Add(Texts.FeaturedFlag);
+        }
+
+        return string.Join(Texts.FlagSeparator, flags);
+    }
 
     private Task SearchAsync() => LoadPageAsync(1);
 
@@ -125,14 +163,26 @@
 
     private async Task LoadPageAsync(int page)
     {
-        _result = await Catalog.ListProductsAsync(_search, page);
+        _result = await Catalog.ListProductsAsync(_view, _search, page);
     }
 
-    private Func<Task> ToggleHandler(ProductRow product) => () => ToggleAsync(product);
+    private EventCallback<CatalogStatus> StatusHandler(ProductRow product) =>
+        EventCallback.Factory.Create<CatalogStatus>(this, status => ChangeStatusAsync(product, status));
 
-    private async Task ToggleAsync(ProductRow product)
+    private EventCallback DeleteHandler(ProductRow product) =>
+        EventCallback.Factory.Create(this, () => DeleteAsync(product));
+
+    private async Task ChangeStatusAsync(ProductRow product, CatalogStatus status)
     {
-        await Catalog.SetProductActiveAsync(ActorUserId, product.Id, !product.IsActive);
+        var result = await Catalog.SetProductStatusAsync(ActorUserId, product.Id, status);
+        _errors = result.Errors;
+        await LoadPageAsync(_result?.Page ?? 1);
+    }
+
+    private async Task DeleteAsync(ProductRow product)
+    {
+        var result = await Catalog.DeleteProductAsync(ActorUserId, product.Id);
+        _errors = result.Errors;
         await LoadPageAsync(_result?.Page ?? 1);
     }
 }

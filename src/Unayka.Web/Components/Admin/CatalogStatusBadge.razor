@@ -1,0 +1,23 @@
+<span class="@_class">@Text(_label)</span>
+
+@code {
+    private const string BaseClass = "inline-flex rounded-full px-3 py-1 text-xs ";
+
+    private static readonly Dictionary<CatalogStatus, (string Label, string Class)> Styles = new()
+    {
+        [CatalogStatus.Active] = ("Ativo", BaseClass + "bg-sage-soft text-espresso"),
+        [CatalogStatus.Inactive] = ("Inativo", BaseClass + "bg-cream text-stone"),
+        [CatalogStatus.Archived] = ("Arquivado", BaseClass + "bg-rose-soft text-clay"),
+    };
+
+    [Parameter, EditorRequired]
+    public CatalogStatus Status { get; set; }
+
+    private string _label = string.Empty;
+    private string _class = string.Empty;
+
+    protected override void OnParametersSet()
+    {
+        (_label, _class) = Styles[Status];
+    }
+}

@@ -109,7 +109,7 @@ public sealed class CatalogQuery(UnaykaDbContext db) : ICatalogQuery
 
     public async Task<IReadOnlyList<ProductCardModel>> RelatedAsync(string slug, int count, CancellationToken cancellationToken = default)
     {
-        var categoryId = await db.Products
+        var categoryId = await Active()
             .Where(product => product.Slug == slug)
             .Select(product => product.CategoryId)
             .FirstOrDefaultAsync(cancellationToken);

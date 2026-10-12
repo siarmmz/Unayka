@@ -7,6 +7,7 @@ public static class CatalogServiceExtensions
     public static IServiceCollection AddUnaykaCatalog(this IServiceCollection services)
     {
         services.AddScoped<ICatalogQuery, CatalogQuery>();
+        services.AddSingleton<IDigitalFileStore, LocalDigitalFileStore>();
         return services;
     }
 }

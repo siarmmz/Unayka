@@ -1,0 +1,295 @@
+@page "/admin/lojas"
+@rendermode InteractiveServer
+@attribute [Authorize(Policy = UnaykaPolicies.Management)]
+@inject IAdminLocations LocationAdmin
+
+<PageTitle>@Texts.PageTitle</PageTitle>
+
+<div class="mx-auto max-w-6xl space-y-6">
+    <AdminPageHeader Title="@Texts.Title" Eyebrow="@Texts.Eyebrow" Subtitle="@Texts.Subtitle">
+        <button type="button" class="btn-primary px-6 py-2" @onclick="StartNew">@Text(Texts.NewLabel)</button>
+    </AdminPageHeader>
+
+    @if (_form is not null)
+    {
+        <form class="space-y-6 rounded-2xl border border-sand bg-paper p-5 shadow-sm sm:p-8" @onsubmit="SaveAsync">
+            <h2 class="font-serif text-2xl">@Text(_formTitle)</h2>
+            <ErrorList Messages="@_errors"/>
+            <div class="grid gap-5 sm:grid-cols-2">
+                <div>
+                    <label for="location-name" class="field-label">@Text(Texts.NameLabel)</label>
+                    <input id="location-name" type="text" maxlength="80" class="field" @bind="_form.Name" @bind:event="oninput" @bind:after="OnNameChanged"/>
+                </div>
+                <div>
+                    <label for="location-slug" class="field-label">@Text(Texts.SlugLabel)</label>
+                    <input id="location-slug" type="text" maxlength="80" class="field" @bind="_form.Slug" @bind:after="OnSlugEdited"/>
+                </div>
+                <div>
+                    <label for="location-city" class="field-label">@Text(Texts.CityLabel)</label>
+                    <input id="location-city" type="text" maxlength="80" class="field" @bind="_form.City"/>
+                </div>
+                <div>
+                    <label for="location-status" class="field-label">@Text(Texts.StatusLabel)</label>
+                    <select id="location-status" class="field" @bind="_form.Status">
+                        @foreach (var option in AdminOptions.CatalogStatuses)
+                        {
+                            <option value="@option.Value">@Text(option.Label)</option>
+                        }
+                    </select>
+                </div>
+                <div class="sm:col-span-2">
+                    <label for="location-address" class="field-label">@Text(Texts.AddressLabel)</label>
+                    <input id="location-address" type="text" maxlength="200" class="field" @bind="_form.Address"/>
+                </div>
+                <div class="sm:col-span-2">
+                    <label for="location-hours" class="field-label">@Text(Texts.HoursLabel)</label>
+                    <input id="location-hours" type="text" maxlength="160" class="field" @bind="_form.OpeningHours"/>
+                </div>
+                <div>
+                    <label for="location-latitude" class="field-label">@Text(Texts.LatitudeLabel)</label>
+                    <input id="location-latitude" type="number" step="any" class="field" @bind="_form.Latitude"/>
+                </div>
+                <div>
+                    <label for="location-longitude" class="field-label">@Text(Texts.LongitudeLabel)</label>
+                    <input id="location-longitude" type="number" step="any" class="field" @bind="_form.Longitude"/>
+                </div>
+                <div class="sm:col-span-2">
+                    <label for="location-map" class="field-label">@Text(Texts.MapLabel)</label>
+                    <input id="location-map" type="url" class="field" @bind="_form.MapEmbedUrl"/>
+                </div>
+                <div>
+                    <label for="location-order" class="field-label">@Text(Texts.OrderLabel)</label>
+                    <input id="location-order" type="number" step="1" class="field" @bind="_form.SortOrder"/>
+                </div>
+            </div>
+
+            <div class="space-y-4">
+                <div class="flex items-center justify-between gap-4">
+                    <h3 class="font-serif text-xl">@Text(Texts.ContactsTitle)</h3>
+                    <button type="button" class="btn-outline px-5 py-2" @onclick="AddContact">@Text(Texts.AddContact)</button>
+                </div>
+                @foreach (var contact in _form.Contacts)
+                {
+                    <div class="grid items-end gap-3 rounded-xl border border-sand p-4 sm:grid-cols-12">
+                        <div class="sm:col-span-3">
+                            <label class="field-label">@Text(Texts.ContactKindLabel)</label>
+                            <select class="field" @bind="contact.Kind">
+                                @foreach (var option in AdminOptions.ContactKinds)
+                                {
+                                    <option value="@option.Value">@Text(option.Label)</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="sm:col-span-3">
+                            <label class="field-label">@Text(Texts.ContactLabelLabel)</label>
+                            <input type="text" maxlength="60" class="field" @bind="contact.Label"/>
+                        </div>
+                        <div class="sm:col-span-3">
+                            <label class="field-label">@Text(Texts.ContactValueLabel)</label>
+                            <input type="text" maxlength="120" class="field" @bind="contact.Value"/>
+                        </div>
+                        <div class="sm:col-span-1">
+                            <label class="field-label">@Text(Texts.OrderLabel)</label>
+                            <input type="number" step="1" class="field px-2" @bind="contact.SortOrder"/>
+                        </div>
+                        <div class="sm:col-span-2">
+                            <button type="button" class="btn-outline w-full px-4 py-3" @onclick="RemoveContactHandler(contact)">@Text(Texts.Remove)</button>
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <div class="flex gap-3">
+                <button type="submit" class="btn-primary px-8">@Text(Texts.Save)</button>
+                <button type="button" class="btn-outline px-8" @onclick="CancelEdit">@Text(Texts.Cancel)</button>
+            </div>
+        </form>
+    }
+
+    @if (_notice is not null)
+    {
+        <p class="rounded-xl bg-sage-soft px-4 py-3 text-sm text-espresso">@Text(_notice)</p>
+    }
+
+    <ErrorList Messages="@_actionErrors"/>
+
+    @if (_rows.Count == 0)
+    {
+        <EmptyState Title="@Texts.EmptyTitle" Message="@Texts.EmptyMessage"/>
+    }
+
+    @if (_rows.Count > 0)
+    {
+        <section class="overflow-hidden rounded-2xl border border-sand bg-paper shadow-sm">
+            <div class="hidden grid-cols-12 gap-4 bg-cream px-4 py-3 text-xs uppercase tracking-widest text-stone md:grid">
+                <span class="col-span-3">@Text(Texts.NameLabel)</span>
+                <span class="col-span-2">@Text(Texts.CityLabel)</span>
+                <span class="col-span-1">@Text(Texts.ContactsColumn)</span>
+                <span class="col-span-1">@Text(Texts.OrderLabel)</span>
+                <span class="col-span-1">@Text(Texts.StatusLabel)</span>
+                <span class="col-span-4">@Text(Texts.ActionsColumn)</span>
+            </div>
+            <div class="divide-y divide-sand">
+                @foreach (var row in _rows)
+                {
+                    <article class="grid gap-3 p-4 md:grid-cols-12 md:items-center md:gap-4">
+                        <div class="md:col-span-3">
+                            <p class="font-medium text-espresso">@Text(row.Name)</p>
+                            <p class="text-xs text-stone">@Text(row.Slug)</p>
+                        </div>
+                        <p class="text-sm text-stone md:col-span-2">@Text(row.City)</p>
+                        <p class="text-sm text-stone md:col-span-1">@Text(FormatNumber(row.ContactCount))</p>
+                        <p class="text-sm text-stone md:col-span-1">@Text(FormatNumber(row.SortOrder))</p>
+                        <div class="md:col-span-1"><CatalogStatusBadge Status="@row.Status"/></div>
+                        <div class="md:col-span-4">
+                            <StatusActions Status="@row.Status" CanDelete="@row.CanDelete" OnStatus="StatusHandler(row)" OnDelete="DeleteHandler(row)">
+                                <button type="button" class="text-clay hover:text-espresso" @onclick="EditHandler(row.Id)">@Text(Texts.Edit)</button>
+                            </StatusActions>
+                        </div>
+                    </article>
+                }
+            </div>
+        </section>
+    }
+</div>
+
+@code {
+    private static class Texts
+    {
+        public const string PageTitle = "Lojas | Unayka";
+        public const string Title = "Lojas";
+        public const string Eyebrow = "Pontos de venda";
+        public const string Subtitle = "Moradas, horários, contactos e mapa de cada loja.";
+        public const string NewLabel = "Nova loja";
+        public const string NewTitle = "Nova loja";
+        public const string EditTitle = "Editar loja";
+        public const string NameLabel = "Nome";
+        public const string SlugLabel = "Endereço (slug)";
+        public const string CityLabel = "Cidade";
+        public const string StatusLabel = "Estado";
+        public const string AddressLabel = "Morada";
+        public const string HoursLabel = "Horário";
+        public const string LatitudeLabel = "Latitude";
+        public const string LongitudeLabel = "Longitude";
+        public const string MapLabel = "Endereço do mapa (incorporar)";
+        public const string OrderLabel = "Ordem";
+        public const string ContactsTitle = "Contactos";
+        public const string ContactsColumn = "Contactos";
+        public const string ActionsColumn = "Ações";
+        public const string AddContact = "Adicionar contacto";
+        public const string ContactKindLabel = "Tipo";
+        public const string ContactLabelLabel = "Etiqueta";
+        public const string ContactValueLabel = "Número ou email";
+        public const string Remove = "Remover";
+        public const string Save = "Guardar";
+        public const string Cancel = "Cancelar";
+        public const string Edit = "Editar";
+        public const string Saved = "Loja guardada.";
+        public const string EmptyTitle = "Sem lojas";
+        public const string EmptyMessage = "Crie a primeira loja para registar stock e contactos.";
+    }
+
+    private IReadOnlyList<LocationRow> _rows = [];
+    private LocationForm? _form;
+    private IReadOnlyList<string> _errors = [];
+    private IReadOnlyList<string> _actionErrors = [];
+    private string _formTitle = Texts.NewTitle;
+    private string? _notice;
+    private bool _slugEdited;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        await ReloadAsync();
+    }
+
+    private Func<Task> EditHandler(int id) => () => EditAsync(id);
+
+    private Action RemoveContactHandler(LocationContactForm contact) => () => _form?.Contacts.Remove(contact);
+
+    private EventCallback<CatalogStatus> StatusHandler(LocationRow row) =>
+        EventCallback.Factory.Create<CatalogStatus>(this, status => ChangeStatusAsync(row, status));
+
+    private EventCallback DeleteHandler(LocationRow row) =>
+        EventCallback.Factory.Create(this, () => DeleteAsync(row));
+
+    private async Task ReloadAsync()
+    {
+        _rows = await LocationAdmin.ListAsync();
+    }
+
+    private void StartNew()
+    {
+        _form = new LocationForm { SortOrder = _rows.Count + 1 };
+        _formTitle = Texts.NewTitle;
+        _slugEdited = false;
+        _errors = [];
+        _notice = null;
+    }
+
+    private async Task EditAsync(int id)
+    {
+        _form = await LocationAdmin.GetAsync(id);
+        _formTitle = Texts.EditTitle;
+        _slugEdited = true;
+        _errors = [];
+        _notice = null;
+    }
+
+    private void CancelEdit()
+    {
+        _form = null;
+        _errors = [];
+    }
+
+    private void AddContact()
+    {
+        _form?.Contacts.Add(new LocationContactForm { SortOrder = _form.Contacts.Count + 1 });
+    }
+
+    private void OnNameChanged()
+    {
+        if (_form is not null && !_slugEdited)
+        {
+            _form.Slug = Slugs.FromName(_form.Name);
+        }
+    }
+
+    private void OnSlugEdited()
+    {
+        _slugEdited = true;
+    }
+
+    private async Task ChangeStatusAsync(LocationRow row, CatalogStatus status)
+    {
+        var result = await LocationAdmin.SetStatusAsync(ActorUserId, row.Id, status);
+        _actionErrors = result.Errors;
+        await ReloadAsync();
+    }
+
+    private async Task DeleteAsync(LocationRow row)
+    {
+        var result = await LocationAdmin.DeleteAsync(ActorUserId, row.Id);
+        _actionErrors = result.Errors;
+        await ReloadAsync();
+    }
+
+    private async Task SaveAsync()
+    {
+        if (_form is null)
+        {
+            return;
+        }
+
+        var result = await LocationAdmin.SaveAsync(ActorUserId, _form);
+        _errors = result.Errors;
+        if (!result.Succeeded)
+        {
+            return;
+        }
+
+        _form = null;
+        _notice = Texts.Saved;
+        await ReloadAsync();
+    }
+}

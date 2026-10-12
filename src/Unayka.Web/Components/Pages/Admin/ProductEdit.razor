@@ -3,6 +3,7 @@
 @rendermode InteractiveServer
 @attribute [Authorize(Policy = UnaykaPolicies.Management)]
 @inject IAdminCatalog Catalog
+@inject IAdminTaxonomy Taxonomy
 
 <PageTitle>@Texts.PageTitle</PageTitle>
 
@@ -25,7 +26,7 @@
                 <p class="rounded-xl bg-sage-soft px-4 py-3 text-sm text-espresso">@Text(_notice)</p>
             }
 
-            <section class="grid gap-5 rounded-2xl border border-sand bg-white p-5 shadow-sm sm:grid-cols-2 sm:p-8">
+            <section class="grid gap-5 rounded-2xl border border-sand bg-paper p-5 shadow-sm sm:grid-cols-2 sm:p-8">
                 <div class="sm:col-span-2">
                     <label for="product-name" class="field-label">@Text(Texts.NameLabel)</label>
                     <input id="product-name" type="text" maxlength="120" class="field" @bind="_form.Name" @bind:event="oninput" @bind:after="OnNameChanged"/>
@@ -35,10 +36,19 @@
                     <input id="product-slug" type="text" maxlength="80" class="field" @bind="_form.Slug" @bind:after="OnSlugEdited"/>
                 </div>
                 <div>
+                    <label for="product-section" class="field-label">@Text(Texts.SectionLabel)</label>
+                    <select id="product-section" class="field" @bind="_form.SectionId" @bind:after="OnSectionChanged">
+                        @foreach (var option in _sections)
+                        {
+                            <option value="@option.Id">@Text(option.Name)</option>
+                        }
+                    </select>
+                </div>
+                <div>
                     <label for="product-category" class="field-label">@Text(Texts.CategoryLabel)</label>
                     <select id="product-category" class="field" @bind="_form.CategoryId">
                         <option value="0">@Text(Texts.ChooseCategory)</option>
-                        @foreach (var category in _categories)
+                        @foreach (var category in _sectionCategories)
                         {
                             <option value="@category.Id">@Text(category.Name)</option>
                         }
@@ -54,7 +64,23 @@
                 </div>
             </section>
 
-            <section class="grid gap-5 rounded-2xl border border-sand bg-white p-5 shadow-sm sm:grid-cols-2 sm:p-8 lg:grid-cols-3">
+            @if (_sectionTags.Count > 0)
+            {
+                <section class="space-y-3 rounded-2xl border border-sand bg-paper p-5 shadow-sm sm:p-8">
+                    <h2 class="font-serif text-2xl">@Text(Texts.TagsTitle)</h2>
+                    <div class="flex flex-wrap gap-x-6 gap-y-3">
+                        @foreach (var tag in _sectionTags)
+                        {
+                            <label class="flex items-center gap-2 text-sm">
+                                <input type="checkbox" class="h-4 w-4 accent-clay" checked="@IsTagSelected(tag.Id)" @onchange="TagToggled(tag.Id)"/>
+                                <span>@Text(tag.Name)</span>
+                            </label>
+                        }
+                    </div>
+                </section>
+            }
+
+            <section class="grid gap-5 rounded-2xl border border-sand bg-paper p-5 shadow-sm sm:grid-cols-2 sm:p-8 lg:grid-cols-3">
                 <div>
                     <label for="product-price" class="field-label">@Text(Texts.PriceLabel)</label>
                     <input id="product-price" type="number" step="0.01" min="0" class="field" @bind="_form.Price"/>
@@ -62,10 +88,6 @@
                 <div>
                     <label for="product-compare" class="field-label">@Text(Texts.CompareLabel)</label>
                     <input id="product-compare" type="number" step="0.01" min="0" class="field" @bind="_form.CompareAtPrice"/>
-                </div>
-                <div>
-                    <label for="product-stock" class="field-label">@Text(Texts.StockLabel)</label>
-                    <input id="product-stock" type="number" step="1" min="0" class="field" @bind="_form.StockQuantity"/>
                 </div>
                 <div>
                     <label for="product-badge" class="field-label">@Text(Texts.BadgeLabel)</label>
@@ -80,21 +102,66 @@
                         }
                     </select>
                 </div>
-                <label class="flex items-center gap-3 text-sm">
-                    <input type="checkbox" class="h-4 w-4 accent-clay" @bind="_form.IsNew"/>
-                    <span>@Text(Texts.NewFlagLabel)</span>
-                </label>
-                <label class="flex items-center gap-3 text-sm">
-                    <input type="checkbox" class="h-4 w-4 accent-clay" @bind="_form.IsFeatured"/>
-                    <span>@Text(Texts.FeaturedLabel)</span>
-                </label>
-                <label class="flex items-center gap-3 text-sm">
-                    <input type="checkbox" class="h-4 w-4 accent-clay" @bind="_form.IsActive"/>
-                    <span>@Text(Texts.ActiveLabel)</span>
-                </label>
+                <div>
+                    <label for="product-status" class="field-label">@Text(Texts.StatusLabel)</label>
+                    <select id="product-status" class="field" @bind="_form.Status">
+                        @foreach (var option in AdminOptions.CatalogStatuses)
+                        {
+                            <option value="@option.Value">@Text(option.Label)</option>
+                        }
+                    </select>
+                </div>
+                <div class="flex flex-wrap items-center gap-x-6 gap-y-3 sm:col-span-2 lg:col-span-1">
+                    <label class="flex items-center gap-3 text-sm">
+                        <input type="checkbox" class="h-4 w-4 accent-clay" @bind="_form.IsNew"/>
+                        <span>@Text(Texts.NewFlagLabel)</span>
+                    </label>
+                    <label class="flex items-center gap-3 text-sm">
+                        <input type="checkbox" class="h-4 w-4 accent-clay" @bind="_form.IsFeatured"/>
+                        <span>@Text(Texts.FeaturedLabel)</span>
+                    </label>
+                </div>
             </section>
 
-            <section class="space-y-4 rounded-2xl border border-sand bg-white p-5 shadow-sm sm:p-8">
+            @if (IsPhysical)
+            {
+                <section class="space-y-4 rounded-2xl border border-sand bg-paper p-5 shadow-sm sm:p-8">
+                    <h2 class="font-serif text-2xl">@Text(Texts.StockTitle)</h2>
+                    @if (_form.Stocks.Count == 0)
+                    {
+                        <p class="text-sm text-stone">@Text(Texts.NoLocations)</p>
+                    }
+                    <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                        @foreach (var stock in _form.Stocks)
+                        {
+                            <div>
+                                <label class="field-label">@Text(stock.LocationName)</label>
+                                <input type="number" step="1" min="0" class="field" @bind="stock.Quantity"/>
+                            </div>
+                        }
+                    </div>
+                </section>
+            }
+
+            @if (IsDigital)
+            {
+                <section class="space-y-4 rounded-2xl border border-sand bg-paper p-5 shadow-sm sm:p-8">
+                    <h2 class="font-serif text-2xl">@Text(Texts.FileTitle)</h2>
+                    <p class="text-sm text-stone">@Text(_fileSummary)</p>
+                    @if (_form.Id is not null)
+                    {
+                        <div class="flex flex-wrap items-center gap-4">
+                            <InputFile OnChange="UploadAsync" class="field max-w-md"/>
+                            @if (_form.DigitalFileName is not null)
+                            {
+                                <button type="button" class="btn-outline px-5 py-2" @onclick="RemoveFileAsync">@Text(Texts.RemoveFile)</button>
+                            }
+                        </div>
+                    }
+                </section>
+            }
+
+            <section class="space-y-4 rounded-2xl border border-sand bg-paper p-5 shadow-sm sm:p-8">
                 <div class="flex items-center justify-between gap-4">
                     <h2 class="font-serif text-2xl">@Text(Texts.MediaTitle)</h2>
                     <button type="button" class="btn-outline px-5 py-2" @onclick="AddMedia">@Text(Texts.AddMedia)</button>
@@ -130,7 +197,7 @@
                 }
             </section>
 
-            <section class="space-y-4 rounded-2xl border border-sand bg-white p-5 shadow-sm sm:p-8">
+            <section class="space-y-4 rounded-2xl border border-sand bg-paper p-5 shadow-sm sm:p-8">
                 <div class="flex items-center justify-between gap-4">
                     <h2 class="font-serif text-2xl">@Text(Texts.FactsTitle)</h2>
                     <button type="button" class="btn-outline px-5 py-2" @onclick="AddFact">@Text(Texts.AddFact)</button>
@@ -182,18 +249,28 @@
         public const string NotFoundMessage = "Este produto já não existe.";
         public const string NameLabel = "Nome";
         public const string SlugLabel = "Endereço (slug)";
+        public const string SectionLabel = "Secção";
         public const string CategoryLabel = "Categoria";
         public const string ChooseCategory = "Escolha uma categoria";
         public const string ShortDescriptionLabel = "Descrição curta";
         public const string DescriptionLabel = "Descrição";
+        public const string TagsTitle = "Etiquetas";
         public const string PriceLabel = "Preço (MZN)";
         public const string CompareLabel = "Preço anterior (MZN)";
-        public const string StockLabel = "Stock na primeira loja";
         public const string KindLabel = "Tipo de produto";
-        public const string NewFlagLabel = "Marcar como novo";
-        public const string BadgeLabel = "Etiqueta";
-        public const string FeaturedLabel = "Em destaque";
-        public const string ActiveLabel = "Visível na loja";
+        public const string StatusLabel = "Estado";
+        public const string NewFlagLabel = "Novo";
+        public const string BadgeLabel = "Selo";
+        public const string FeaturedLabel = "Destaque";
+        public const string StockTitle = "Stock por loja";
+        public const string NoLocations = "Crie uma loja ativa para registar stock.";
+        public const string FileTitle = "Ficheiro para descarregar";
+        public const string FileMissing = "Sem ficheiro. Escolha um ficheiro para os compradores descarregarem.";
+        public const string FileSaveFirst = "Guarde o produto para poder enviar o ficheiro.";
+        public const string FilePrefix = "Ficheiro atual: ";
+        public const string FileUploaded = "Ficheiro guardado.";
+        public const string FileRemoved = "Ficheiro removido.";
+        public const string RemoveFile = "Remover ficheiro";
         public const string MediaTitle = "Imagens";
         public const string AddMedia = "Adicionar imagem";
         public const string MediaUrlLabel = "Endereço da imagem";
@@ -210,35 +287,110 @@
         public const string Cancel = "Cancelar";
         public const string Saved = "Produto guardado.";
         public const string EditUrlPrefix = "/admin/produtos/";
+        public const string Kilobytes = "KB";
+        public const string Megabytes = "MB";
     }
+
+    private const double BytesPerKilobyte = 1024;
+    private const double BytesPerMegabyte = 1024 * 1024;
 
     [Parameter]
     public int? Id { get; set; }
 
     private ProductForm? _form;
+    private IReadOnlyList<SectionOption> _sections = [];
     private IReadOnlyList<CategoryOption> _categories = [];
+    private IReadOnlyList<TagOption> _tags = [];
+    private IReadOnlyList<CategoryOption> _sectionCategories = [];
+    private IReadOnlyList<TagOption> _sectionTags = [];
     private IReadOnlyList<string> _errors = [];
     private string _title = Texts.NewTitle;
+    private string _fileSummary = string.Empty;
     private string? _notice;
     private bool _notFound;
     private bool _saving;
     private bool _slugEdited;
 
+    private bool IsDigital => _form?.Kind == ProductKind.Digital;
+
+    private bool IsPhysical => _form is not null && !IsDigital;
+
     protected override async Task OnParametersSetAsync()
     {
-        _categories = await Catalog.ListCategoryOptionsAsync();
+        _sections = await Taxonomy.ListSectionOptionsAsync();
+        _categories = await Taxonomy.ListCategoryOptionsAsync();
+        _tags = await Taxonomy.ListTagOptionsAsync();
         _notFound = false;
         _slugEdited = Id is not null;
         _title = Id is null ? Texts.NewTitle : Texts.EditTitle;
         if (Id is null)
         {
-            _form = new ProductForm { CategoryId = _categories.FirstOrDefault()?.Id ?? 0 };
+            _form = await Catalog.NewProductAsync();
+            _form.SectionId = _sections.FirstOrDefault()?.Id ?? 0;
+            RefreshSectionChoices();
+            _form.CategoryId = _sectionCategories.FirstOrDefault()?.Id ?? 0;
+            RefreshFileSummary();
             return;
         }
 
         _form = await Catalog.GetProductAsync(Id.Value);
         _notFound = _form is null;
+        RefreshSectionChoices();
+        RefreshFileSummary();
     }
+
+    private static string FormatSize(long bytes) =>
+        bytes >= BytesPerMegabyte
+            ? $"{bytes / BytesPerMegabyte:0.#} {Texts.Megabytes}"
+            : $"{Math.Max(1, bytes / BytesPerKilobyte):0.#} {Texts.Kilobytes}";
+
+    private void RefreshSectionChoices()
+    {
+        var sectionId = _form?.SectionId ?? 0;
+        _sectionCategories = _categories.Where(category => category.SectionId == sectionId).ToList();
+        _sectionTags = _tags.Where(tag => tag.SectionId == sectionId).ToList();
+    }
+
+    private void RefreshFileSummary()
+    {
+        _fileSummary = _form switch
+        {
+            null => string.Empty,
+            { Id: null } => Texts.FileSaveFirst,
+            { DigitalFileName: { } name, DigitalFileSizeBytes: { } size } => $"{Texts.FilePrefix}{name} ({FormatSize(size)})",
+            _ => Texts.FileMissing,
+        };
+    }
+
+    private void OnSectionChanged()
+    {
+        if (_form is null)
+        {
+            return;
+        }
+
+        RefreshSectionChoices();
+        _form.CategoryId = _sectionCategories.FirstOrDefault()?.Id ?? 0;
+        _form.TagIds.RemoveAll(tagId => _sectionTags.All(tag => tag.Id != tagId));
+    }
+
+    private bool IsTagSelected(int tagId) => _form?.TagIds.Contains(tagId) == true;
+
+    private Action<ChangeEventArgs> TagToggled(int tagId) => args =>
+    {
+        if (_form is null)
+        {
+            return;
+        }
+
+        if (args.Value is true)
+        {
+            _form.TagIds.Add(tagId);
+            return;
+        }
+
+        _form.TagIds.Remove(tagId);
+    };
 
     private void OnNameChanged()
     {
@@ -275,6 +427,45 @@
     private void RemoveFact(ProductFactForm fact)
     {
         _form?.Facts.Remove(fact);
+    }
+
+    private async Task UploadAsync(InputFileChangeEventArgs args)
+    {
+        if (_form?.Id is not { } productId)
+        {
+            return;
+        }
+
+        var file = args.File;
+        await using var content = file.OpenReadStream(AdminCatalogService.MaxDigitalFileBytes);
+        var result = await Catalog.SetDigitalFileAsync(ActorUserId, productId, new DigitalFileUpload(file.Name, file.ContentType, file.Size, content));
+        await ReloadFileAsync(result, Texts.FileUploaded);
+    }
+
+    private async Task RemoveFileAsync()
+    {
+        if (_form?.Id is not { } productId)
+        {
+            return;
+        }
+
+        var result = await Catalog.RemoveDigitalFileAsync(ActorUserId, productId);
+        await ReloadFileAsync(result, Texts.FileRemoved);
+    }
+
+    private async Task ReloadFileAsync(AdminResult result, string successNotice)
+    {
+        _errors = result.Errors;
+        _notice = result.Succeeded ? successNotice : null;
+        if (!result.Succeeded || _form?.Id is not { } productId)
+        {
+            return;
+        }
+
+        var saved = await Catalog.GetProductAsync(productId);
+        _form.DigitalFileName = saved?.DigitalFileName;
+        _form.DigitalFileSizeBytes = saved?.DigitalFileSizeBytes;
+        RefreshFileSummary();
     }
 
     private async Task SaveAsync()
