@@ -10,23 +10,23 @@ None.
 
 ### Phase 0: repository base
 
-- [ ] 0.1 (O) Review and confirm this phase plan and the split by feature folder
-- [ ] 0.2 (S) Initialize Git repository, .gitignore, .dockerignore and .editorconfig (JetBrains Rider style)
-- [ ] 0.3 (S) Create solution src/Unayka.slnx with Unayka.Core, Unayka.Web, Unayka.Core.Test and Unayka.Web.Test
-- [ ] 0.4 (S) Create Directory.Build.props (nullable, analyzers, TreatWarningsAsErrors)
-- [ ] 0.5 (H) Generate initial MAP.md from the created structure
+- [x] 0.1 (O) Review and confirm this phase plan and the split by feature folder
+- [x] 0.2 (S) Initialize Git repository, .gitignore, .dockerignore and .editorconfig (JetBrains Rider style)
+- [x] 0.3 (S) Create solution src/Unayka.slnx with Unayka.Core, Unayka.Web, Unayka.Core.Test and Unayka.Web.Test
+- [x] 0.4 (S) Create Directory.Build.props (nullable, analyzers, TreatWarningsAsErrors)
+- [x] 0.5 (H) Generate initial MAP.md from the created structure
 
 ### Phase 1: foundation and public pages
 
-- [ ] 1.1 (S) AppEnvConfig in Unayka.Core (typed properties, TryGet, IsProduction, UsePostgres, UseS3, Validate)
-- [ ] 1.2 (S) .env.example and DotNetEnv loading on the first line of Program.cs
-- [ ] 1.3 (S) Tailwind v4: globals.css (@import, @source, @theme, @layer), app.css generation
-- [ ] 1.4 (S) UnaykaComponentBase, UnaykaLayoutBase, helpers (Text, ToUrl, ToUrlTarget, FormatMoney, FormatDate, FormatPhone) and _Imports.razor
-- [ ] 1.5 (S) SeoComponent (title, description, canonical, Open Graph, structured data)
-- [ ] 1.6 (S) Static public pages: home, services, about, location, contact
-- [ ] 1.7 (S) /health endpoint (active server, database and storage)
-- [ ] 1.8 (S) Multi stage Dockerfile (Node/Tailwind, .NET 10 SDK, ASP.NET 10 runtime), port 10000
-- [ ] 1.9 (S) Tests: AppEnvConfig, ToUrl safety, in memory server, /health 200, SEO title, no loose text in .razor rule
+- [x] 1.1 (S) AppEnvConfig in Unayka.Core (typed properties, TryGet, IsProduction, UsePostgres, UseS3, Validate)
+- [x] 1.2 (S) .env.example and DotNetEnv loading on the first line of Program.cs
+- [x] 1.3 (S) Tailwind v4: globals.css (@import, @source, @theme, @layer), app.css generation
+- [x] 1.4 (S) UnaykaComponentBase, UnaykaLayoutBase, helpers (Text, ToUrl, ToUrlTarget, FormatMoney, FormatDate, FormatPhone) and _Imports.razor
+- [x] 1.5 (S) SeoComponent (title, description, canonical, Open Graph, structured data)
+- [x] 1.6 (S) Static public pages: home, services, about, location, contact
+- [x] 1.7 (S) /health endpoint (active server, database and storage)
+- [x] 1.8 (S) Multi stage Dockerfile (Node/Tailwind, .NET 10 SDK, ASP.NET 10 runtime), port 10000. Image build not verified yet: Docker is not installed on this machine
+- [x] 1.9 (S) Tests: AppEnvConfig, ToUrl safety, in memory server, /health 200, SEO title, no loose text in .razor rule
 
 ### Phase 2: data, catalog, images and audit
 
