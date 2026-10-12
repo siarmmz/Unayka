@@ -1,7 +1,10 @@
 const heroIntervalMs = 5000;
-const fadeIntervalMs = 4000;
-const railIntervalMs = 4000;
-const railResumeDelayMs = 6000;
+const fadeStepMs = 1800;
+const railIntervalMs = 2500;
+const railResumeDelayMs = 3500;
+const railSettleMs = 150;
+const railBufferSets = 1;
+const previousAttribute = "data-previous";
 const swipeThresholdPx = 50;
 const dragThresholdPx = 6;
 const copiedResetMs = 2000;
@@ -80,8 +83,11 @@ class UnaykaCarousel extends HTMLElement {
     }
 
     show(index, restart) {
-        this.index = (index + this.slides.length) % this.slides.length;
-        this.slides.forEach((slide, position) => slide.toggleAttribute(activeAttribute, position === this.index));
+        const nextIndex = (index + this.slides.length) % this.slides.length;
+        if (nextIndex !== this.index || !this.slides[nextIndex].hasAttribute(activeAttribute)) {
+            crossfade(this.slides, nextIndex);
+        }
+        this.index = nextIndex;
         this.bullets.forEach((bullet, position) => bullet.setAttribute("aria-current", position === this.index ? "true" : "false"));
         if (restart) {
             this.start();
@@ -91,15 +97,27 @@ class UnaykaCarousel extends HTMLElement {
 
 class UnaykaRail extends HTMLElement {
     connectedCallback() {
+        this.track = this.querySelector("[data-rail-track]");
+        this.originals = [...this.track.children];
+        if (this.originals.length < 2) {
+            this.querySelectorAll("[data-rail-previous], [data-rail-next]").forEach(button => button.remove());
+            return;
+        }
         this.hovered = false;
         this.pausedUntil = 0;
+        this.buildLoop();
         this.addEventListener("pointerenter", () => (this.hovered = true));
         this.addEventListener("pointerleave", () => (this.hovered = false));
-        this.addEventListener("pointerdown", event => this.beginDrag(event));
-        this.addEventListener("touchstart", () => this.pause(), { passive: true });
-        this.addEventListener("wheel", () => this.pause(), { passive: true });
+        this.track.addEventListener("pointerdown", event => this.beginDrag(event));
+        this.track.addEventListener("touchstart", () => this.pause(), { passive: true });
+        this.track.addEventListener("wheel", () => this.pause(), { passive: true });
+        this.track.addEventListener("scroll", () => this.scheduleRecenter(), { passive: true });
+        this.track.addEventListener("dragstart", event => event.preventDefault());
         this.addEventListener("focusin", () => this.pause());
-        this.addEventListener("dragstart", event => event.preventDefault());
+        this.querySelector("[data-rail-previous]")?.addEventListener("click", () => this.move(-1, true));
+        this.querySelector("[data-rail-next]")?.addEventListener("click", () => this.move(1, true));
+        this.resizeObserver = new ResizeObserver(() => this.buildLoop());
+        this.resizeObserver.observe(this.track);
         if (!reducedMotion.matches) {
             this.timer = setInterval(() => this.advance(), railIntervalMs);
         }
@@ -107,6 +125,40 @@ class UnaykaRail extends HTMLElement {
 
     disconnectedCallback() {
         clearInterval(this.timer);
+        clearTimeout(this.recenterTimer);
+        this.resizeObserver?.disconnect();
+    }
+
+    buildLoop() {
+        this.track.querySelectorAll("[data-rail-clone]").forEach(clone => clone.remove());
+        const gap = this.gap();
+        const setWidth = this.originals.reduce((total, item) => total + item.getBoundingClientRect().width + gap, 0);
+        if (setWidth < 1) {
+            return;
+        }
+        const sidesNeeded = Math.ceil(this.track.clientWidth / setWidth) + railBufferSets;
+        const cloneSet = () => this.originals.map(item => {
+            const clone = item.cloneNode(true);
+            clone.setAttribute("data-rail-clone", "");
+            clone.setAttribute("aria-hidden", "true");
+            clone.querySelectorAll("a, button").forEach(element => element.setAttribute("tabindex", "-1"));
+            return clone;
+        });
+        for (let copy = 0; copy < sidesNeeded; copy++) {
+            this.track.prepend(...cloneSet());
+            this.track.append(...cloneSet());
+        }
+        this.setWidth = setWidth;
+        this.homeLeft = setWidth * sidesNeeded;
+        this.track.scrollLeft = this.homeLeft;
+    }
+
+    gap() {
+        return parseFloat(getComputedStyle(this.track).columnGap) || 0;
+    }
+
+    step() {
+        return this.originals[0].getBoundingClientRect().width + this.gap();
     }
 
     pause() {
@@ -114,14 +166,33 @@ class UnaykaRail extends HTMLElement {
     }
 
     advance() {
-        const overflow = this.scrollWidth - this.clientWidth;
-        if (this.hovered || Date.now() < this.pausedUntil || overflow < 1 || !this.firstElementChild) {
+        if (this.hovered || Date.now() < this.pausedUntil || document.hidden) {
             return;
         }
-        const gap = parseFloat(getComputedStyle(this).columnGap) || 0;
-        const step = this.firstElementChild.getBoundingClientRect().width + gap;
-        const atEnd = this.scrollLeft >= overflow - 2;
-        this.scrollTo({ left: atEnd ? 0 : this.scrollLeft + step, behavior: "smooth" });
+        this.move(1, false);
+    }
+
+    move(direction, manual) {
+        if (manual) {
+            this.pause();
+        }
+        this.track.scrollBy({ left: direction * this.step(), behavior: "smooth" });
+    }
+
+    scheduleRecenter() {
+        clearTimeout(this.recenterTimer);
+        this.recenterTimer = setTimeout(() => this.recenter(), railSettleMs);
+    }
+
+    recenter() {
+        if (!this.setWidth || this.track.hasAttribute(draggingAttribute)) {
+            return;
+        }
+        const offset = this.track.scrollLeft - this.homeLeft;
+        const wrapped = ((offset % this.setWidth) + this.setWidth) % this.setWidth;
+        if (Math.abs(wrapped - offset) > 1) {
+            this.track.scrollLeft = this.homeLeft + wrapped;
+        }
     }
 
     beginDrag(event) {
@@ -130,7 +201,7 @@ class UnaykaRail extends HTMLElement {
             return;
         }
         const startX = event.clientX;
-        const startScroll = this.scrollLeft;
+        const startScroll = this.track.scrollLeft;
         let moved = false;
         const move = current => {
             const delta = current.clientX - startX;
@@ -138,61 +209,72 @@ class UnaykaRail extends HTMLElement {
                 return;
             }
             moved = true;
-            this.setAttribute(draggingAttribute, "");
-            this.scrollLeft = startScroll - delta;
+            this.track.setAttribute(draggingAttribute, "");
+            this.track.scrollLeft = startScroll - delta;
         };
         const finish = () => {
             window.removeEventListener("pointermove", move);
             window.removeEventListener("pointerup", finish);
-            this.removeAttribute(draggingAttribute);
+            this.track.removeAttribute(draggingAttribute);
             if (moved) {
-                suppressNextClick(this);
+                suppressNextClick(this.track);
             }
             this.pause();
+            this.scheduleRecenter();
         };
         window.addEventListener("pointermove", move);
         window.addEventListener("pointerup", finish);
     }
 }
 
-const fades = new Set();
+function crossfade(items, nextIndex) {
+    const current = items.find(item => item.hasAttribute(activeAttribute));
+    items.forEach(item => item.removeAttribute(previousAttribute));
+    current?.setAttribute(previousAttribute, "");
+    items.forEach((item, position) => item.toggleAttribute(activeAttribute, position === nextIndex));
+}
+
+const visibleFades = new Set();
 let fadeTimer;
+let lastFade;
 
-function advanceFades() {
-    fades.forEach(fade => fade.advance());
-}
-
-function startFadeTimer() {
-    if (!fadeTimer && fades.size > 0 && !reducedMotion.matches) {
-        fadeTimer = setInterval(advanceFades, fadeIntervalMs);
+function advanceNextVisibleFade() {
+    if (document.hidden || visibleFades.size === 0) {
+        return;
     }
+    const queue = [...visibleFades];
+    const next = queue[(queue.indexOf(lastFade) + 1) % queue.length];
+    lastFade = next;
+    next.advance();
 }
 
-function stopFadeTimerWhenIdle() {
-    if (fades.size === 0) {
-        clearInterval(fadeTimer);
-        fadeTimer = undefined;
+const fadeVisibility = new IntersectionObserver(entries => entries.forEach(entry => {
+    if (entry.isIntersecting) {
+        visibleFades.add(entry.target);
+    } else {
+        visibleFades.delete(entry.target);
     }
-}
+}));
 
 class UnaykaFade extends HTMLElement {
     connectedCallback() {
         this.images = [...this.querySelectorAll("[data-fade]")];
         this.index = 0;
-        if (this.images.length > 1) {
-            fades.add(this);
-            startFadeTimer();
+        if (this.images.length < 2 || reducedMotion.matches) {
+            return;
         }
+        fadeVisibility.observe(this);
+        fadeTimer ??= setInterval(advanceNextVisibleFade, fadeStepMs);
     }
 
     disconnectedCallback() {
-        fades.delete(this);
-        stopFadeTimerWhenIdle();
+        fadeVisibility.unobserve(this);
+        visibleFades.delete(this);
     }
 
     advance() {
         this.index = (this.index + 1) % this.images.length;
-        this.images.forEach((image, position) => image.toggleAttribute(activeAttribute, position === this.index));
+        crossfade(this.images, this.index);
     }
 }
 

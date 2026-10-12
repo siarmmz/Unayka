@@ -1,10 +1,10 @@
 <article class="@@container group flex h-full flex-col">
     <a href="@_url" class="block">
         <div class="relative aspect-[4/5] overflow-hidden rounded-2xl bg-surface-alt">
-            <unayka-fade class="block h-full w-full">
+            <unayka-fade class="isolate block h-full w-full">
                 @foreach (var image in _images)
                 {
-                    <img src="@image.Url" alt="@image.Alt" loading="lazy" draggable="false" data-fade data-active="@image.ActiveMarker" class="absolute inset-0 h-full w-full object-cover opacity-0 transition-opacity duration-1000 data-[active]:opacity-100"/>
+                    <img src="@image.Url" alt="@image.Alt" loading="lazy" draggable="false" data-fade data-active="@image.ActiveMarker" class="absolute inset-0 h-full w-full object-cover opacity-0 transition-opacity duration-1000 ease-in-out data-[previous]:opacity-100 data-[active]:z-10 data-[active]:opacity-100"/>
                 }
             </unayka-fade>
             <div class="absolute left-3 top-3 flex flex-wrap gap-1.5">

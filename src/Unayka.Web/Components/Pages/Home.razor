@@ -75,10 +75,10 @@
 </section>
 
 @code {
-    private const int RowItemCount = 4;
+    private const int RowItemCount = 8;
     private const string AboutPath = "/about";
     private const string ContactPath = "/contacto";
-    private const string SlideClass = "group absolute inset-0 isolate opacity-0 transition-opacity duration-1000 data-[active]:opacity-100 data-[active]:z-10";
+    private const string SlideClass = "group absolute inset-0 isolate opacity-0 transition-opacity duration-1000 ease-in-out data-[previous]:opacity-100 data-[active]:z-10 data-[active]:opacity-100";
 
     private sealed record Slide(string? ActiveMarker, string Eyebrow, string Title, string Text, string ActionLabel, string Url, string ImageUrl);
 
