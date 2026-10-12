@@ -65,7 +65,7 @@ public sealed class AdminServicesTests : IDisposable
     {
         var categoryId = await SeedCategoryAsync();
         var catalog = Catalog();
-        var form = new ProductForm { Name = "Café", Slug = "cafe", CategoryId = categoryId, Price = 125.5m, StockQuantity = 3 };
+        var form = new ProductForm { Name = "Café", Slug = "cafe", CategoryId = categoryId, Price = 125.5m };
 
         var created = await catalog.SaveProductAsync(1, form);
         var duplicate = await catalog.SaveProductAsync(1, new ProductForm { Name = "Outro", Slug = "cafe", CategoryId = categoryId, Price = 10m });
@@ -89,7 +89,7 @@ public sealed class AdminServicesTests : IDisposable
         var updated = await catalog.SaveProductAsync(1, form);
 
         Assert.True(updated.Succeeded);
-        Assert.Equal(1200, (await catalog.ListProductsAsync(null, 1)).Items.Single().PriceMinor);
+        Assert.Equal(1200, (await catalog.ListProductsAsync(ProductListView.All, null, 1)).Items.Single().PriceMinor);
     }
 
     [Fact]
@@ -153,7 +153,7 @@ public sealed class AdminServicesTests : IDisposable
 
     private AdminOrdersService Orders() => new(new TestContextFactory(_database), new AuditLog(_database.Context, _time), _time);
 
-    private AdminCatalogService Catalog() => new(new TestContextFactory(_database), new AuditLog(_database.Context, _time), _time);
+    private AdminCatalogService Catalog() => new(new TestContextFactory(_database), new AuditLog(_database.Context, _time), new InMemoryDigitalFileStore(), _time);
 
     private async Task<int> SeedCategoryAsync()
     {

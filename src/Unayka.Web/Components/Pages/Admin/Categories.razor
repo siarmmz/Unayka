@@ -1,18 +1,18 @@
 @page "/admin/categorias"
 @rendermode InteractiveServer
 @attribute [Authorize(Policy = UnaykaPolicies.Management)]
-@inject IAdminCatalog Catalog
+@inject IAdminTaxonomy Taxonomy
 
 <PageTitle>@Texts.PageTitle</PageTitle>
 
-<div class="mx-auto max-w-6xl space-y-8">
+<div class="mx-auto max-w-6xl space-y-6">
     <AdminPageHeader Title="@Texts.Title" Eyebrow="@Texts.Eyebrow" Subtitle="@Texts.Subtitle">
         <button type="button" class="btn-primary px-6 py-2" @onclick="StartNew">@Text(Texts.NewLabel)</button>
     </AdminPageHeader>
 
     @if (_form is not null)
     {
-        <form class="space-y-5 rounded-2xl border border-sand bg-white p-5 shadow-sm sm:p-8" @onsubmit="SaveAsync">
+        <form class="space-y-5 rounded-2xl border border-sand bg-paper p-5 shadow-sm sm:p-8" @onsubmit="SaveAsync">
             <h2 class="font-serif text-2xl">@Text(_formTitle)</h2>
             <ErrorList Messages="@_errors"/>
             <div class="grid gap-5 sm:grid-cols-2">
@@ -34,10 +34,19 @@
                     </select>
                 </div>
                 <div>
+                    <label for="category-status" class="field-label">@Text(Texts.StatusLabel)</label>
+                    <select id="category-status" class="field" @bind="_form.Status">
+                        @foreach (var option in AdminOptions.CatalogStatuses)
+                        {
+                            <option value="@option.Value">@Text(option.Label)</option>
+                        }
+                    </select>
+                </div>
+                <div>
                     <label for="category-order" class="field-label">@Text(Texts.OrderLabel)</label>
                     <input id="category-order" type="number" step="1" class="field" @bind="_form.SortOrder"/>
                 </div>
-                <div class="sm:col-span-2">
+                <div>
                     <label for="category-image" class="field-label">@Text(Texts.ImageLabel)</label>
                     <input id="category-image" type="url" class="field" @bind="_form.ImageUrl"/>
                 </div>
@@ -58,6 +67,8 @@
         <p class="rounded-xl bg-sage-soft px-4 py-3 text-sm text-espresso">@Text(_notice)</p>
     }
 
+    <ErrorList Messages="@_actionErrors"/>
+
     @if (_rows.Count == 0)
     {
         <EmptyState Title="@Texts.EmptyTitle" Message="@Texts.EmptyMessage"/>
@@ -65,23 +76,35 @@
 
     @if (_rows.Count > 0)
     {
-        <section class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            @foreach (var category in _rows)
-            {
-                <article class="overflow-hidden rounded-2xl border border-sand bg-white shadow-sm transition hover:shadow-md">
-                    <div class="h-36 bg-cream">
-                        <img src="@ToUrl(category.ImageUrl)" alt="" loading="lazy" class="h-full w-full object-cover"/>
-                    </div>
-                    <div class="space-y-3 p-5">
-                        <div class="flex items-start justify-between gap-3">
-                            <h2 class="font-serif text-2xl">@Text(category.Name)</h2>
-                            <span class="rounded-full bg-cream px-3 py-1 text-xs text-stone">@Text(category.SectionName)</span>
+        <section class="overflow-hidden rounded-2xl border border-sand bg-paper shadow-sm">
+            <div class="hidden grid-cols-12 gap-4 bg-cream px-4 py-3 text-xs uppercase tracking-widest text-stone md:grid">
+                <span class="col-span-3">@Text(Texts.NameLabel)</span>
+                <span class="col-span-2">@Text(Texts.SectionLabel)</span>
+                <span class="col-span-2">@Text(Texts.ProductsColumn)</span>
+                <span class="col-span-1">@Text(Texts.OrderLabel)</span>
+                <span class="col-span-1">@Text(Texts.StatusLabel)</span>
+                <span class="col-span-3">@Text(Texts.ActionsColumn)</span>
+            </div>
+            <div class="divide-y divide-sand">
+                @foreach (var category in _rows)
+                {
+                    <article class="grid gap-3 p-4 md:grid-cols-12 md:items-center md:gap-4">
+                        <div class="md:col-span-3">
+                            <p class="font-medium text-espresso">@Text(category.Name)</p>
+                            <p class="text-xs text-stone">@Text(category.Slug)</p>
                         </div>
-                        <p class="text-xs text-stone">@Text(CategoryDetail(category))</p>
-                        <button type="button" class="text-sm text-clay hover:text-espresso" @onclick="EditHandler(category.Id)">@Text(Texts.Edit)</button>
-                    </div>
-                </article>
-            }
+                        <p class="text-sm text-stone md:col-span-2">@Text(category.SectionName)</p>
+                        <p class="text-sm text-stone md:col-span-2">@Text(FormatNumber(category.ProductCount))</p>
+                        <p class="text-sm text-stone md:col-span-1">@Text(FormatNumber(category.SortOrder))</p>
+                        <div class="md:col-span-1"><CatalogStatusBadge Status="@category.Status"/></div>
+                        <div class="md:col-span-3">
+                            <StatusActions Status="@category.Status" CanDelete="@category.CanDelete" OnStatus="StatusHandler(category)" OnDelete="DeleteHandler(category)">
+                                <button type="button" class="text-clay hover:text-espresso" @onclick="EditHandler(category.Id)">@Text(Texts.Edit)</button>
+                            </StatusActions>
+                        </div>
+                    </article>
+                }
+            </div>
         </section>
     }
 </div>
@@ -92,30 +115,32 @@
         public const string PageTitle = "Categorias | Unayka";
         public const string Title = "Categorias";
         public const string Eyebrow = "Catálogo";
-        public const string Subtitle = "Como os produtos se organizam na loja.";
+        public const string Subtitle = "Como os produtos se organizam dentro de cada secção.";
         public const string NewLabel = "Nova categoria";
         public const string NewTitle = "Nova categoria";
         public const string EditTitle = "Editar categoria";
         public const string NameLabel = "Nome";
         public const string SlugLabel = "Endereço (slug)";
         public const string SectionLabel = "Secção";
+        public const string StatusLabel = "Estado";
         public const string OrderLabel = "Ordem";
         public const string ImageLabel = "Endereço da imagem";
         public const string DescriptionLabel = "Descrição";
+        public const string ProductsColumn = "Produtos";
+        public const string ActionsColumn = "Ações";
         public const string Save = "Guardar";
         public const string Cancel = "Cancelar";
         public const string Edit = "Editar";
         public const string Saved = "Categoria guardada.";
         public const string EmptyTitle = "Sem categorias";
         public const string EmptyMessage = "Crie a primeira categoria para organizar os produtos.";
-        public const string Products = "produtos";
-        public const string Order = "ordem";
     }
 
     private IReadOnlyList<CategoryRow> _rows = [];
     private IReadOnlyList<SectionOption> _sections = [];
     private CategoryForm? _form;
     private IReadOnlyList<string> _errors = [];
+    private IReadOnlyList<string> _actionErrors = [];
     private string _formTitle = Texts.NewTitle;
     private string? _notice;
     private bool _slugEdited;
@@ -126,15 +151,18 @@
         await ReloadAsync();
     }
 
-    private static string CategoryDetail(CategoryRow category) =>
-        $"{FormatNumber(category.ProductCount)} {Texts.Products} | {Texts.Order} {FormatNumber(category.SortOrder)} | {category.Slug}";
-
     private Func<Task> EditHandler(int id) => () => EditAsync(id);
+
+    private EventCallback<CatalogStatus> StatusHandler(CategoryRow category) =>
+        EventCallback.Factory.Create<CatalogStatus>(this, status => ChangeStatusAsync(category, status));
+
+    private EventCallback DeleteHandler(CategoryRow category) =>
+        EventCallback.Factory.Create(this, () => DeleteAsync(category));
 
     private async Task ReloadAsync()
     {
-        _rows = await Catalog.ListCategoriesAsync();
-        _sections = await Catalog.ListSectionOptionsAsync();
+        _rows = await Taxonomy.ListCategoriesAsync();
+        _sections = await Taxonomy.ListSectionOptionsAsync();
     }
 
     private void StartNew()
@@ -148,7 +176,7 @@
 
     private async Task EditAsync(int id)
     {
-        _form = await Catalog.GetCategoryAsync(id);
+        _form = await Taxonomy.GetCategoryAsync(id);
         _formTitle = Texts.EditTitle;
         _slugEdited = true;
         _errors = [];
@@ -174,6 +202,20 @@
         _slugEdited = true;
     }
 
+    private async Task ChangeStatusAsync(CategoryRow category, CatalogStatus status)
+    {
+        var result = await Taxonomy.SetCategoryStatusAsync(ActorUserId, category.Id, status);
+        _actionErrors = result.Errors;
+        await ReloadAsync();
+    }
+
+    private async Task DeleteAsync(CategoryRow category)
+    {
+        var result = await Taxonomy.DeleteCategoryAsync(ActorUserId, category.Id);
+        _actionErrors = result.Errors;
+        await ReloadAsync();
+    }
+
     private async Task SaveAsync()
     {
         if (_form is null)
@@ -181,7 +223,7 @@
             return;
         }
 
-        var result = await Catalog.SaveCategoryAsync(ActorUserId, _form);
+        var result = await Taxonomy.SaveCategoryAsync(ActorUserId, _form);
         _errors = result.Errors;
         if (!result.Succeeded)
         {

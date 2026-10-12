@@ -1,5 +1,6 @@
 using Unayka.Core.Catalog;
 using Unayka.Core.Coupons;
+using Unayka.Core.Locations;
 using Unayka.Core.Orders;
 using Unayka.Core.Payments;
 using Unayka.Core.Presentation;
@@ -28,6 +29,20 @@ public static class AdminOptions
 
     public static readonly IReadOnlyList<SelectOption> ProductKinds =
         [new(nameof(ProductKind.Physical), "Físico"), new(nameof(ProductKind.Digital), "Digital")];
+
+    public static readonly IReadOnlyList<SelectOption> CatalogStatuses =
+    [
+        new(nameof(CatalogStatus.Active), "Ativo"),
+        new(nameof(CatalogStatus.Inactive), "Inativo"),
+        new(nameof(CatalogStatus.Archived), "Arquivado"),
+    ];
+
+    public static readonly IReadOnlyList<SelectOption> ContactKinds =
+    [
+        new(nameof(ContactKind.Phone), "Telefone"),
+        new(nameof(ContactKind.WhatsApp), "WhatsApp"),
+        new(nameof(ContactKind.Email), "Email"),
+    ];
 
     public static readonly IReadOnlyList<SelectOption> MediaKinds =
     [

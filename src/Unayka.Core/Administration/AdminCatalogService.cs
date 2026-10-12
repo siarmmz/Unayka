@@ -8,40 +8,45 @@ namespace Unayka.Core.Administration;
 
 public interface IAdminCatalog
 {
-    /// <summary>Lists products with an optional text search.</summary>
-    Task<PagedResult<ProductRow>> ListProductsAsync(string? search, int page, CancellationToken cancellationToken = default);
+    /// <summary>Lists the products of one subpage with an optional text search.</summary>
+    Task<PagedResult<ProductRow>> ListProductsAsync(ProductListView view, string? search, int page, CancellationToken cancellationToken = default);
 
     /// <summary>Loads a product for editing, or null when it does not exist.</summary>
     Task<ProductForm?> GetProductAsync(int id, CancellationToken cancellationToken = default);
 
+    /// <summary>Builds an empty product with one stock line per active location.</summary>
+    Task<ProductForm> NewProductAsync(CancellationToken cancellationToken = default);
+
     /// <summary>Creates or updates a product after validation and audits the change.</summary>
     Task<AdminResult> SaveProductAsync(int? actorUserId, ProductForm form, CancellationToken cancellationToken = default);
 
-    /// <summary>Shows or hides a product in the shop and audits the change.</summary>
-    Task<AdminResult> SetProductActiveAsync(int? actorUserId, int id, bool isActive, CancellationToken cancellationToken = default);
+    /// <summary>Changes the status of a product (active, inactive or archived) and audits the change.</summary>
+    Task<AdminResult> SetProductStatusAsync(int? actorUserId, int id, CatalogStatus status, CancellationToken cancellationToken = default);
 
-    /// <summary>Lists every category with its product count.</summary>
-    Task<IReadOnlyList<CategoryRow>> ListCategoriesAsync(CancellationToken cancellationToken = default);
+    /// <summary>Deletes a product that no order references, or fails telling it can only be archived.</summary>
+    Task<AdminResult> DeleteProductAsync(int? actorUserId, int id, CancellationToken cancellationToken = default);
 
-    /// <summary>Lists sections for selects.</summary>
-    Task<IReadOnlyList<SectionOption>> ListSectionOptionsAsync(CancellationToken cancellationToken = default);
+    /// <summary>Stores the downloadable file of a digital product in private storage and audits the change.</summary>
+    Task<AdminResult> SetDigitalFileAsync(int? actorUserId, int productId, DigitalFileUpload upload, CancellationToken cancellationToken = default);
 
-    /// <summary>Lists categories for selects.</summary>
-    Task<IReadOnlyList<CategoryOption>> ListCategoryOptionsAsync(CancellationToken cancellationToken = default);
-
-    /// <summary>Loads a category for editing, or null when it does not exist.</summary>
-    Task<CategoryForm?> GetCategoryAsync(int id, CancellationToken cancellationToken = default);
-
-    /// <summary>Creates or updates a category after validation and audits the change.</summary>
-    Task<AdminResult> SaveCategoryAsync(int? actorUserId, CategoryForm form, CancellationToken cancellationToken = default);
+    /// <summary>Removes the downloadable file of a digital product and audits the change.</summary>
+    Task<AdminResult> RemoveDigitalFileAsync(int? actorUserId, int productId, CancellationToken cancellationToken = default);
 }
 
-public sealed class AdminCatalogService(IDbContextFactory<UnaykaDbContext> factory, IAuditLog audit, TimeProvider time) : IAdminCatalog
+/// <summary>File chosen for a digital product.</summary>
+public sealed record DigitalFileUpload(string FileName, string ContentType, long SizeBytes, Stream Content);
+
+public sealed class AdminCatalogService(IDbContextFactory<UnaykaDbContext> factory, IAuditLog audit, IDigitalFileStore files, TimeProvider time) : IAdminCatalog
 {
-    public async Task<PagedResult<ProductRow>> ListProductsAsync(string? search, int page, CancellationToken cancellationToken = default)
+    public const long MaxDigitalFileBytes = 100L * 1024 * 1024;
+
+    private const string DefaultContentType = "application/octet-stream";
+    private const string ProductNotFound = "Produto não encontrado.";
+
+    public async Task<PagedResult<ProductRow>> ListProductsAsync(ProductListView view, string? search, int page, CancellationToken cancellationToken = default)
     {
         await using var db = await factory.CreateDbContextAsync(cancellationToken);
-        var query = db.Products.AsNoTracking().AsQueryable();
+        var query = ApplyView(db.Products.AsNoTracking(), view);
         if (SearchPattern.Contains(search) is { } pattern)
         {
             query = query.Where(product => EF.Functions.Like(product.Name, pattern) || EF.Functions.Like(product.Slug, pattern));
@@ -61,9 +66,12 @@ public sealed class AdminCatalogService(IDbContextFactory<UnaykaDbContext> facto
                 product.PriceMinor,
                 product.CompareAtPriceMinor,
                 product.Stocks.Sum(stock => stock.Quantity),
-                product.Status == CatalogStatus.Active,
+                product.Status,
                 product.IsFeatured,
-                product.Media.OrderBy(media => media.SortOrder).Select(media => media.Url).FirstOrDefault()))
+                product.IsNew,
+                product.Kind,
+                product.Media.OrderBy(media => media.SortOrder).Select(media => media.Url).FirstOrDefault(),
+                !db.OrderItems.Any(item => item.ProductId == product.Id)))
             .ToListAsync(cancellationToken);
         return new PagedResult<ProductRow>(items, pageNumber, AdminPaging.DefaultPageSize, total);
     }
@@ -72,12 +80,22 @@ public sealed class AdminCatalogService(IDbContextFactory<UnaykaDbContext> facto
     {
         await using var db = await factory.CreateDbContextAsync(cancellationToken);
         var product = await db.Products.AsNoTracking()
+            .Include(candidate => candidate.Category)
             .Include(candidate => candidate.Media)
             .Include(candidate => candidate.Facts)
+            .Include(candidate => candidate.Tags)
             .Include(candidate => candidate.Stocks)
+            .Include(candidate => candidate.DigitalAssets)
             .AsSplitQuery()
             .FirstOrDefaultAsync(candidate => candidate.Id == id, cancellationToken);
-        return product is null ? null : ToForm(product, await FirstLocationIdAsync(db, cancellationToken));
+        return product is null ? null : ToForm(product, await ActiveLocationsAsync(db, cancellationToken));
+    }
+
+    public async Task<ProductForm> NewProductAsync(CancellationToken cancellationToken = default)
+    {
+        await using var db = await factory.CreateDbContextAsync(cancellationToken);
+        var locations = await ActiveLocationsAsync(db, cancellationToken);
+        return new ProductForm { Stocks = locations.Select(location => new LocationStockForm { LocationId = location.Id, LocationName = location.Name }).ToList() };
     }
 
     public async Task<AdminResult> SaveProductAsync(int? actorUserId, ProductForm form, CancellationToken cancellationToken = default)
@@ -85,7 +103,8 @@ public sealed class AdminCatalogService(IDbContextFactory<UnaykaDbContext> facto
         form.Slug = form.Slug.Trim().ToLowerInvariant();
         var errors = CatalogValidator.ValidateProduct(form);
         await using var db = await factory.CreateDbContextAsync(cancellationToken);
-        if (form.CategoryId > 0 && !await db.Categories.AnyAsync(category => category.Id == form.CategoryId, cancellationToken))
+        var category = form.CategoryId > 0 ? await db.Categories.AsNoTracking().FirstOrDefaultAsync(candidate => candidate.Id == form.CategoryId, cancellationToken) : null;
+        if (form.CategoryId > 0 && category is null)
         {
             errors.Add("A categoria escolhida não existe.");
         }
@@ -95,17 +114,29 @@ public sealed class AdminCatalogService(IDbContextFactory<UnaykaDbContext> facto
             errors.Add("Já existe um produto com este endereço (slug).");
         }
 
+        var locationIds = form.Stocks.Select(stock => stock.LocationId).Distinct().ToList();
+        if (await db.Locations.CountAsync(location => locationIds.Contains(location.Id), cancellationToken) != locationIds.Count)
+        {
+            errors.Add("Uma das lojas indicadas no stock não existe.");
+        }
+
         if (errors.Count > 0)
         {
             return AdminResult.Fail(errors);
         }
 
         var product = form.Id is { } id
-            ? await db.Products.Include(candidate => candidate.Media).Include(candidate => candidate.Facts).Include(candidate => candidate.Stocks).FirstOrDefaultAsync(candidate => candidate.Id == id, cancellationToken)
+            ? await db.Products
+                .Include(candidate => candidate.Media)
+                .Include(candidate => candidate.Facts)
+                .Include(candidate => candidate.Stocks)
+                .Include(candidate => candidate.Tags)
+                .AsSplitQuery()
+                .FirstOrDefaultAsync(candidate => candidate.Id == id, cancellationToken)
             : null;
         if (form.Id is not null && product is null)
         {
-            return AdminResult.Fail("Produto não encontrado.");
+            return AdminResult.Fail(ProductNotFound);
         }
 
         var isNew = product is null;
@@ -115,98 +146,91 @@ public sealed class AdminCatalogService(IDbContextFactory<UnaykaDbContext> facto
             db.Products.Add(product);
         }
 
-        Apply(form, product, await FirstLocationIdAsync(db, cancellationToken));
+        var tags = await db.Tags.Where(tag => form.TagIds.Contains(tag.Id) && tag.SectionId == category!.SectionId).ToListAsync(cancellationToken);
+        Apply(form, product, tags);
         await db.SaveChangesAsync(cancellationToken);
-        await audit.WriteAsync(
+        await audit.WriteEntityAsync(
             actorUserId,
             isNew ? AdminAuditActions.ProductCreated : AdminAuditActions.ProductUpdated,
             AdminEntityTypes.Product,
-            product.Id.ToString(System.Globalization.CultureInfo.InvariantCulture),
+            product.Id,
             isNew ? $"Produto {product.Name} criado." : $"Produto {product.Name} atualizado.",
             cancellationToken);
         return AdminResult.Ok(product.Id);
     }
 
-    public async Task<AdminResult> SetProductActiveAsync(int? actorUserId, int id, bool isActive, CancellationToken cancellationToken = default)
+    public async Task<AdminResult> SetProductStatusAsync(int? actorUserId, int id, CatalogStatus status, CancellationToken cancellationToken = default)
     {
         await using var db = await factory.CreateDbContextAsync(cancellationToken);
         var product = await db.Products.FirstOrDefaultAsync(candidate => candidate.Id == id, cancellationToken);
         if (product is null)
         {
-            return AdminResult.Fail("Produto não encontrado.");
+            return AdminResult.Fail(ProductNotFound);
         }
 
-        product.Status = isActive ? CatalogStatus.Active : CatalogStatus.Inactive;
+        product.Status = status;
         await db.SaveChangesAsync(cancellationToken);
-        await audit.WriteAsync(
+        await audit.WriteEntityAsync(
             actorUserId,
-            AdminAuditActions.ProductToggled,
+            AdminAuditActions.ProductStatusChanged,
             AdminEntityTypes.Product,
-            product.Id.ToString(System.Globalization.CultureInfo.InvariantCulture),
-            isActive ? $"Produto {product.Name} ativado." : $"Produto {product.Name} desativado.",
+            product.Id,
+            $"Produto {product.Name}: {StatusNames.For(status)}.",
             cancellationToken);
         return AdminResult.Ok(product.Id);
     }
 
-    public async Task<IReadOnlyList<CategoryRow>> ListCategoriesAsync(CancellationToken cancellationToken = default)
+    public async Task<AdminResult> DeleteProductAsync(int? actorUserId, int id, CancellationToken cancellationToken = default)
     {
         await using var db = await factory.CreateDbContextAsync(cancellationToken);
-        return await db.Categories.AsNoTracking()
-            .OrderBy(category => category.SortOrder)
-            .ThenBy(category => category.Name)
-            .Select(category => new CategoryRow(category.Id, category.Name, category.Slug, category.Section!.Name, category.Products.Count, category.SortOrder, category.ImageUrl))
-            .ToListAsync(cancellationToken);
-    }
-
-    public async Task<IReadOnlyList<SectionOption>> ListSectionOptionsAsync(CancellationToken cancellationToken = default)
-    {
-        await using var db = await factory.CreateDbContextAsync(cancellationToken);
-        return await db.Sections.AsNoTracking()
-            .OrderBy(section => section.SortOrder)
-            .Select(section => new SectionOption(section.Id, section.Name))
-            .ToListAsync(cancellationToken);
-    }
-
-    public async Task<IReadOnlyList<CategoryOption>> ListCategoryOptionsAsync(CancellationToken cancellationToken = default)
-    {
-        await using var db = await factory.CreateDbContextAsync(cancellationToken);
-        return await db.Categories.AsNoTracking()
-            .OrderBy(category => category.SortOrder)
-            .Select(category => new CategoryOption(category.Id, category.Name))
-            .ToListAsync(cancellationToken);
-    }
-
-    public async Task<CategoryForm?> GetCategoryAsync(int id, CancellationToken cancellationToken = default)
-    {
-        await using var db = await factory.CreateDbContextAsync(cancellationToken);
-        return await db.Categories.AsNoTracking()
-            .Where(category => category.Id == id)
-            .Select(category => new CategoryForm
-            {
-                Id = category.Id,
-                Name = category.Name,
-                Slug = category.Slug,
-                SectionId = category.SectionId,
-                Description = category.Description,
-                ImageUrl = category.ImageUrl,
-                SortOrder = category.SortOrder,
-            })
-            .FirstOrDefaultAsync(cancellationToken);
-    }
-
-    public async Task<AdminResult> SaveCategoryAsync(int? actorUserId, CategoryForm form, CancellationToken cancellationToken = default)
-    {
-        form.Slug = form.Slug.Trim().ToLowerInvariant();
-        var errors = CatalogValidator.ValidateCategory(form);
-        await using var db = await factory.CreateDbContextAsync(cancellationToken);
-        if (form.SectionId > 0 && !await db.Sections.AnyAsync(section => section.Id == form.SectionId, cancellationToken))
+        var product = await db.Products.Include(candidate => candidate.DigitalAssets).FirstOrDefaultAsync(candidate => candidate.Id == id, cancellationToken);
+        if (product is null)
         {
-            errors.Add("A secção escolhida não existe.");
+            return AdminResult.Fail(ProductNotFound);
         }
 
-        if (await db.Categories.AnyAsync(category => category.Slug == form.Slug && category.Id != (form.Id ?? 0), cancellationToken))
+        if (await db.OrderItems.AnyAsync(item => item.ProductId == id, cancellationToken))
         {
-            errors.Add("Já existe uma categoria com este endereço (slug).");
+            return AdminResult.Fail("Este produto tem encomendas e só pode ser arquivado.");
+        }
+
+        var storageKeys = product.DigitalAssets.Select(asset => asset.StorageKey).ToList();
+        await db.CartItems.Where(item => item.ProductId == id).ExecuteDeleteAsync(cancellationToken);
+        db.Products.Remove(product);
+        await db.SaveChangesAsync(cancellationToken);
+        foreach (var storageKey in storageKeys)
+        {
+            await files.DeleteAsync(storageKey, cancellationToken);
+        }
+
+        await audit.WriteEntityAsync(actorUserId, AdminAuditActions.ProductDeleted, AdminEntityTypes.Product, id, $"Produto {product.Name} eliminado.", cancellationToken);
+        return AdminResult.Ok(id);
+    }
+
+    public async Task<AdminResult> SetDigitalFileAsync(int? actorUserId, int productId, DigitalFileUpload upload, CancellationToken cancellationToken = default)
+    {
+        var fileName = Path.GetFileName(upload.FileName.Trim());
+        var errors = new List<string>();
+        if (fileName.Length == 0)
+        {
+            errors.Add("Escolha um ficheiro.");
+        }
+
+        if (upload.SizeBytes <= 0 || upload.SizeBytes > MaxDigitalFileBytes)
+        {
+            errors.Add("O ficheiro deve ter entre 1 byte e 100 MB.");
+        }
+
+        await using var db = await factory.CreateDbContextAsync(cancellationToken);
+        var product = await db.Products.Include(candidate => candidate.DigitalAssets).FirstOrDefaultAsync(candidate => candidate.Id == productId, cancellationToken);
+        if (product is null)
+        {
+            return AdminResult.Fail(ProductNotFound);
+        }
+
+        if (product.Kind != ProductKind.Digital)
+        {
+            errors.Add("Só os produtos digitais têm ficheiro para descarregar.");
         }
 
         if (errors.Count > 0)
@@ -214,37 +238,58 @@ public sealed class AdminCatalogService(IDbContextFactory<UnaykaDbContext> facto
             return AdminResult.Fail(errors);
         }
 
-        var category = form.Id is { } id ? await db.Categories.FirstOrDefaultAsync(candidate => candidate.Id == id, cancellationToken) : null;
-        if (form.Id is not null && category is null)
+        var storageKey = $"{Guid.NewGuid():N}{Path.GetExtension(fileName)}";
+        await files.SaveAsync(storageKey, upload.Content, cancellationToken);
+        var replacedKeys = product.DigitalAssets.Select(asset => asset.StorageKey).ToList();
+        db.DigitalAssets.RemoveRange(product.DigitalAssets);
+        product.DigitalAssets.Add(new DigitalAsset
         {
-            return AdminResult.Fail("Categoria não encontrada.");
-        }
-
-        var isNew = category is null;
-        if (category is null)
-        {
-            category = new Category();
-            db.Categories.Add(category);
-        }
-
-        category.Name = form.Name.Trim();
-        category.Slug = form.Slug;
-        category.SectionId = form.SectionId;
-        category.Description = form.Description.Trim();
-        category.ImageUrl = form.ImageUrl.Trim();
-        category.SortOrder = form.SortOrder;
+            StorageKey = storageKey,
+            FileName = fileName,
+            ContentType = string.IsNullOrWhiteSpace(upload.ContentType) ? DefaultContentType : upload.ContentType,
+            SizeBytes = upload.SizeBytes,
+        });
         await db.SaveChangesAsync(cancellationToken);
-        await audit.WriteAsync(
-            actorUserId,
-            isNew ? AdminAuditActions.CategoryCreated : AdminAuditActions.CategoryUpdated,
-            AdminEntityTypes.Category,
-            category.Id.ToString(System.Globalization.CultureInfo.InvariantCulture),
-            isNew ? $"Categoria {category.Name} criada." : $"Categoria {category.Name} atualizada.",
-            cancellationToken);
-        return AdminResult.Ok(category.Id);
+        foreach (var replacedKey in replacedKeys)
+        {
+            await files.DeleteAsync(replacedKey, cancellationToken);
+        }
+
+        await audit.WriteEntityAsync(actorUserId, AdminAuditActions.ProductFileChanged, AdminEntityTypes.Product, product.Id, $"Ficheiro de {product.Name} atualizado.", cancellationToken);
+        return AdminResult.Ok(product.Id);
     }
 
-    private static void Apply(ProductForm form, Product product, int? stockLocationId)
+    public async Task<AdminResult> RemoveDigitalFileAsync(int? actorUserId, int productId, CancellationToken cancellationToken = default)
+    {
+        await using var db = await factory.CreateDbContextAsync(cancellationToken);
+        var product = await db.Products.Include(candidate => candidate.DigitalAssets).FirstOrDefaultAsync(candidate => candidate.Id == productId, cancellationToken);
+        if (product is null)
+        {
+            return AdminResult.Fail(ProductNotFound);
+        }
+
+        var storageKeys = product.DigitalAssets.Select(asset => asset.StorageKey).ToList();
+        db.DigitalAssets.RemoveRange(product.DigitalAssets);
+        await db.SaveChangesAsync(cancellationToken);
+        foreach (var storageKey in storageKeys)
+        {
+            await files.DeleteAsync(storageKey, cancellationToken);
+        }
+
+        await audit.WriteEntityAsync(actorUserId, AdminAuditActions.ProductFileChanged, AdminEntityTypes.Product, product.Id, $"Ficheiro de {product.Name} removido.", cancellationToken);
+        return AdminResult.Ok(product.Id);
+    }
+
+    private static IQueryable<Product> ApplyView(IQueryable<Product> products, ProductListView view) => view switch
+    {
+        ProductListView.New => products.Where(product => product.IsNew && product.Status != CatalogStatus.Archived),
+        ProductListView.Featured => products.Where(product => product.IsFeatured && product.Status != CatalogStatus.Archived),
+        ProductListView.Inactive => products.Where(product => product.Status == CatalogStatus.Inactive),
+        ProductListView.Archived => products.Where(product => product.Status == CatalogStatus.Archived),
+        _ => products.Where(product => product.Status != CatalogStatus.Archived),
+    };
+
+    private static void Apply(ProductForm form, Product product, List<Tag> tags)
     {
         product.Name = form.Name.Trim();
         product.Slug = form.Slug;
@@ -257,8 +302,10 @@ public sealed class AdminCatalogService(IDbContextFactory<UnaykaDbContext> facto
         product.IsFeatured = form.IsFeatured;
         product.IsNew = form.IsNew;
         product.Kind = form.Kind;
-        product.Status = form.IsActive ? CatalogStatus.Active : CatalogStatus.Inactive;
-        ApplyStock(product, stockLocationId, form.StockQuantity);
+        product.Status = form.Status;
+        product.Tags.Clear();
+        product.Tags.AddRange(tags);
+        ApplyStocks(product, form);
 
         product.Media.Clear();
         product.Media.AddRange(form.Media.Select(media => new ProductMedia
@@ -274,49 +321,64 @@ public sealed class AdminCatalogService(IDbContextFactory<UnaykaDbContext> facto
             .Select(fact => new ProductFact { Group = fact.Group.Trim(), Label = fact.Label.Trim(), Value = fact.Value.Trim(), SortOrder = fact.SortOrder }));
     }
 
-    private static void ApplyStock(Product product, int? locationId, int quantity)
+    private static void ApplyStocks(Product product, ProductForm form)
     {
-        if (locationId is not { } id || product.Kind == ProductKind.Digital)
+        if (product.Kind == ProductKind.Digital)
         {
             return;
         }
 
-        var stock = product.Stocks.FirstOrDefault(candidate => candidate.LocationId == id);
-        if (stock is null)
+        foreach (var line in form.Stocks)
         {
-            product.Stocks.Add(new LocationStock { LocationId = id, Quantity = quantity });
-            return;
-        }
+            var stock = product.Stocks.FirstOrDefault(candidate => candidate.LocationId == line.LocationId);
+            if (stock is null)
+            {
+                product.Stocks.Add(new LocationStock { LocationId = line.LocationId, Quantity = line.Quantity });
+                continue;
+            }
 
-        stock.Quantity = quantity;
+            stock.Quantity = line.Quantity;
+        }
     }
 
-    private static async Task<int?> FirstLocationIdAsync(UnaykaDbContext db, CancellationToken cancellationToken) =>
+    private static async Task<List<Location>> ActiveLocationsAsync(UnaykaDbContext db, CancellationToken cancellationToken) =>
         await db.Locations.AsNoTracking()
             .Where(location => location.Status == CatalogStatus.Active)
             .OrderBy(location => location.SortOrder)
-            .Select(location => (int?)location.Id)
-            .FirstOrDefaultAsync(cancellationToken);
+            .ToListAsync(cancellationToken);
 
-    private static ProductForm ToForm(Product product, int? stockLocationId) => new()
+    private static ProductForm ToForm(Product product, List<Location> activeLocations)
     {
-        Id = product.Id,
-        Name = product.Name,
-        Slug = product.Slug,
-        CategoryId = product.CategoryId,
-        ShortDescription = product.ShortDescription,
-        Description = product.Description,
-        Price = MoneyInput.ToAmount(product.PriceMinor),
-        CompareAtPrice = product.CompareAtPriceMinor is { } compare ? MoneyInput.ToAmount(compare) : null,
-        Badge = product.Badge,
-        Kind = product.Kind,
-        IsFeatured = product.IsFeatured,
-        IsNew = product.IsNew,
-        IsActive = product.Status == CatalogStatus.Active,
-        StockQuantity = product.Stocks.FirstOrDefault(stock => stock.LocationId == stockLocationId)?.Quantity ?? 0,
-        Media = product.Media.OrderBy(media => media.SortOrder)
-            .Select(media => new ProductMediaForm { Kind = media.Kind, Url = media.Url, Alt = media.Alt, SortOrder = media.SortOrder }).ToList(),
-        Facts = product.Facts.OrderBy(fact => fact.SortOrder)
-            .Select(fact => new ProductFactForm { Group = fact.Group, Label = fact.Label, Value = fact.Value, SortOrder = fact.SortOrder }).ToList(),
-    };
+        var asset = product.DigitalAssets.FirstOrDefault();
+        return new ProductForm
+        {
+            Id = product.Id,
+            Name = product.Name,
+            Slug = product.Slug,
+            SectionId = product.Category!.SectionId,
+            CategoryId = product.CategoryId,
+            ShortDescription = product.ShortDescription,
+            Description = product.Description,
+            Price = MoneyInput.ToAmount(product.PriceMinor),
+            CompareAtPrice = product.CompareAtPriceMinor is { } compare ? MoneyInput.ToAmount(compare) : null,
+            Badge = product.Badge,
+            Kind = product.Kind,
+            IsFeatured = product.IsFeatured,
+            IsNew = product.IsNew,
+            Status = product.Status,
+            TagIds = product.Tags.Select(tag => tag.Id).ToList(),
+            Stocks = activeLocations.Select(location => new LocationStockForm
+            {
+                LocationId = location.Id,
+                LocationName = location.Name,
+                Quantity = product.Stocks.FirstOrDefault(stock => stock.LocationId == location.Id)?.Quantity ?? 0,
+            }).ToList(),
+            DigitalFileName = asset?.FileName,
+            DigitalFileSizeBytes = asset?.SizeBytes,
+            Media = product.Media.OrderBy(media => media.SortOrder)
+                .Select(media => new ProductMediaForm { Kind = media.Kind, Url = media.Url, Alt = media.Alt, SortOrder = media.SortOrder }).ToList(),
+            Facts = product.Facts.OrderBy(fact => fact.SortOrder)
+                .Select(fact => new ProductFactForm { Group = fact.Group, Label = fact.Label, Value = fact.Value, SortOrder = fact.SortOrder }).ToList(),
+        };
+    }
 }

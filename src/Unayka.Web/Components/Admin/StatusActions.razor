@@ -1,0 +1,96 @@
+<div class="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
+    @ChildContent
+    @if (_confirming)
+    {
+        <span class="text-stone">@Text(ConfirmQuestion)</span>
+        <button type="button" class="text-clay hover:text-espresso" @onclick="ConfirmDelete">@Text(ConfirmLabel)</button>
+        <button type="button" class="text-stone hover:text-espresso" @onclick="CancelDelete">@Text(CancelLabel)</button>
+    }
+    @if (!_confirming)
+    {
+        @foreach (var action in _actions)
+        {
+            <button type="button" class="text-clay hover:text-espresso" @onclick="action.Handler">@Text(action.Label)</button>
+        }
+    }
+</div>
+
+@code {
+    private const string ActivateLabel = "Ativar";
+    private const string DeactivateLabel = "Desativar";
+    private const string RestoreLabel = "Restaurar";
+    private const string ArchiveLabel = "Arquivar";
+    private const string DeleteLabel = "Eliminar";
+    private const string ConfirmQuestion = "Eliminar de vez?";
+    private const string ConfirmLabel = "Confirmar";
+    private const string CancelLabel = "Cancelar";
+
+    [Parameter, EditorRequired]
+    public CatalogStatus Status { get; set; }
+
+    [Parameter, EditorRequired]
+    public bool CanDelete { get; set; }
+
+    [Parameter, EditorRequired]
+    public EventCallback<CatalogStatus> OnStatus { get; set; }
+
+    [Parameter, EditorRequired]
+    public EventCallback OnDelete { get; set; }
+
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    private bool _confirming;
+    private List<(string Label, Func<Task> Handler)> _actions = [];
+
+    protected override void OnParametersSet()
+    {
+        _actions = BuildActions();
+    }
+
+    private List<(string Label, Func<Task> Handler)> BuildActions()
+    {
+        var actions = new List<(string Label, Func<Task> Handler)>();
+        switch (Status)
+        {
+            case CatalogStatus.Active:
+                actions.Add((DeactivateLabel, () => OnStatus.InvokeAsync(CatalogStatus.Inactive)));
+                break;
+            case CatalogStatus.Inactive:
+                actions.Add((ActivateLabel, () => OnStatus.InvokeAsync(CatalogStatus.Active)));
+                break;
+            default:
+                actions.Add((RestoreLabel, () => OnStatus.InvokeAsync(CatalogStatus.Inactive)));
+                break;
+        }
+
+        if (CanDelete)
+        {
+            actions.Add((DeleteLabel, StartDelete));
+        }
+
+        if (!CanDelete && Status != CatalogStatus.Archived)
+        {
+            actions.Add((ArchiveLabel, () => OnStatus.InvokeAsync(CatalogStatus.Archived)));
+        }
+
+        return actions;
+    }
+
+    private Task StartDelete()
+    {
+        _confirming = true;
+        return Task.CompletedTask;
+    }
+
+    private void CancelDelete()
+    {
+        _confirming = false;
+    }
+
+    private async Task ConfirmDelete()
+    {
+        _confirming = false;
+        await OnDelete.InvokeAsync();
+    }
+}

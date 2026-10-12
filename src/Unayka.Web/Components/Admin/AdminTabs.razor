@@ -1,0 +1,20 @@
+<nav class="flex gap-2 overflow-x-auto">
+    @foreach (var tab in Tabs)
+    {
+        <a href="@ToUrl(tab.Url)" class="@TabClass(tab.Url)">@Text(tab.Label)</a>
+    }
+</nav>
+
+@code {
+    private const string BaseClass = "whitespace-nowrap rounded-full border px-4 py-2 text-sm transition ";
+    private const string ActiveClass = BaseClass + "border-espresso bg-espresso text-paper";
+    private const string IdleClass = BaseClass + "border-sand bg-paper text-stone hover:border-clay hover:text-espresso";
+
+    [Parameter, EditorRequired]
+    public IReadOnlyList<(string Label, string Url)> Tabs { get; set; } = [];
+
+    [Parameter, EditorRequired]
+    public string ActiveUrl { get; set; } = string.Empty;
+
+    private string TabClass(string url) => url == ActiveUrl ? ActiveClass : IdleClass;
+}

@@ -2,7 +2,7 @@
 @rendermode InteractiveServer
 @attribute [Authorize(Policy = UnaykaPolicies.Management)]
 @inject IAdminCoupons CouponService
-@inject IAdminCatalog Catalog
+@inject IAdminTaxonomy Taxonomy
 
 <PageTitle>@Texts.PageTitle</PageTitle>
 
@@ -185,7 +185,7 @@
     protected override async Task OnInitializedAsync()
     {
         await base.OnInitializedAsync();
-        _categories = await Catalog.ListCategoryOptionsAsync();
+        _categories = await Taxonomy.ListCategoryOptionsAsync();
         await ReloadAsync();
     }
 
