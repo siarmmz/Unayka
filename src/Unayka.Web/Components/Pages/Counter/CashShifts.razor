@@ -1,0 +1,297 @@
+@page "/balcao/caixa"
+@layout AdminLayout
+@rendermode InteractiveServer
+@attribute [Authorize(Policy = UnaykaPolicies.Staff)]
+@using Unayka.Core.Counter
+@using Unayka.Web.Components.Counter
+@inherits CounterPageBase
+@inject ICounterShifts Shifts
+
+<PageTitle>@Texts.PageTitle</PageTitle>
+
+<div class="mx-auto max-w-5xl">
+    <header class="mb-6">
+        <p class="font-script text-3xl text-clay">@Text(Texts.Eyebrow)</p>
+        <h1 class="font-serif text-4xl text-espresso">@Text(Texts.Title)</h1>
+    </header>
+
+    <CounterNav/>
+
+    @if (_loaded)
+    {
+        @if (_error is not null)
+        {
+            <p role="alert" class="mb-4 rounded-xl bg-rose-soft px-4 py-3 text-sm text-red-700">@Text(_error)</p>
+        }
+
+        @if (_summary is null)
+        {
+            <section class="rounded-3xl bg-paper p-8 shadow-sm">
+                <h2 class="font-serif text-2xl text-espresso">@Text(Texts.OpenTitle)</h2>
+                <p class="mt-2 text-sm text-stone">@Text(Texts.OpenIntro)</p>
+                <div class="mt-6 max-w-xs">
+                    <label for="opening" class="field-label">@Text(Texts.OpeningLabel)</label>
+                    <input id="opening" type="text" inputmode="decimal" @bind="_openingText" @bind:event="oninput" class="field"/>
+                </div>
+                <button type="button" @onclick="OpenShift" class="btn-primary mt-6">@Text(Texts.OpenButton)</button>
+            </section>
+        }
+
+        @if (_summary is not null)
+        {
+            <section class="rounded-3xl bg-paper p-8 shadow-sm">
+                <div class="flex flex-wrap items-baseline justify-between gap-2">
+                    <h2 class="font-serif text-2xl text-espresso">@Text(Texts.CurrentTitle)</h2>
+                    <p class="text-sm text-stone">@Text(_openedLabel)</p>
+                </div>
+
+                <div class="mt-6 grid gap-4 sm:grid-cols-3">
+                    @foreach (var figure in _figures)
+                    {
+                        <div class="rounded-2xl bg-cream p-5">
+                            <p class="text-xs uppercase tracking-widest text-stone">@Text(figure.Label)</p>
+                            <p class="mt-2 font-serif text-3xl text-espresso">@Text(figure.Value)</p>
+                        </div>
+                    }
+                </div>
+
+                <table class="mt-8 w-full text-left text-sm">
+                    <thead class="text-xs uppercase tracking-widest text-stone">
+                        <tr>
+                            <th class="pb-2 font-normal">@Text(Texts.MethodHeader)</th>
+                            <th class="pb-2 text-right font-normal">@Text(Texts.CountHeader)</th>
+                            <th class="pb-2 text-right font-normal">@Text(Texts.TotalHeader)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var row in _methodRows)
+                        {
+                            <tr class="border-t border-sand">
+                                <td class="py-3">@Text(row.Method)</td>
+                                <td class="py-3 text-right text-stone">@Text(row.Count)</td>
+                                <td class="py-3 text-right">@Text(row.Total)</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+
+                <div class="mt-10 border-t border-sand pt-8">
+                    <h3 class="font-serif text-xl text-espresso">@Text(Texts.CloseTitle)</h3>
+                    <p class="mt-1 text-sm text-stone">@Text(Texts.CloseIntro)</p>
+                    <div class="mt-4 grid max-w-xl gap-4 sm:grid-cols-2">
+                        <div>
+                            <label for="counted" class="field-label">@Text(Texts.CountedLabel)</label>
+                            <input id="counted" type="text" inputmode="decimal" @bind="_countedText" @bind:event="oninput" class="field"/>
+                        </div>
+                        <div>
+                            <p class="field-label">@Text(Texts.DifferenceLabel)</p>
+                            <p class="@DifferenceClass">@Text(DifferenceText)</p>
+                        </div>
+                        <div class="sm:col-span-2">
+                            <label for="note" class="field-label">@Text(Texts.NoteLabel)</label>
+                            <input id="note" type="text" maxlength="200" @bind="_note" class="field"/>
+                        </div>
+                    </div>
+                    <button type="button" @onclick="CloseShift" class="btn-primary mt-6">@Text(Texts.CloseButton)</button>
+                </div>
+            </section>
+        }
+
+        @if (_closedMessage is not null)
+        {
+            <p class="mt-4 rounded-xl bg-sage-soft px-4 py-3 text-sm text-espresso">@Text(_closedMessage)</p>
+        }
+
+        <section class="mt-10">
+            <h2 class="mb-4 font-serif text-2xl text-espresso">@Text(Texts.HistoryTitle)</h2>
+            @if (_history.Count == 0)
+            {
+                <EmptyState Title="@Texts.HistoryEmptyTitle" Message="@Texts.HistoryEmptyMessage"/>
+            }
+            @if (_history.Count > 0)
+            {
+                <div class="overflow-x-auto rounded-3xl bg-paper shadow-sm">
+                    <table class="w-full text-left text-sm">
+                        <thead class="text-xs uppercase tracking-widest text-stone">
+                            <tr>
+                                @foreach (var header in HistoryHeaders)
+                                {
+                                    <th class="px-5 py-4 font-normal">@Text(header)</th>
+                                }
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var row in _historyRows)
+                            {
+                                <tr class="border-t border-sand">
+                                    <td class="px-5 py-3">@Text(row.Opened)</td>
+                                    <td class="px-5 py-3 text-stone">@Text(row.Closed)</td>
+                                    <td class="px-5 py-3">@Text(row.Opening)</td>
+                                    <td class="px-5 py-3">@Text(row.Expected)</td>
+                                    <td class="px-5 py-3">@Text(row.Counted)</td>
+                                    <td class="@row.DifferenceClass">@Text(row.Difference)</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </section>
+    }
+</div>
+
+@code {
+    private const int HistorySize = 10;
+    private const string OpenedFormat = "Aberto às {0}";
+    private const string ClosedFormat = "Caixa fechado. Diferença de {0}.";
+    private const string PositiveSign = "+";
+    private const string BalancedClass = "pt-2 font-serif text-2xl text-espresso";
+    private const string ShortClass = "pt-2 font-serif text-2xl text-red-700";
+    private const string OverClass = "pt-2 font-serif text-2xl text-clay";
+    private const string CellClass = "px-5 py-3 ";
+
+    private static readonly (string PageTitle, string Eyebrow, string Title, string OpenTitle, string OpenIntro, string OpeningLabel, string OpenButton, string CurrentTitle,
+        string MethodHeader, string CountHeader, string TotalHeader, string CloseTitle, string CloseIntro, string CountedLabel, string DifferenceLabel, string NoteLabel,
+        string CloseButton, string HistoryTitle, string HistoryEmptyTitle, string HistoryEmptyMessage, string InvalidAmount) Texts = (
+        "Caixa | Unayka",
+        "Balcão",
+        "Caixa",
+        "Abrir o caixa",
+        "Indique o valor com que a gaveta começa o turno. Só é possível vender com o caixa aberto.",
+        "Valor de abertura (MZN)",
+        "Abrir caixa",
+        "Turno em curso",
+        "Método",
+        "Vendas",
+        "Total",
+        "Fechar o caixa",
+        "Conte o dinheiro da gaveta. A diferença é calculada em relação ao valor esperado.",
+        "Dinheiro contado (MZN)",
+        "Diferença em dinheiro",
+        "Nota (opcional)",
+        "Fechar caixa",
+        "Últimos turnos",
+        "Ainda sem turnos fechados",
+        "Os turnos aparecem aqui depois de fechados.",
+        "Indique um valor válido."
+    );
+
+    private static readonly string[] HistoryHeaders = ["Abertura", "Fecho", "Fundo inicial", "Esperado", "Contado", "Diferença"];
+    private static readonly string[] FigureLabels = ["Fundo inicial", "Vendas do turno", "Dinheiro esperado"];
+
+    private sealed record HistoryRowView(string Opened, string Closed, string Opening, string Expected, string Counted, string Difference, string DifferenceClass);
+
+    private bool _loaded;
+    private ShiftSummary? _summary;
+    private IReadOnlyList<ShiftHistoryRow> _history = [];
+    private string _openingText = "0";
+    private string _countedText = string.Empty;
+    private string _note = string.Empty;
+    private string? _error;
+    private string? _closedMessage;
+
+    private string _openedLabel = string.Empty;
+    private List<(string Label, string Value)> _figures = [];
+    private List<(string Method, string Count, string Total)> _methodRows = [];
+    private List<HistoryRowView> _historyRows = [];
+
+    private long CurrentDifference => _summary is null ? 0 : CashMath.Difference(MoneyInput.ParseOrZero(_countedText), _summary.Totals.ExpectedCashMinor);
+
+    private string DifferenceText => FormatSigned(CurrentDifference);
+
+    private string DifferenceClass => CurrentDifference switch
+    {
+        0 => BalancedClass,
+        < 0 => ShortClass,
+        _ => OverClass,
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        await Load();
+        _loaded = true;
+    }
+
+    private async Task Load()
+    {
+        var open = await Shifts.GetOpenAsync();
+        _summary = open is null ? null : await Shifts.SummarizeAsync(open);
+        _history = await Shifts.GetHistoryAsync(HistorySize);
+        _historyRows = _history.Select(ToHistoryRow).ToList();
+        PrepareSummary();
+    }
+
+    private void PrepareSummary()
+    {
+        @if (_summary is null)
+        {
+            return;
+        }
+
+        var totals = _summary.Totals;
+        _openedLabel = string.Format(System.Globalization.CultureInfo.InvariantCulture, OpenedFormat, CounterTimes.FormatTime(_summary.Shift.OpenedAt));
+        _figures =
+        [
+            (FigureLabels[0], FormatMoney(_summary.Shift.OpeningMinor)),
+            (FigureLabels[1], FormatMoney(totals.SalesMinor)),
+            (FigureLabels[2], FormatMoney(totals.ExpectedCashMinor)),
+        ];
+        _methodRows = totals.ByMethod
+            .Select(total => (StatusLabels.For(total.Method), total.Count.ToString(System.Globalization.CultureInfo.InvariantCulture), FormatMoney(total.TotalMinor)))
+            .ToList();
+    }
+
+    private static string FormatSigned(long difference) =>
+        difference > 0 ? PositiveSign + FormatMoney(difference) : FormatMoney(difference);
+
+    private static HistoryRowView ToHistoryRow(ShiftHistoryRow row)
+    {
+        var difference = row.CountedMinor is null ? 0 : CashMath.Difference(row.CountedMinor.Value, row.ExpectedMinor);
+        var differenceClass = CellClass + (difference < 0 ? "text-red-700" : "text-ink");
+        return new HistoryRowView(
+            CounterTimes.FormatDateTime(row.OpenedAt),
+            row.ClosedAt is null ? string.Empty : CounterTimes.FormatDateTime(row.ClosedAt.Value),
+            FormatMoney(row.OpeningMinor),
+            FormatMoney(row.ExpectedMinor),
+            row.CountedMinor is null ? string.Empty : FormatMoney(row.CountedMinor.Value),
+            FormatSigned(difference),
+            differenceClass);
+    }
+
+    private async Task OpenShift()
+    {
+        _closedMessage = null;
+        @if (!MoneyInput.TryParse(_openingText, out var opening))
+        {
+            _error = Texts.InvalidAmount;
+            return;
+        }
+
+        _error = null;
+        await Shifts.OpenAsync(UserId, opening);
+        _countedText = string.Empty;
+        await Load();
+    }
+
+    private async Task CloseShift()
+    {
+        @if (!MoneyInput.TryParse(_countedText, out var counted))
+        {
+            _error = Texts.InvalidAmount;
+            return;
+        }
+
+        _error = null;
+        var closed = await Shifts.CloseAsync(UserId, counted, _note);
+        @if (closed is not null)
+        {
+            var difference = CashMath.Difference(counted, closed.Totals.ExpectedCashMinor);
+            _closedMessage = string.Format(System.Globalization.CultureInfo.InvariantCulture, ClosedFormat, FormatSigned(difference));
+        }
+
+        _note = string.Empty;
+        _countedText = string.Empty;
+        await Load();
+    }
+}

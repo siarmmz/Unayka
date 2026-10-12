@@ -126,7 +126,38 @@ src/Unayka.Web/Components/Pages/Store/CategoryPage.razor: /loja/categoria/{slug}
 src/Unayka.Web/Components/Pages/Store/ProductPage.razor: /produto/{slug} narrative page with order forms and mobile bottom bar
 src/Unayka.Web/Components/Pages/Home.razor: home with hero, categories, featured, story, best sellers, banners, value props and visit block
 src/Unayka.Web.Test/Pages/StorefrontTests.cs: 200, 404, search and product form tests
+<!-- Counter (sprint L5) -->
+src/Unayka.Core/Counter/CashMath.cs: pure cash shift totals, expected cash, difference and change
+src/Unayka.Core/Counter/TicketLine.cs: counter ticket line record and total
+src/Unayka.Core/Counter/MoneyInput.cs: parses typed MZN amounts into minor units
+src/Unayka.Core/Counter/CounterWallet.cs: counter mock wallet provider names, delay and approval rule (phone ending in 0 fails)
+src/Unayka.Core/Counter/CounterTimes.cs: Maputo time formatting, start of day and age in minutes
+src/Unayka.Core/Counter/CounterOrderNumbers.cs: temporary next UN- order number helper (to be replaced by IOrderNumberGenerator)
+src/Unayka.Core/Counter/PreparationFlow.cs: preparation status transitions and initial status of a counter order
+src/Unayka.Core/Counter/ICounterShifts.cs: shift contract (open, summarize, close, history) and records
+src/Unayka.Core/Counter/CounterShifts.cs: shift implementation with audit
+src/Unayka.Core/Counter/ICounterSales.cs: catalog and sale registration contract, requests, receipt and errors
+src/Unayka.Core/Counter/CounterSales.cs: validates the ticket, creates paid counter order, payment, stock movement and audit
+src/Unayka.Core/Counter/ICounterPreparation.cs: preparation board contract and records
+src/Unayka.Core/Counter/CounterPreparation.cs: board query and status advance with audit
+src/Unayka.Core/Counter/CounterServiceExtensions.cs: services.AddUnaykaCounter()
+src/Unayka.Web/Components/Counter/CounterPageBase.cs: base for counter pages exposing the signed in user id
+src/Unayka.Web/Components/Counter/CounterNav.razor: pill links between sale, cash shift and preparation pages
+src/Unayka.Web/Components/Counter/CounterTile.razor: touch friendly product tile for the sale grid
+src/Unayka.Web/Components/Counter/TicketRow.razor: ticket line with quantity buttons and remove
+src/Unayka.Web/Components/Counter/ReceiptPanel.razor: receipt shown after a sale with the new sale button
+src/Unayka.Web/Components/Counter/PreparationColumn.razor: preparation board column with order cards
+src/Unayka.Web/Components/Pages/Counter/PointOfSale.razor: /balcao point of sale
+src/Unayka.Web/Components/Pages/Counter/CashShifts.razor: /balcao/caixa open, close and history of cash shifts
+src/Unayka.Web/Components/Pages/Counter/PreparationBoardPage.razor: /balcao/preparacao board with 5 second refresh
+src/Unayka.Core.Test/Counter/CashMathTests.cs: cash math, money input, wallet rule and preparation flow tests
+src/Unayka.Core.Test/Counter/CounterServicesTests.cs: sale registration, shift close and board advance tests
+src/Unayka.Web.Test/Pages/CounterPagesTests.cs: staff access and anonymous block tests for the counter pages
 
 ## Interactive render modes
 
 None yet. AddInteractiveServerComponents is enabled in Program.cs; there is no global render mode.
+<!-- Counter -->
+/balcao (PointOfSale.razor): InteractiveServer, live ticket, payment status simulation and receipt
+/balcao/caixa (CashShifts.razor): InteractiveServer, live difference while counting the drawer
+/balcao/preparacao (PreparationBoardPage.razor): InteractiveServer, board refreshed by a timer and status buttons

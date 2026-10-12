@@ -17,7 +17,7 @@ Wave 2 (four worktrees in parallel, Sonnet, split by feature folder):
 - [x] L2 Store front: home (hero, featured, categories, best sellers, story), catalog with filters and search, category, product narrative page (branch sprint-l/storefront)
 - [ ] L3 Cart and checkout: server cart, drawer, coupon engine, single page checkout, mock wallet payment with status, order confirmation, customer account and orders (branch sprint-l/checkout)
 - [ ] L4 Administration: dashboard, products, categories, orders, coupons, customers, audit (branch sprint-l/admin)
-- [ ] L5 Counter: point of sale charge mode, cash shift, preparation board (branch sprint-l/counter)
+- [x] L5 Counter: point of sale charge mode, cash shift, preparation board (branch sprint-l/counter)
 
 Wave 3 (primary agent): merge, build, tests, browser check of every page in Chrome, MAP.md update.
 

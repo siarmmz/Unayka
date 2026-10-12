@@ -2,6 +2,7 @@ using Unayka.Core.Accounts;
 using Unayka.Core.Carts;
 using Unayka.Core.Catalog;
 using Unayka.Core.Configuration;
+using Unayka.Core.Counter;
 using Unayka.Core.Data;
 using Unayka.Web.Components;
 using Unayka.Web.Endpoints;
@@ -24,6 +25,7 @@ builder.Services.AddUnaykaData();
 builder.Services.AddUnaykaAccounts();
 builder.Services.AddUnaykaCarts();
 builder.Services.AddUnaykaCatalog();
+builder.Services.AddUnaykaCounter();
 
 var app = builder.Build();
 
