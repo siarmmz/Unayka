@@ -6,6 +6,7 @@ public static class AppEnvConfig
     private const string ProductionEnvironmentName = "Production";
     private const string DefaultSqliteFilePath = "database.sqlite";
     private const string DefaultLocalUploadsPath = "data/uploads";
+    private const string DefaultDataProtectionKeysPath = "data/keys";
     private const string SolutionFileName = "Unayka.slnx";
     private const string SourceFolderName = "src";
     private const int DefaultPostgresPort = 5432;
@@ -42,6 +43,9 @@ public static class AppEnvConfig
     public static string LocalUploadsPath =>
         GetTextOrDefault("STORAGE_LOCAL_UPLOADS_PATH", DefaultLocalUploadsPath);
 
+    public static string DataProtectionKeysPath =>
+        GetTextOrDefault("STORAGE_LOCAL_KEYS_PATH", DefaultDataProtectionKeysPath);
+
     public static string PaySuiteBaseUrl => GetText("PAYMENT_PAYSUITE_BASE_URL");
     public static string PaySuiteApiKey => GetText("PAYMENT_PAYSUITE_API_KEY");
     public static string PaySuiteWebhookSecret => GetText("PAYMENT_PAYSUITE_WEBHOOK_SECRET");
@@ -54,6 +58,7 @@ public static class AppEnvConfig
     public static string SmsProvider => GetText("AUTH_SMS_PROVIDER");
     public static string SmsApiKey => GetText("AUTH_SMS_API_KEY");
     public static string AdminBootstrapEmail => GetText("AUTH_ADMIN_BOOTSTRAP_EMAIL");
+    public static string AuthSeedStaffPassword => GetText("AUTH_SEED_STAFF_PASSWORD");
 
     public static int RateLimitLoginPerMinute => GetNumber("RATE_LIMIT_LOGIN_PER_MINUTE", DefaultLoginPerMinute);
     public static int RateLimitOtpPerHour => GetNumber("RATE_LIMIT_OTP_PER_HOUR", DefaultOtpPerHour);

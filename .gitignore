@@ -6,7 +6,8 @@ obj/
 
 .env
 src/Unayka.Web/wwwroot/styles/app.css
-data/
+/data/
+/src/Unayka.Web/data/
 
 PLAN.md
 .claude/
