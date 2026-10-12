@@ -4,7 +4,20 @@ Rule: Opus analyzes and details each item before any execution. Suggested model 
 
 ## In progress
 
-None.
+### Sprint L: working store with mocks (requested 2026-10-12, execute directly)
+
+Goal: a complete, lively e-commerce running locally on port 5000 with real data flow (SQLite, seeded catalog with images, accounts, cart, checkout, mock payment, administration and counter). External providers (PaySuite, SMS, Google) are mocked behind interfaces until their open decisions are resolved.
+
+Wave 1 (one worktree, branch sprint-l/foundation, Sonnet):
+- [ ] L1 Foundation: EF Core (SQLite/Npgsql), entities for catalog, users, OTP, carts, coupons, orders, payments, audit; seed with categories and about 24 products with real photos; cookie auth with phone code (dev sender) and staff email/password; roles; layout with Google Fonts, header (logo, nav, search, account, cart count), rich footer; feature service registration in Program.cs; extension points for waves 2 features.
+
+Wave 2 (four worktrees in parallel, Sonnet, split by feature folder):
+- [ ] L2 Store front: home (hero, featured, categories, best sellers, story), catalog with filters and search, category, product narrative page (branch sprint-l/storefront)
+- [ ] L3 Cart and checkout: server cart, drawer, coupon engine, single page checkout, mock wallet payment with status, order confirmation, customer account and orders (branch sprint-l/checkout)
+- [ ] L4 Administration: dashboard, products, categories, orders, coupons, customers, audit (branch sprint-l/admin)
+- [ ] L5 Counter: point of sale charge mode, cash shift, preparation board (branch sprint-l/counter)
+
+Wave 3 (primary agent): merge, build, tests, browser check of every page in Chrome, MAP.md update.
 
 ## Next
 
