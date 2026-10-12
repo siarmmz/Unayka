@@ -54,7 +54,7 @@ Decision (2026-10-12): all images and content are provisional mocks (placeholder
 
 ## Next
 
-### Sprint P: managed catalog, locations, digital products and a livelier store (requested 2026-10-12, executing)
+### Sprint P: managed catalog, locations, digital products and a livelier store (requested 2026-10-12, done except the P13 mobile check)
 
 Analysis summary: the catalog is hard coded around CategoryKind (Tea, Cosmetic) and the UI has rows, routes and seeds per kind. The store must become data driven: everything a customer sees (sections, categories, tags, locations, contacts, maps) is registered in the administration and the pages only loop and render. The database uses EnsureCreated (no migrations), so every schema change in this sprint requires deleting the local database.sqlite; adding the first EF migration is part of P1.
 
@@ -91,7 +91,7 @@ Wave 2 (worktrees in parallel, Sonnet, split by feature folder):
 - [x] P12 (S) Palette and tokens (globals.css plus a sweep of every .razor): introduce semantic tokens (accent, accent-strong, accent-soft, surface, surface-alt, ink, muted, border, success, warning, danger, brand-google, brand-facebook) and a more vivid palette (warmer terracotta accent, fresher leaf green, keeping AA contrast for text); replace every use of Tailwind default colors, white and black in markup with tokens so changing one variable changes the whole site. Test added: no .razor uses a non token color class.
 
 Wave 3 (primary agent):
-- [ ] P13 (H) Tests: section, category and tag CRUD, archive rule (no delete when referenced), archived 404 public and visible in orders, stock per location in checkout, digital download (buyer allowed, other user and anonymous refused), token only color rule. Responsive check in Chrome at 375, 768 and 1280 widths on home, loja, product, cart, checkout, contacto and admin product form.
+- [ ] P13 (H) (automated tests done: 254 Core, 84 Web; desktop checked in Chrome: hero swipe, synchronized card fade, Destaque badges, /contacto with maps; pending: mobile and tablet check, the Chrome window could not be resized) Tests: section, category and tag CRUD, archive rule (no delete when referenced), archived 404 public and visible in orders, stock per location in checkout, digital download (buyer allowed, other user and anonymous refused), token only color rule. Responsive check in Chrome at 375, 768 and 1280 widths on home, loja, product, cart, checkout, contacto and admin product form.
 - [x] P14 (O) Merge, update MAP.md, regenerate Tailwind, build green, commits grouped by problem solved.
 
 Owner decisions (2026-10-12):
