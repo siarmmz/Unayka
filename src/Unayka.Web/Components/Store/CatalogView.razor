@@ -6,7 +6,7 @@
             @foreach (var group in _filterGroups)
             {
                 <div>
-                    <p class="font-script text-2xl text-clay">@Text(group.Title)</p>
+                    <p class="font-script text-2xl text-accent">@Text(group.Title)</p>
                     <ul class="mt-3 flex flex-wrap gap-2">
                         @foreach (var link in group.Links)
                         {
@@ -33,7 +33,7 @@
                 <button type="submit" class="btn-primary">@Text(Data.ApplyLabel)</button>
             </form>
 
-            <p class="mt-6 text-sm text-stone">@Text(_summary)</p>
+            <p class="mt-6 text-sm text-muted">@Text(_summary)</p>
 
             @if (_page.Items.Count == 0)
             {
@@ -47,7 +47,7 @@
                 <div class="mt-8 grid grid-cols-2 gap-x-4 gap-y-10 md:grid-cols-3 md:gap-x-6">
                     @foreach (var item in _page.Items)
                     {
-                        <ProductCard Model="item"/>
+                        <StoreProductCard Model="item"/>
                     }
                 </div>
                 <div class="mt-14">
@@ -60,8 +60,8 @@
 
 @code {
     private const string ChipClass = "inline-flex min-h-11 items-center rounded-full border px-5 text-base transition";
-    private const string ActiveChipClass = ChipClass + " border-espresso bg-espresso text-paper";
-    private const string IdleChipClass = ChipClass + " border-sand text-espresso hover:border-clay hover:bg-cream";
+    private const string ActiveChipClass = ChipClass + " border-accent-strong bg-accent-strong text-surface";
+    private const string IdleChipClass = ChipClass + " border-border text-accent-strong hover:border-accent hover:bg-surface-alt";
 
     private sealed record FilterLink(string Label, string Url, string CssClass);
 

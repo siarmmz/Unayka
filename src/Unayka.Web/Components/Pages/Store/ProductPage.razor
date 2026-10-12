@@ -1,6 +1,8 @@
 @page "/produto/{Slug}"
+@using Unayka.Core.Locations
 @using Unayka.Web.Components.Store
 @inject ICatalogQuery Catalog
+@inject ILocationDirectory Locations
 
 @if (_product is not null)
 {
@@ -8,21 +10,24 @@
 
     <article class="pb-28 md:pb-0">
         <section class="container-page py-8 md:py-14">
-            <a href="@_categoryUrl" class="text-xs uppercase tracking-widest text-stone transition hover:text-clay">@Text(_product.CategoryName)</a>
+            <a href="@_categoryUrl" class="text-xs uppercase tracking-widest text-muted transition hover:text-accent">@Text(_product.CategoryName)</a>
             <div class="mt-6 grid gap-10 lg:grid-cols-2 lg:gap-16">
                 <ProductGallery Images="_product.Images"/>
 
                 <div class="lg:sticky lg:top-28 lg:self-start">
-                    @if (_product.Badge is not null)
-                    {
-                        <span class="inline-block rounded-full bg-rose-soft px-3 py-1 text-xs font-medium tracking-wide text-clay">@Text(_product.Badge)</span>
-                    }
-                    <h1 class="mt-3 font-serif text-4xl leading-tight text-espresso md:text-5xl">@Text(_product.Name)</h1>
+                    <div class="flex flex-wrap gap-2">
+                        @foreach (var badge in _badges)
+                        {
+                            <span class="@badge.CssClass">@Text(badge.Label)</span>
+                        }
+                    </div>
+                    <h1 class="mt-3 font-serif text-4xl leading-tight text-accent-strong md:text-5xl">@Text(_product.Name)</h1>
                     <div class="mt-5">
                         <PriceTag PriceMinor="_product.PriceMinor" CompareAtPriceMinor="_product.CompareAtPriceMinor" Large="true"/>
                     </div>
-                    <p class="mt-6 text-lg leading-relaxed text-stone">@Text(_product.ShortDescription)</p>
+                    <p class="mt-6 text-lg leading-relaxed text-muted">@Text(_product.ShortDescription)</p>
                     <p class="@_stockClass">@Text(_stockLabel)</p>
+                    <p class="mt-2 text-sm text-muted">@Text(_availability)</p>
 
                     <form id="@OrderFormId" method="post" action="@Data.AddAction" class="mt-8 space-y-5">
                         <AntiforgeryToken/>
@@ -33,13 +38,20 @@
                             <input id="quantity" type="number" name="Quantity" value="1" min="1" max="@_maxQuantity" inputmode="numeric" disabled="@_soldOut" class="field disabled:opacity-40"/>
                         </div>
                         <div class="flex flex-col gap-3 sm:flex-row">
-                            <button type="submit" disabled="@_soldOut" class="btn-primary disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-espresso sm:flex-1">@Text(_addLabel)</button>
-                            <button type="submit" formaction="@Data.BuyNowAction" disabled="@_soldOut" class="btn-outline disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-espresso sm:flex-1">@Text(Data.BuyNowLabel)</button>
+                            <button type="submit" disabled="@_soldOut" class="btn-primary gap-2 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-accent-strong sm:flex-1">
+                                <StoreIcon Name="@StoreIcons.Bag" Class="h-5 w-5 shrink-0"/>
+                                <span>@Text(_addLabel)</span>
+                            </button>
+                            <button type="submit" formaction="@Data.BuyNowAction" disabled="@_soldOut" class="btn-outline disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-accent-strong sm:flex-1">@Text(Data.BuyNowLabel)</button>
                         </div>
                     </form>
 
-                    <ul class="mt-10 space-y-3 border-t border-sand pt-6 text-sm text-stone">
-                        @foreach (var promise in Data.Promises)
+                    <div class="mt-6 flex justify-end">
+                        <ShareButton Path="@_shareUrl" Title="@_product.Name"/>
+                    </div>
+
+                    <ul class="mt-6 space-y-3 border-t border-border pt-6 text-sm text-muted">
+                        @foreach (var promise in _promises)
                         {
                             <li>@Text(promise)</li>
                         }
@@ -50,12 +62,12 @@
 
         @if (_package is not null)
         {
-            <section class="bg-cream">
+            <section class="bg-surface-alt">
                 <div class="container-page grid items-center gap-10 py-16 md:grid-cols-2 md:gap-16 md:py-24">
                     <img src="@_packageUrl" alt="@_package.Alt" loading="lazy" class="aspect-[4/5] w-full rounded-3xl object-cover"/>
                     <div>
                         <SectionHeading Eyebrow="@Data.StoryEyebrow" Title="@_product.Name"/>
-                        <p class="mt-6 text-lg leading-relaxed text-stone">@Text(_product.Description)</p>
+                        <p class="mt-6 text-lg leading-relaxed text-muted">@Text(_product.Description)</p>
                     </div>
                 </div>
             </section>
@@ -69,13 +81,13 @@
                         <SectionHeading Eyebrow="@Data.DetailsEyebrow" Title="@Data.DetailsTitle"/>
                         @foreach (var group in _product.FactGroups)
                         {
-                            <h3 class="mt-8 font-serif text-2xl text-espresso">@Text(group.Name)</h3>
-                            <dl class="mt-3 divide-y divide-sand border-y border-sand">
+                            <h3 class="mt-8 font-serif text-2xl text-accent-strong">@Text(group.Name)</h3>
+                            <dl class="mt-3 divide-y divide-border border-y border-border">
                                 @foreach (var row in group.Rows)
                                 {
                                     <div class="flex justify-between gap-6 py-3 text-sm">
-                                        <dt class="text-stone">@Text(row.Label)</dt>
-                                        <dd class="text-right text-espresso">@Text(row.Value)</dd>
+                                        <dt class="text-muted">@Text(row.Label)</dt>
+                                        <dd class="text-right text-accent-strong">@Text(row.Value)</dd>
                                     </div>
                                 }
                             </dl>
@@ -91,25 +103,25 @@
 
         @if (_related.Count > 0)
         {
-            <section class="border-t border-sand">
+            <section class="border-t border-border">
                 <div class="container-page py-16 md:py-24">
                     <SectionHeading Eyebrow="@Data.RelatedEyebrow" Title="@Data.RelatedTitle" Centered="true"/>
-                    <div class="mt-12 grid grid-cols-2 gap-x-4 gap-y-10 md:grid-cols-4 md:gap-x-6">
-                        @foreach (var item in _related)
-                        {
-                            <ProductCard Model="item"/>
-                        }
+                    <div class="mt-12">
+                        <ProductRail Items="_related"/>
                     </div>
                 </div>
             </section>
         }
 
-        <div class="fixed inset-x-0 bottom-0 z-40 flex items-center justify-between gap-4 border-t border-sand bg-paper/95 px-4 py-3 backdrop-blur md:hidden">
+        <div class="fixed inset-x-0 bottom-0 z-40 flex items-center justify-between gap-4 border-t border-border bg-surface/95 px-4 py-3 backdrop-blur md:hidden">
             <div class="min-w-0">
-                <p class="truncate text-xs text-stone">@Text(_product.Name)</p>
+                <p class="truncate text-xs text-muted">@Text(_product.Name)</p>
                 <PriceTag PriceMinor="_product.PriceMinor"/>
             </div>
-            <button type="submit" form="@OrderFormId" disabled="@_soldOut" class="btn-primary shrink-0 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-espresso">@Text(_addLabel)</button>
+            <button type="submit" form="@OrderFormId" disabled="@_soldOut" class="btn-primary shrink-0 gap-2 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-accent-strong">
+                <StoreIcon Name="@StoreIcons.Bag" Class="h-5 w-5 shrink-0"/>
+                <span>@Text(_addLabel)</span>
+            </button>
         </div>
     </article>
 }
@@ -117,13 +129,19 @@
 @code {
     private const string OrderFormId = "order-form";
     private const string TitleSuffix = " | Unayka";
+    private const string LocationSeparator = " / ";
     private const int MaxQuantity = 20;
-    private const int RelatedCount = 4;
+    private const int RelatedCount = 8;
     private const string StockClassBase = "mt-4 text-sm font-medium ";
     private const string TwoColumnsClass = "grid items-center gap-10 lg:grid-cols-2 lg:gap-16";
     private const string OneColumnClass = "max-w-2xl";
+    private const string BadgeBase = "inline-block rounded-full px-3 py-1 text-xs font-medium tracking-wide ";
+    private const string NewBadgeClass = BadgeBase + "bg-accent text-surface";
+    private const string PlainBadgeClass = BadgeBase + "bg-accent-soft text-accent-strong";
 
-    private static readonly (string AddAction, string BuyNowAction, string AddLabel, string SoldOutLabel, string BuyNowLabel, string QuantityLabel, string InStock, string LowStock, string OutOfStock, string StoryEyebrow, string DetailsEyebrow, string DetailsTitle, string RelatedEyebrow, string RelatedTitle, string[] Promises) Data = (
+    private sealed record DetailBadge(string Label, string CssClass);
+
+    private static readonly (string AddAction, string BuyNowAction, string AddLabel, string SoldOutLabel, string BuyNowLabel, string QuantityLabel, string InStock, string LowStock, string OutOfStock, string StoryEyebrow, string DetailsEyebrow, string DetailsTitle, string RelatedEyebrow, string RelatedTitle, string NewLabel, string AvailableAt, string DigitalNote, string[] PhysicalPromises, string[] DigitalPromises) Data = (
         "/carrinho/adicionar",
         "/carrinho/comprar-agora",
         "Adicionar ao carrinho",
@@ -138,8 +156,16 @@
         "O que contém",
         "Continue a explorar",
         "Também vai gostar",
+        "Novo",
+        "Disponível em ",
+        "Produto digital, descarregue após o pagamento.",
         [
-            "Levantamento na loja ou entrega em Maputo.",
+            "Levantamento numa das nossas lojas.",
+            "Pagamento por M-Pesa, e-Mola, mKesh ou cartão.",
+            "Preço final em meticais, sem surpresas.",
+        ],
+        [
+            "Sem entrega: descarregue o ficheiro na sua conta depois de pagar.",
             "Pagamento por M-Pesa, e-Mola, mKesh ou cartão.",
             "Preço final em meticais, sem surpresas.",
         ]);
@@ -149,6 +175,8 @@
 
     private ProductDetail? _product;
     private IReadOnlyList<ProductCardModel> _related = [];
+    private IReadOnlyList<string> _promises = [];
+    private List<DetailBadge> _badges = [];
     private ProductImage? _package;
     private ProductImage? _elements;
     private string _packageUrl = string.Empty;
@@ -157,8 +185,10 @@
     private string _structuredData = string.Empty;
     private string _categoryUrl = string.Empty;
     private string _returnUrl = string.Empty;
+    private string _shareUrl = string.Empty;
     private string _stockLabel = string.Empty;
     private string _stockClass = StockClassBase;
+    private string _availability = string.Empty;
     private string _addLabel = string.Empty;
     private string _detailsGridClass = OneColumnClass;
     private bool _soldOut;
@@ -182,11 +212,43 @@
         _seoTitle = _product.Name + TitleSuffix;
         _structuredData = StoreStructuredData.Product(_product, StoreStructuredData.Root(Navigation.BaseUri));
         _categoryUrl = ToUrl(StoreUrls.Category(_product.CategorySlug));
-        _returnUrl = StoreUrls.Product(_product.Slug);
+        _shareUrl = ToUrl(StoreUrls.Product(_product.Slug));
+        _returnUrl = CartNotice.ReturnUrl(Navigation, _product.Slug);
         _showDetails = _product.FactGroups.Count > 0 || _elements is not null;
         _detailsGridClass = _elements is null ? OneColumnClass : TwoColumnsClass;
         _maxQuantity = Math.Clamp(_product.StockQuantity, 1, MaxQuantity);
+        _badges = BuildBadges(_product);
+        _promises = _product.Kind == ProductKind.Digital ? Data.DigitalPromises : Data.PhysicalPromises;
+        _availability = await BuildAvailabilityAsync(_product);
         ApplyStock(StockLevels.For(_product.StockQuantity));
+    }
+
+    private async Task<string> BuildAvailabilityAsync(ProductDetail product)
+    {
+        if (product.Kind == ProductKind.Digital)
+        {
+            return Data.DigitalNote;
+        }
+
+        var stock = await Locations.StockForProductAsync(product.Id);
+        var names = stock.Where(location => location.Quantity > 0).Select(location => location.LocationName).ToList();
+        return names.Count == 0 ? string.Empty : Data.AvailableAt + string.Join(LocationSeparator, names);
+    }
+
+    private static List<DetailBadge> BuildBadges(ProductDetail product)
+    {
+        var badges = new List<DetailBadge>();
+        if (product.IsNew)
+        {
+            badges.Add(new DetailBadge(Data.NewLabel, NewBadgeClass));
+        }
+
+        if (product.Badge is not null && !string.Equals(product.Badge, Data.NewLabel, StringComparison.OrdinalIgnoreCase))
+        {
+            badges.Add(new DetailBadge(product.Badge, PlainBadgeClass));
+        }
+
+        return badges;
     }
 
     private void ApplyStock(StockLevel level)
@@ -195,9 +257,9 @@
         _addLabel = _soldOut ? Data.SoldOutLabel : Data.AddLabel;
         (_stockLabel, _stockClass) = level switch
         {
-            StockLevel.OutOfStock => (Data.OutOfStock, StockClassBase + "text-rose"),
-            StockLevel.LowStock => (Data.LowStock, StockClassBase + "text-clay"),
-            _ => (Data.InStock, StockClassBase + "text-sage"),
+            StockLevel.OutOfStock => (Data.OutOfStock, StockClassBase + "text-danger"),
+            StockLevel.LowStock => (Data.LowStock, StockClassBase + "text-warning"),
+            _ => (Data.InStock, StockClassBase + "text-success"),
         };
     }
 }

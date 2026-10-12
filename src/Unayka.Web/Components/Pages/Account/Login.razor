@@ -1,4 +1,5 @@
 @page "/conta/entrar"
+@using Unayka.Web.Components.Store
 @using Unayka.Web.Endpoints.Account
 
 <SeoComponent Title="@Texts.SeoTitle" Description="@Texts.SeoDescription"/>
@@ -6,44 +7,47 @@
 <section class="grid min-h-[calc(100vh-8rem)] lg:grid-cols-2">
     <div class="relative hidden lg:block">
         <img src="@LoginImageUrl" alt="" class="absolute inset-0 h-full w-full object-cover"/>
-        <div class="absolute inset-0 bg-gradient-to-t from-paper/90 via-paper/20 to-transparent"></div>
+        <div class="absolute inset-0 bg-gradient-to-t from-surface/90 via-surface/20 to-transparent"></div>
         <div class="absolute inset-x-0 bottom-0 p-14">
-            <p class="max-w-md font-script text-5xl leading-tight text-espresso">@Text(Texts.Quote)</p>
+            <p class="max-w-md font-script text-5xl leading-tight text-accent-strong">@Text(Texts.Quote)</p>
         </div>
     </div>
 
     <div class="flex items-center justify-center px-4 py-14 sm:px-10">
         <div class="w-full max-w-md space-y-12">
             <header>
-                <p class="font-script text-3xl text-clay">@Text(Texts.Eyebrow)</p>
-                <h1 class="mt-1 font-serif text-5xl text-espresso">@Text(Texts.Title)</h1>
-                <p class="mt-4 text-stone">@Text(Texts.Intro)</p>
+                <p class="font-script text-3xl text-accent">@Text(Texts.Eyebrow)</p>
+                <h1 class="mt-1 font-serif text-5xl text-accent-strong">@Text(Texts.Title)</h1>
+                <p class="mt-4 text-muted">@Text(Texts.Intro)</p>
             </header>
 
             <div class="space-y-4">
                 @if (_customerError is not null)
                 {
-                    <p role="alert" class="rounded-xl bg-rose-soft px-4 py-3 text-sm text-red-700">@Text(_customerError)</p>
+                    <p role="alert" class="rounded-xl bg-accent-soft px-4 py-3 text-sm text-danger">@Text(_customerError)</p>
                 }
                 @foreach (var provider in _providers)
                 {
-                    <a href="@provider.Url" class="flex min-h-14 w-full items-center justify-center gap-3 rounded-full border border-sand bg-white px-6 text-base font-medium text-espresso transition hover:border-clay hover:bg-cream">@Text(provider.Label)</a>
+                    <a href="@provider.Url" class="@provider.CssClass">
+                        <StoreIcon Name="@provider.Icon" Class="h-5 w-5 shrink-0"/>
+                        <span>@Text(provider.Label)</span>
+                    </a>
                 }
                 @if (_showMockNote)
                 {
-                    <p class="rounded-xl bg-sage-soft px-4 py-3 text-sm text-espresso">@Text(Texts.MockNote)</p>
+                    <p class="rounded-xl bg-success-soft px-4 py-3 text-sm text-accent-strong">@Text(Texts.MockNote)</p>
                 }
-                <p class="text-sm text-stone">@Text(Texts.Privacy)</p>
+                <p class="text-sm text-muted">@Text(Texts.Privacy)</p>
             </div>
 
-            <details class="rounded-2xl border border-sand bg-cream/60 p-5" open="@_staffOpen">
-                <summary class="cursor-pointer font-serif text-xl text-espresso">@Text(Texts.StaffTitle)</summary>
+            <details class="rounded-2xl border border-border bg-surface-alt/60 p-5" open="@_staffOpen">
+                <summary class="cursor-pointer font-serif text-xl text-accent-strong">@Text(Texts.StaffTitle)</summary>
                 <form method="post" action="@Texts.StaffAction" class="mt-5 space-y-5">
                     <AntiforgeryToken/>
                     <input type="hidden" name="returnUrl" value="@_returnUrl"/>
                     @if (_staffError is not null)
                     {
-                        <p role="alert" class="rounded-xl bg-rose-soft px-4 py-3 text-sm text-red-700">@Text(_staffError)</p>
+                        <p role="alert" class="rounded-xl bg-accent-soft px-4 py-3 text-sm text-danger">@Text(_staffError)</p>
                     }
                     <div>
                         <label for="email" class="field-label">@Text(Texts.EmailLabel)</label>
@@ -65,7 +69,13 @@
         string SeoTitle, string SeoDescription, string Quote, string Eyebrow, string Title, string Intro,
         string MockNote, string Privacy, string StaffTitle, string EmailLabel, string PasswordLabel, string StaffButton, string StaffAction);
 
-    private sealed record ProviderLink(string Label, string Url);
+    private sealed record ProviderLink(string Label, string Url, string Icon, string CssClass);
+
+    private sealed record ProviderStyle(string Label, string Icon, string CssClass);
+
+    private const string ButtonBase = "flex min-h-14 w-full items-center justify-center gap-3 rounded-full px-6 text-base font-medium transition focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 ";
+    private const string GoogleButton = ButtonBase + "border border-brand-google-border bg-brand-google text-brand-google-text hover:bg-surface-alt";
+    private const string FacebookButton = ButtonBase + "bg-brand-facebook text-brand-facebook-text hover:opacity-90";
 
     private static readonly LoginTexts Texts = new(
         "Entrar | Unayka",
@@ -82,10 +92,10 @@
         "Entrar na administração",
         "/conta/entrar/equipa");
 
-    private static readonly Dictionary<string, string> ProviderLabels = new()
+    private static readonly Dictionary<string, ProviderStyle> ProviderStyles = new()
     {
-        [ExternalProviders.Google] = "Continuar com Google",
-        [ExternalProviders.Facebook] = "Continuar com Facebook",
+        [ExternalProviders.Google] = new("Continuar com Google", StoreIcons.Google, GoogleButton),
+        [ExternalProviders.Facebook] = new("Continuar com Facebook", StoreIcons.Facebook, FacebookButton),
     };
 
     private static readonly Dictionary<string, string> ErrorMessages = new()
@@ -115,7 +125,9 @@
     {
         _returnUrl = ReturnUrl ?? string.Empty;
         var available = ExternalProviders.All.Where(ExternalProviders.IsAvailable).ToList();
-        _providers = available.Select(provider => new ProviderLink(ProviderLabels[provider], ToUrl(AccountEndpoints.ExternalUrl(provider, ReturnUrl)))).ToList();
+        _providers = available
+            .Select(provider => new ProviderLink(ProviderStyles[provider].Label, ToUrl(AccountEndpoints.ExternalUrl(provider, ReturnUrl)), ProviderStyles[provider].Icon, ProviderStyles[provider].CssClass))
+            .ToList();
         _showMockNote = available.Any(ExternalProviders.IsMocked);
 
         var message = Error is not null && ErrorMessages.TryGetValue(Error, out var found) ? found : null;

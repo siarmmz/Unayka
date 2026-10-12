@@ -1,22 +1,22 @@
 @inherits UnaykaLayoutBase
 
-<div class="min-h-screen bg-cream text-ink lg:flex">
-    <aside class="bg-espresso text-sand lg:min-h-screen lg:w-64 lg:shrink-0">
+<div class="min-h-screen bg-surface-alt text-ink lg:flex">
+    <aside class="bg-accent-strong text-border lg:min-h-screen lg:w-64 lg:shrink-0">
         <div class="flex items-center justify-between px-5 py-4 lg:block lg:py-8">
-            <a href="@ToUrl(Data.HomeUrl)" class="font-script text-4xl text-paper">@Text(Data.BrandName)</a>
-            <p class="text-xs uppercase tracking-widest text-rose">@Text(Data.AreaLabel)</p>
+            <a href="@ToUrl(Data.HomeUrl)" class="font-script text-4xl text-surface">@Text(Data.BrandName)</a>
+            <p class="text-xs uppercase tracking-widest text-accent-soft">@Text(Data.AreaLabel)</p>
         </div>
         <nav class="flex gap-1 overflow-x-auto px-3 pb-3 lg:flex-col lg:overflow-visible lg:pb-8">
             @foreach (var item in Data.Navigation)
             {
-                <NavLink href="@ToUrl(item.Url)" Match="@item.Match" class="whitespace-nowrap rounded-xl px-4 py-2 text-sm text-sand/80 transition hover:bg-white/10 hover:text-paper" ActiveClass="bg-white/10 text-paper">@Text(item.Label)</NavLink>
+                <NavLink href="@ToUrl(item.Url)" Match="@item.Match" class="whitespace-nowrap rounded-xl px-4 py-2 text-sm text-border/80 transition hover:bg-surface/10 hover:text-surface" ActiveClass="bg-surface/10 text-surface">@Text(item.Label)</NavLink>
             }
         </nav>
     </aside>
 
     <div class="flex min-w-0 flex-1 flex-col">
-        <header class="flex items-center justify-between gap-4 border-b border-sand bg-paper px-4 py-3 sm:px-8">
-            <p class="text-sm text-stone">@Text(_userName)</p>
+        <header class="flex items-center justify-between gap-4 border-b border-border bg-surface px-4 py-3 sm:px-8">
+            <p class="text-sm text-muted">@Text(_userName)</p>
             <form method="post" action="@Data.SignOutUrl">
                 <AntiforgeryToken/>
                 <button type="submit" class="btn-outline px-5 py-2">@Text(Data.SignOutLabel)</button>

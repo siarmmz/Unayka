@@ -1,14 +1,15 @@
 @inherits UnaykaLayoutBase
 
-<div class="flex min-h-screen flex-col bg-paper text-ink">
-    <div class="bg-sage-soft px-4 py-2 text-center text-sm text-espresso">@Text(Announcement)</div>
+<div class="flex min-h-screen flex-col bg-surface text-ink">
+    <div class="bg-success-soft px-4 py-2 text-center text-sm text-accent-strong">@Text(Announcement)</div>
     <SiteHeader/>
     <main class="flex-1">
         @Body
     </main>
     <SiteFooter/>
+    <CartAddedNotice/>
 </div>
 
 @code {
-    private static readonly string Announcement = "Entrega em Maputo e levantamento na loja. Pague com carteira móvel ou cartão.";
+    private static readonly string Announcement = "Levantamento nas nossas lojas. Pague com carteira móvel ou cartão.";
 }

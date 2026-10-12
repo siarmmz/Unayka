@@ -1,0 +1,13 @@
+<unayka-rail class="no-scrollbar -mx-4 flex cursor-grab snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-4 data-[dragging]:cursor-grabbing data-[dragging]:snap-none sm:-mx-6 sm:px-6 md:gap-6 lg:-mx-8 lg:px-8">
+    @foreach (var item in Items)
+    {
+        <div class="w-44 shrink-0 snap-start sm:w-52 md:w-60">
+            <StoreProductCard Model="item"/>
+        </div>
+    }
+</unayka-rail>
+
+@code {
+    [Parameter, EditorRequired]
+    public IReadOnlyList<ProductCardModel> Items { get; set; } = [];
+}
