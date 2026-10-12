@@ -120,13 +120,14 @@ src/Unayka.Web/Components/Store/CatalogLinks.cs: catalog query string parsing an
 src/Unayka.Web/Components/Store/CatalogView.razor: filters sidebar, search and sort form, product grid, pagination
 src/Unayka.Web/Components/Store/ProductGallery.razor: CSS only product gallery with thumbnails
 src/Unayka.Web/Components/Store/StoreStructuredData.cs: schema.org Product and Store JSON-LD builders
-src/Unayka.Web/Components/Pages/Store/Shop.razor: /loja showroom with featured marquee and product rows
+src/Unayka.Web/Components/Pages/Store/Shop.razor: /loja with search, category chips, contained featured marquee, category shortcuts and new arrivals grid
+src/Unayka.Web/wwwroot/scripts/carousel.js: unayka-carousel custom element (fade rotation every 5 seconds, bullets, pause on hover)
 src/Unayka.Web/Components/Pages/Store/TeaShop.razor: /loja/chas catalog (teas and coffees) with banner
 src/Unayka.Web/Components/Store/ProductRowSection.razor: titled product row with "Ver mais" link, shared by home and /loja
 src/Unayka.Web/Components/Pages/Store/CosmeticsShop.razor: /loja/cosmeticos catalog with banner
 src/Unayka.Web/Components/Pages/Store/CategoryPage.razor: /loja/categoria/{slug} catalog with category hero
 src/Unayka.Web/Components/Pages/Store/ProductPage.razor: /produto/{slug} narrative page with order forms and mobile bottom bar
-src/Unayka.Web/Components/Pages/Home.razor: home with CSS only carousel, Destaques, Chás and Cosméticos naturais rows, how it works, natural ingredients and contact strip
+src/Unayka.Web/Components/Pages/Home.razor: home with rotating hero carousel and bullets, Destaques, Chás and Cosméticos naturais rows, how it works, natural ingredients and contact strip
 src/Unayka.Web.Test/Pages/StorefrontTests.cs: 200, 404, search and product form tests
 <!-- Counter (sprint L5) -->
 src/Unayka.Core/Counter/CashMath.cs: pure cash shift totals, expected cash, difference and change

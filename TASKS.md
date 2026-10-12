@@ -47,6 +47,7 @@ Wave 2 (four worktrees in parallel, Sonnet, split by feature folder):
 
 - [x] O1 Online checkout accepts Visa and Mastercard cards besides M-Pesa, e-Mola and mKesh (OnlineMethods); the wallet number is asked only for wallets; cash stays counter only.
 - [x] O2 Payment icons from wwwroot/images/pay on checkout options and in the footer, sized 40px on white tiles.
+- [x] O4 /loja redesigned to differ from the home (search, category chips and shortcuts, new arrivals); featured marquee contained and auto scrolling; home hero is a rotating carousel with bullets; Tailwind output regenerated and checked in Chrome.
 - [ ] O3 (H) Before the real gateway: confirm in the PaySuite documentation whether cards are supported and how (hosted page redirect, fields, webhook), and record it here. Until then card payments go through the mock gateway.
 
 Decision (2026-10-12): all images and content are provisional mocks (placeholder stock photos, nutrition table shown as an image placeholder) to be replaced by the final products later.
