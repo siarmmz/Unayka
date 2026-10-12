@@ -1,0 +1,215 @@
+@implements IAsyncDisposable
+@inject IServiceScopeFactory ScopeFactory
+
+<div class="space-y-8 rounded-3xl border border-sand p-8 sm:p-10">
+    <div class="flex items-center justify-between gap-4">
+        <p class="font-script text-3xl text-clay">@Text(_title)</p>
+        <StatusBadge Order="_orderStatus"/>
+    </div>
+    <p class="text-stone">@Text(_message)</p>
+
+    @if (_phase == Phase.Pending)
+    {
+        <div class="flex items-center gap-3 rounded-2xl bg-cream px-5 py-4 text-sm text-espresso">
+            <span class="h-3 w-3 animate-pulse rounded-full bg-clay"></span>
+            <span>@Text(Texts.WaitingLabel)</span>
+        </div>
+    }
+
+    @if (_phase == Phase.Paid)
+    {
+        <div class="space-y-4">
+            <p class="rounded-2xl bg-sage-soft px-5 py-4 text-sm text-espresso">@Text(_fulfillmentNote)</p>
+            <a href="@Texts.ShopUrl" class="btn-outline">@Text(Texts.ContinueShopping)</a>
+        </div>
+    }
+
+    @if (_phase == Phase.Failed)
+    {
+        <div class="space-y-5">
+            <p role="alert" class="rounded-2xl bg-rose-soft px-5 py-4 text-sm text-red-700">@Text(_failureText)</p>
+            <h2 class="font-serif text-2xl text-espresso">@Text(Texts.RetryTitle)</h2>
+            <div>
+                <label for="retry-method" class="field-label">@Text(Texts.MethodLabel)</label>
+                <select id="retry-method" class="field" @bind="_retryMethod">
+                    @foreach (var option in MethodOptions)
+                    {
+                        <option value="@option.Value">@Text(option.Label)</option>
+                    }
+                </select>
+            </div>
+            <div>
+                <label for="retry-phone" class="field-label">@Text(Texts.WalletLabel)</label>
+                <input id="retry-phone" type="tel" inputmode="numeric" placeholder="@Texts.PhonePlaceholder" class="field" @bind="_retryPhone"/>
+            </div>
+            @if (_retryError is not null)
+            {
+                <p role="alert" class="text-sm text-red-700">@Text(_retryError)</p>
+            }
+            <button type="button" class="btn-primary" @onclick="RetryAsync">@Text(Texts.RetryButton)</button>
+        </div>
+    }
+</div>
+
+@code {
+    private enum Phase
+    {
+        Pending,
+        Paid,
+        Failed,
+        Cancelled,
+    }
+
+    private sealed record LiveTexts(
+        string PendingTitle, string PendingMessageTemplate, string WaitingLabel, string PaidTitle, string PaidMessage,
+        string PickupNote, string DeliveryNote, string ContinueShopping, string ShopUrl,
+        string FailedTitle, string FailedMessage, string FailureTemplate, string RetryTitle, string MethodLabel, string WalletLabel,
+        string PhonePlaceholder, string RetryButton, string InvalidPhone, string RetryUnavailable,
+        string CancelledTitle, string CancelledMessage);
+
+    private sealed record MethodOption(string Value, string Label);
+
+    private static readonly LiveTexts Texts = new(
+        "Confirme o pagamento",
+        "Confirme o pagamento no seu telemóvel. Enviámos um pedido de {0} para {1}.",
+        "A aguardar a sua confirmação",
+        "Pagamento confirmado",
+        "Obrigado pela sua compra. Já recebemos o pagamento e vamos preparar o seu pedido.",
+        "Pode levantar o pedido na loja assim que o avisarmos por mensagem.",
+        "Vamos entregar o pedido na morada indicada. Entraremos em contacto se for preciso.",
+        "Continuar a comprar",
+        StoreUrls.Shop,
+        "O pagamento não passou",
+        "Não conseguimos concluir o pagamento deste pedido.",
+        "Motivo: {0}.",
+        "Tentar novamente",
+        "Método",
+        "Número da carteira móvel",
+        "84 123 4567",
+        "Pagar novamente",
+        "Indique um número de telemóvel válido, com nove dígitos.",
+        "Este pedido já não aceita novas tentativas de pagamento.",
+        "Pedido cancelado",
+        "Este pedido foi cancelado. Se precisar de ajuda, fale connosco.");
+
+    private static readonly MethodOption[] MethodOptions =
+    [
+        new(nameof(PaymentMethod.MPesa), StatusLabels.For(PaymentMethod.MPesa)),
+        new(nameof(PaymentMethod.EMola), StatusLabels.For(PaymentMethod.EMola)),
+    ];
+
+    private static readonly TimeSpan PollInterval = TimeSpan.FromSeconds(2);
+
+    [Parameter, EditorRequired]
+    public string Number { get; set; } = string.Empty;
+
+    private readonly CancellationTokenSource _stop = new();
+    private Phase _phase = Phase.Pending;
+    private OrderStatus _orderStatus = OrderStatus.AwaitingPayment;
+    private string _title = string.Empty;
+    private string _message = string.Empty;
+    private string _fulfillmentNote = string.Empty;
+    private string _failureText = string.Empty;
+    private string _retryMethod = nameof(PaymentMethod.MPesa);
+    private string _retryPhone = string.Empty;
+    private string? _retryError;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAsync();
+    }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _ = PollAsync();
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        await _stop.CancelAsync();
+        _stop.Dispose();
+    }
+
+    private async Task PollAsync()
+    {
+        using var timer = new PeriodicTimer(PollInterval);
+        try
+        {
+            while (await timer.WaitForNextTickAsync(_stop.Token))
+            {
+                if (_phase == Phase.Pending)
+                {
+                    await LoadAsync();
+                    await InvokeAsync(StateHasChanged);
+                }
+            }
+        }
+        catch (Exception exception) when (exception is OperationCanceledException or ObjectDisposedException)
+        {
+        }
+    }
+
+    private async Task RetryAsync()
+    {
+        await using var scope = ScopeFactory.CreateAsyncScope();
+        var payments = scope.ServiceProvider.GetRequiredService<IPaymentService>();
+        var method = Enum.Parse<PaymentMethod>(_retryMethod);
+        var outcome = await payments.RetryAsync(Number, method, _retryPhone);
+        _retryError = outcome switch
+        {
+            PaymentRetryOutcome.InvalidPhone => Texts.InvalidPhone,
+            PaymentRetryOutcome.NotRetryable => Texts.RetryUnavailable,
+            _ => null,
+        };
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        await using var scope = ScopeFactory.CreateAsyncScope();
+        await scope.ServiceProvider.GetRequiredService<IPaymentService>().RefreshAsync(Number);
+        var order = await scope.ServiceProvider.GetRequiredService<IOrderQueries>().GetByNumberAsync(Number);
+        if (order is not null)
+        {
+            Apply(order);
+        }
+    }
+
+    private void Apply(OrderDetail order)
+    {
+        var culture = System.Globalization.CultureInfo.InvariantCulture;
+        _orderStatus = order.Status;
+        _phase = ResolvePhase(order);
+        (_title, _message) = _phase switch
+        {
+            Phase.Paid => (Texts.PaidTitle, Texts.PaidMessage),
+            Phase.Failed => (Texts.FailedTitle, Texts.FailedMessage),
+            Phase.Cancelled => (Texts.CancelledTitle, Texts.CancelledMessage),
+            _ => (Texts.PendingTitle, string.Format(culture, Texts.PendingMessageTemplate, FormatMoney(order.TotalMinor), FormatPhone(order.Payment?.Phone))),
+        };
+        _fulfillmentNote = order.Fulfillment == FulfillmentKind.Delivery ? Texts.DeliveryNote : Texts.PickupNote;
+        _failureText = string.Format(culture, Texts.FailureTemplate, order.Payment?.FailureReason);
+        if (string.IsNullOrEmpty(_retryPhone))
+        {
+            _retryPhone = order.Payment?.Phone ?? string.Empty;
+        }
+    }
+
+    private static Phase ResolvePhase(OrderDetail order)
+    {
+        if (order.Status == OrderStatus.Cancelled)
+        {
+            return Phase.Cancelled;
+        }
+
+        if (order.Status != OrderStatus.AwaitingPayment && order.Status != OrderStatus.New)
+        {
+            return Phase.Paid;
+        }
+
+        return order.Payment?.Status == PaymentStatus.Failed ? Phase.Failed : Phase.Pending;
+    }
+}

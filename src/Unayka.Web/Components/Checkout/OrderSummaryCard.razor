@@ -1,0 +1,83 @@
+<div class="h-fit space-y-6 rounded-3xl border border-sand bg-cream/60 p-8">
+    <h2 class="font-serif text-2xl text-espresso">@Text(Texts.Title)</h2>
+    <ul class="divide-y divide-sand">
+        @foreach (var line in _lines)
+        {
+            <li class="flex justify-between gap-4 py-3 text-sm">
+                <span class="text-espresso">@Text(line.Label)</span>
+                <span>@Text(line.Total)</span>
+            </li>
+        }
+    </ul>
+    <dl class="space-y-3 text-sm">
+        @foreach (var row in _totals)
+        {
+            <div class="@row.CssClass"><dt>@Text(row.Label)</dt><dd>@Text(row.Value)</dd></div>
+        }
+    </dl>
+    <div class="space-y-1 border-t border-sand pt-5 text-sm">
+        <p class="font-medium text-espresso">@Text(_fulfillmentTitle)</p>
+        <p class="text-stone">@Text(_fulfillmentText)</p>
+        @if (_notes is not null)
+        {
+            <p class="pt-2 text-stone">@Text(_notes)</p>
+        }
+    </div>
+</div>
+
+@code {
+    private sealed record SummaryTexts(
+        string Title, string SubtotalLabel, string DiscountTemplate, string DeliveryLabel, string FreeLabel, string TotalLabel,
+        string PickupTitle, string PickupText, string DeliveryTitle, string DeliveryTemplate, string NotesTemplate, string QuantityTemplate);
+
+    private sealed record LineRow(string Label, string Total);
+
+    private sealed record TotalRow(string Label, string Value, string CssClass);
+
+    private const string PlainRowClass = "flex justify-between text-stone";
+    private const string TotalRowClass = "flex justify-between border-t border-sand pt-4 font-serif text-xl text-espresso";
+
+    private static readonly SummaryTexts Texts = new(
+        "Resumo do pedido",
+        "Subtotal",
+        "Desconto ({0})",
+        "Entrega",
+        "Grátis",
+        "Total",
+        "Levantamento na loja",
+        "Levante o pedido na loja quando estiver pronto. Avisamos por mensagem.",
+        "Entrega em Maputo",
+        "Entregamos em: {0}",
+        "Notas: {0}",
+        "{0} x {1}");
+
+    [Parameter, EditorRequired]
+    public OrderDetail Order { get; set; } = default!;
+
+    private List<LineRow> _lines = [];
+    private List<TotalRow> _totals = [];
+    private string _fulfillmentTitle = string.Empty;
+    private string _fulfillmentText = string.Empty;
+    private string? _notes;
+
+    protected override void OnParametersSet()
+    {
+        var culture = System.Globalization.CultureInfo.InvariantCulture;
+        _lines = Order.Lines
+            .Select(line => new LineRow(string.Format(culture, Texts.QuantityTemplate, line.Quantity, line.ProductName), FormatMoney(line.LineTotalMinor)))
+            .ToList();
+        _totals = [new(Texts.SubtotalLabel, FormatMoney(Order.SubtotalMinor), PlainRowClass)];
+        if (Order.DiscountMinor > 0)
+        {
+            _totals.Add(new(string.Format(culture, Texts.DiscountTemplate, Order.CouponCode), "-" + FormatMoney(Order.DiscountMinor), PlainRowClass));
+        }
+
+        _totals.Add(new(Texts.DeliveryLabel, Order.DeliveryFeeMinor > 0 ? FormatMoney(Order.DeliveryFeeMinor) : Texts.FreeLabel, PlainRowClass));
+        _totals.Add(new(Texts.TotalLabel, FormatMoney(Order.TotalMinor), TotalRowClass));
+
+        var isDelivery = Order.Fulfillment == FulfillmentKind.Delivery;
+        _fulfillmentTitle = isDelivery ? Texts.DeliveryTitle : Texts.PickupTitle;
+        _fulfillmentText = isDelivery ? string.Format(culture, Texts.DeliveryTemplate, Order.DeliveryAddress) : Texts.PickupText;
+        _notes = string.IsNullOrWhiteSpace(Order.Notes) ? null : string.Format(culture, Texts.NotesTemplate, Order.Notes);
+    }
+}

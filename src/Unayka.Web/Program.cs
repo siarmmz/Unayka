@@ -4,9 +4,11 @@ using Unayka.Core.Catalog;
 using Unayka.Core.Configuration;
 using Unayka.Core.Counter;
 using Unayka.Core.Data;
+using Unayka.Core.Orders;
 using Unayka.Web.Components;
 using Unayka.Web.Endpoints;
 using Unayka.Web.Endpoints.Account;
+using Unayka.Web.Endpoints.Checkout;
 using Unayka.Web.Endpoints.Security;
 
 DotNetEnv.Env.NoClobber().Load();
@@ -26,6 +28,7 @@ builder.Services.AddUnaykaAccounts();
 builder.Services.AddUnaykaCarts();
 builder.Services.AddUnaykaCatalog();
 builder.Services.AddUnaykaCounter();
+builder.Services.AddUnaykaOrders();
 
 var app = builder.Build();
 
@@ -45,6 +48,7 @@ app.MapHealthEndpoint();
 
 // Feature endpoints: at most one line per feature.
 app.MapAccountEndpoints();
+app.MapCheckoutEndpoints();
 
 app.MapRazorComponents<App>().AddInteractiveServerRenderMode();
 

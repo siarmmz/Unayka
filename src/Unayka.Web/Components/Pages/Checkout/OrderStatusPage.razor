@@ -1,0 +1,80 @@
+@page "/pedido/{Number}"
+@using Microsoft.AspNetCore.DataProtection
+@using Unayka.Web.Components.Checkout
+@using Unayka.Web.Endpoints.Cart
+@using Unayka.Web.Endpoints.Checkout
+@inject IOrderQueries Orders
+@inject IDataProtectionProvider Protection
+
+<SeoComponent Title="@_seoTitle" Description="@Texts.SeoDescription"/>
+
+<section class="container-page py-12 lg:py-20">
+    @if (_order is null)
+    {
+        <EmptyState Title="@Texts.NotFoundTitle" Message="@Texts.NotFoundMessage" ActionLabel="@Texts.NotFoundAction" ActionUrl="@Texts.ShopUrl"/>
+    }
+
+    @if (_order is not null)
+    {
+        <SectionHeading Title="@_heading" Eyebrow="@Texts.Eyebrow" Subtitle="@_subtitle"/>
+        <div class="mt-12 grid gap-12 lg:grid-cols-5">
+            <div class="lg:col-span-3">
+                <OrderStatusLive Number="@Number" @rendermode="InteractiveServer"/>
+            </div>
+            <div class="lg:col-span-2">
+                <OrderSummaryCard Order="_order"/>
+            </div>
+        </div>
+    }
+</section>
+
+@code {
+    private static readonly (string SeoDescription, string NotFoundTitle, string NotFoundMessage, string NotFoundAction, string ShopUrl, string Eyebrow, string HeadingTemplate, string SubtitleTemplate, string SeoTitleTemplate) Texts = (
+        "Acompanhe o estado do seu pedido e do pagamento.",
+        "Pedido não encontrado",
+        "Não encontrámos este pedido neste dispositivo. Se comprou com uma conta, inicie sessão.",
+        "Ver a loja",
+        StoreUrls.Shop,
+        "O seu pedido",
+        "Pedido {0}",
+        "Feito a {0}",
+        "Pedido {0} | Unayka");
+
+    [CascadingParameter]
+    private HttpContext? HttpContext { get; set; }
+
+    [Parameter]
+    public string Number { get; set; } = string.Empty;
+
+    private OrderDetail? _order;
+    private string _seoTitle = string.Empty;
+    private string _heading = string.Empty;
+    private string _subtitle = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var order = await Orders.GetByNumberAsync(Number);
+        _seoTitle = string.Format(System.Globalization.CultureInfo.InvariantCulture, Texts.SeoTitleTemplate, Number);
+        if (order is null || HttpContext is null || !CanView(order, HttpContext))
+        {
+            _order = null;
+            if (HttpContext is not null)
+            {
+                HttpContext.Response.StatusCode = StatusCodes.Status404NotFound;
+            }
+
+            return;
+        }
+
+        _order = order;
+        _heading = string.Format(System.Globalization.CultureInfo.InvariantCulture, Texts.HeadingTemplate, order.Number);
+        _subtitle = string.Format(System.Globalization.CultureInfo.InvariantCulture, Texts.SubtitleTemplate, FormatDate(order.CreatedAt));
+    }
+
+    private bool CanView(OrderDetail order, HttpContext context)
+    {
+        var isStaff = new[] { nameof(UserRole.Cashier), nameof(UserRole.Manager), nameof(UserRole.Administrator) }.Any(context.User.IsInRole);
+        var placed = PlacedOrdersCookie.Read(context.Request, Protection);
+        return OrderAccess.CanView(order, CartCookies.ReadUserId(context.User), isStaff, placed);
+    }
+}

@@ -1,0 +1,239 @@
+@page "/carrinho"
+@using Unayka.Core.Coupons
+@using Unayka.Web.Endpoints.Cart
+@inject ICartService Carts
+
+<SeoComponent Title="@Texts.SeoTitle" Description="@Texts.SeoDescription"/>
+
+<section class="container-page py-12 lg:py-20">
+    <SectionHeading Title="@Texts.Title" Eyebrow="@Texts.Eyebrow" Subtitle="@Texts.Subtitle"/>
+
+    @if (_notice is not null)
+    {
+        <p role="status" class="mt-8 rounded-xl bg-sage-soft px-4 py-3 text-sm text-espresso">@Text(_notice)</p>
+    }
+
+    @if (_rows.Count == 0)
+    {
+        <div class="mt-12">
+            <EmptyState Title="@Texts.EmptyTitle" Message="@Texts.EmptyMessage" ActionLabel="@Texts.EmptyAction" ActionUrl="@Texts.ShopUrl"/>
+        </div>
+    }
+
+    @if (_rows.Count > 0)
+    {
+        <div class="mt-12 grid gap-12 lg:grid-cols-3">
+            <ul class="divide-y divide-sand border-y border-sand lg:col-span-2">
+                @foreach (var row in _rows)
+                {
+                    <li class="flex gap-5 py-6">
+                        <a href="@row.ProductUrl" class="shrink-0"><img src="@row.ImageUrl" alt="@row.Name" class="h-32 w-28 rounded-2xl bg-cream object-cover"/></a>
+                        <div class="flex flex-1 flex-col justify-between gap-4 sm:flex-row">
+                            <div class="space-y-1">
+                                <a href="@row.ProductUrl" class="font-serif text-xl text-espresso hover:text-clay">@Text(row.Name)</a>
+                                <p class="text-sm text-stone">@Text(row.UnitPrice)</p>
+                                @if (row.Warning is not null)
+                                {
+                                    <p class="text-sm text-red-700">@Text(row.Warning)</p>
+                                }
+                            </div>
+                            <div class="flex flex-col items-start gap-3 sm:items-end">
+                                <p class="font-serif text-xl text-espresso">@Text(row.LineTotal)</p>
+                                <form method="post" action="@Texts.UpdateAction" class="flex items-center gap-2">
+                                    <AntiforgeryToken/>
+                                    <input type="hidden" name="productId" value="@row.ProductId"/>
+                                    <label for="@row.QuantityId" class="sr-only">@Text(Texts.QuantityLabel)</label>
+                                    <input id="@row.QuantityId" name="quantity" type="number" min="1" max="@row.MaxQuantity" value="@row.Quantity" class="field w-20 py-2 text-center"/>
+                                    <button type="submit" class="btn-outline px-4 py-2">@Text(Texts.UpdateButton)</button>
+                                </form>
+                                <form method="post" action="@Texts.RemoveAction">
+                                    <AntiforgeryToken/>
+                                    <input type="hidden" name="productId" value="@row.ProductId"/>
+                                    <button type="submit" class="text-sm text-stone underline underline-offset-4 hover:text-clay">@Text(Texts.RemoveButton)</button>
+                                </form>
+                            </div>
+                        </div>
+                    </li>
+                }
+            </ul>
+
+            <aside class="h-fit space-y-8 rounded-3xl border border-sand bg-cream/60 p-8">
+                <h2 class="font-serif text-2xl text-espresso">@Text(Texts.SummaryTitle)</h2>
+
+                <form method="post" action="@Texts.CouponAction" class="space-y-3">
+                    <AntiforgeryToken/>
+                    <label for="coupon-code" class="field-label">@Text(Texts.CouponLabel)</label>
+                    <div class="flex gap-2">
+                        <input id="coupon-code" name="code" type="text" maxlength="30" autocapitalize="characters" value="@_appliedCode" placeholder="@Texts.CouponPlaceholder" class="field uppercase"/>
+                        <button type="submit" class="btn-outline px-5">@Text(_couponButton)</button>
+                    </div>
+                    @if (_couponFeedback is not null)
+                    {
+                        <p role="status" class="@_couponFeedbackClass">@Text(_couponFeedback)</p>
+                    }
+                </form>
+
+                <dl class="space-y-3 text-sm">
+                    <div class="flex justify-between"><dt class="text-stone">@Text(Texts.SubtotalLabel)</dt><dd>@Text(_subtotal)</dd></div>
+                    @if (_discount is not null)
+                    {
+                        <div class="flex justify-between"><dt class="text-stone">@Text(_discountLabel)</dt><dd class="text-sage">@Text(_discount)</dd></div>
+                    }
+                    <div class="flex justify-between border-t border-sand pt-4 font-serif text-xl text-espresso"><dt>@Text(Texts.TotalLabel)</dt><dd>@Text(_total)</dd></div>
+                </dl>
+                <p class="text-xs text-stone">@Text(Texts.DeliveryNote)</p>
+
+                @if (_canCheckout)
+                {
+                    <a href="@Texts.CheckoutUrl" class="btn-primary w-full">@Text(Texts.CheckoutButton)</a>
+                }
+                @if (!_canCheckout)
+                {
+                    <p class="rounded-xl bg-rose-soft px-4 py-3 text-sm text-red-700">@Text(Texts.StockProblem)</p>
+                }
+                <a href="@Texts.ShopUrl" class="block text-center text-sm text-stone underline underline-offset-4 hover:text-clay">@Text(Texts.ContinueShopping)</a>
+            </aside>
+        </div>
+    }
+</section>
+
+@code {
+    private sealed record CartTexts(
+        string SeoTitle, string SeoDescription, string Eyebrow, string Title, string Subtitle,
+        string EmptyTitle, string EmptyMessage, string EmptyAction, string ShopUrl, string CheckoutUrl,
+        string QuantityLabel, string UpdateButton, string RemoveButton, string SummaryTitle,
+        string CouponLabel, string CouponPlaceholder, string ApplyButton, string ChangeButton,
+        string SubtotalLabel, string TotalLabel, string DiscountTemplate, string DeliveryNote,
+        string CheckoutButton, string StockProblem, string ContinueShopping,
+        string UpdateAction, string RemoveAction, string CouponAction,
+        string UnavailableWarning, string LimitedWarning);
+
+    private sealed record LineRow(
+        int ProductId, string Name, string ProductUrl, string ImageUrl, string UnitPrice, string LineTotal,
+        int Quantity, int MaxQuantity, string QuantityId, string? Warning);
+
+    private static readonly CartTexts Texts = new(
+        "Carrinho | Unayka",
+        "Reveja os seus produtos, aplique um cupão e continue para o pagamento.",
+        "A sua seleção",
+        "Carrinho",
+        "Reveja os produtos antes de pagar.",
+        "O carrinho está vazio",
+        "Escolha cafés e cosméticos na loja e volte aqui para finalizar.",
+        "Ver a loja",
+        StoreUrls.Shop,
+        StoreUrls.Checkout,
+        "Quantidade",
+        "Atualizar",
+        "Remover",
+        "Resumo",
+        "Cupão de desconto",
+        "Código",
+        "Aplicar",
+        "Atualizar",
+        "Subtotal",
+        "Total",
+        "Desconto ({0})",
+        "A entrega e o método de pagamento são escolhidos no passo seguinte.",
+        "Continuar para pagamento",
+        "Alguns produtos já não têm stock suficiente. Ajuste as quantidades para continuar.",
+        "Continuar a comprar",
+        "/carrinho/atualizar",
+        "/carrinho/remover",
+        "/carrinho/cupao",
+        "Produto indisponível de momento.",
+        "Só temos {0} em stock.");
+
+    private static readonly Dictionary<string, string> Notices = new()
+    {
+        [nameof(CartChange.LimitedByStock)] = "Ajustámos a quantidade ao stock disponível.",
+        [nameof(CartChange.OutOfStock)] = "Este produto está esgotado.",
+        [nameof(CartChange.UnknownProduct)] = "Este produto já não está disponível.",
+    };
+
+    private static readonly Dictionary<string, string> CouponMessages = new()
+    {
+        [CartEndpoints.CouponApplied] = "Cupão aplicado.",
+        [CartEndpoints.CouponRemoved] = "Cupão removido.",
+        [CartEndpoints.CouponUnknown] = "Não encontrámos este cupão. Verifique o código.",
+        [nameof(CouponRejection.Inactive)] = "Este cupão já não está ativo.",
+        [nameof(CouponRejection.NotStarted)] = "Este cupão ainda não está disponível.",
+        [nameof(CouponRejection.Expired)] = "Este cupão expirou.",
+        [nameof(CouponRejection.UsageLimitReached)] = "Este cupão já atingiu o limite de utilizações.",
+        [nameof(CouponRejection.MinSubtotalNotReached)] = "O valor do carrinho ainda não chega ao mínimo deste cupão.",
+        [nameof(CouponRejection.CategoryNotInCart)] = "Este cupão aplica-se a produtos que não estão no carrinho.",
+    };
+
+    private static readonly string[] PositiveFeedback = [CartEndpoints.CouponApplied, CartEndpoints.CouponRemoved];
+    private const string PositiveClass = "text-sm text-sage";
+    private const string NegativeClass = "text-sm text-red-700";
+
+    [CascadingParameter]
+    private HttpContext? HttpContext { get; set; }
+
+    [Parameter, SupplyParameterFromQuery(Name = CartEndpoints.NoticeKey)]
+    public string? NoticeCode { get; set; }
+
+    [Parameter, SupplyParameterFromQuery(Name = CartEndpoints.CouponKey)]
+    public string? CouponCode { get; set; }
+
+    private List<LineRow> _rows = [];
+    private string? _notice;
+    private string? _couponFeedback;
+    private string _couponFeedbackClass = PositiveClass;
+    private string _couponButton = Texts.ApplyButton;
+    private string _appliedCode = string.Empty;
+    private string _subtotal = string.Empty;
+    private string? _discount;
+    private string _discountLabel = string.Empty;
+    private string _total = string.Empty;
+    private bool _canCheckout;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var cartId = HttpContext is null ? null : CartCookies.Read(HttpContext.Request);
+        var view = await Carts.GetAsync(cartId);
+        _rows = view.Lines.Select(ToRow).ToList();
+        _canCheckout = !view.HasStockProblem;
+        _subtotal = FormatMoney(view.SubtotalMinor);
+        _total = FormatMoney(view.TotalMinor);
+        _appliedCode = view.CouponRejection is null ? view.CouponCode ?? string.Empty : string.Empty;
+        _couponButton = _appliedCode.Length > 0 ? Texts.ChangeButton : Texts.ApplyButton;
+        _discount = view.DiscountMinor > 0 ? "-" + FormatMoney(view.DiscountMinor) : null;
+        _discountLabel = string.Format(System.Globalization.CultureInfo.InvariantCulture, Texts.DiscountTemplate, view.CouponCode);
+        _notice = NoticeCode is not null && Notices.TryGetValue(NoticeCode, out var notice) ? notice : null;
+        ResolveCouponFeedback(view);
+    }
+
+    private void ResolveCouponFeedback(CartView view)
+    {
+        var key = view.CouponRejection?.ToString() ?? CouponCode;
+        _couponFeedback = key is not null && CouponMessages.TryGetValue(key, out var message) ? message : null;
+        _couponFeedbackClass = key is not null && PositiveFeedback.Contains(key) ? PositiveClass : NegativeClass;
+    }
+
+    private static LineRow ToRow(CartLineView line) =>
+        new(
+            line.ProductId,
+            line.Name,
+            ToUrl(StoreUrls.Product(line.Slug)),
+            line.ImageUrl,
+            FormatMoney(line.UnitPriceMinor),
+            FormatMoney(line.LineTotalMinor),
+            line.Quantity,
+            Math.Max(1, Math.Min(line.StockQuantity, CartService.MaxQuantityPerLine)),
+            $"quantity-{line.ProductId}",
+            WarningFor(line));
+
+    private static string? WarningFor(CartLineView line)
+    {
+        if (!line.IsAvailable)
+        {
+            return Texts.UnavailableWarning;
+        }
+
+        return line.Quantity > line.StockQuantity
+            ? string.Format(System.Globalization.CultureInfo.InvariantCulture, Texts.LimitedWarning, line.StockQuantity)
+            : null;
+    }
+}

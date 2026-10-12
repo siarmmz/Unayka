@@ -26,7 +26,7 @@ public sealed class CounterServicesTests : IDisposable
         var factory = new TestFactory(_database);
         var audit = new AuditLog(_database.Context, _time);
         _shifts = new CounterShifts(factory, audit, _time);
-        _sales = new CounterSales(factory, audit, _time);
+        _sales = new CounterSales(factory, new OrderNumberGenerator(_database.Context), audit, _time);
         _preparation = new CounterPreparation(factory, audit, _time);
         DatabaseSeeder.SeedAsync(_database.Context, new SeedOptions("unayka2026", "admin@unayka.co.mz", true), _time).GetAwaiter().GetResult();
     }

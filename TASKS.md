@@ -15,7 +15,9 @@ Note for L1: the database is created with EnsureCreated at startup (no migration
 
 Wave 2 (four worktrees in parallel, Sonnet, split by feature folder):
 - [x] L2 Store front: home (hero, featured, categories, best sellers, story), catalog with filters and search, category, product narrative page (branch sprint-l/storefront)
-- [ ] L3 Cart and checkout: server cart, drawer, coupon engine, single page checkout, mock wallet payment with status, order confirmation, customer account and orders (branch sprint-l/checkout)
+- [x] L3 Cart and checkout: server cart, drawer, coupon engine, single page checkout, mock wallet payment with status, order confirmation, customer account and orders (branch sprint-l/checkout)
+  - MockPaymentGateway (provider "mock") is registered by AddUnaykaOrders; PaySuiteGateway replaces it after task 5.1. The mock resolves on read: Paid after 5 seconds, phone ending in 0 fails after 3 seconds with "Saldo insuficiente".
+  - Not done: cart drawer (the header cart link goes to /carrinho) and merging a guest cart into the user cart on sign in (the cart only receives the user id when the signed in user adds an item).
 - [ ] L4 Administration: dashboard, products, categories, orders, coupons, customers, audit (branch sprint-l/admin)
 - [x] L5 Counter: point of sale charge mode, cash shift, preparation board (branch sprint-l/counter)
 

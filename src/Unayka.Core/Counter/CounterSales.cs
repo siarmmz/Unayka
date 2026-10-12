@@ -10,7 +10,7 @@ using Unayka.Core.Presentation;
 
 namespace Unayka.Core.Counter;
 
-public sealed class CounterSales(IDbContextFactory<UnaykaDbContext> factory, IAuditLog audit, TimeProvider time) : ICounterSales
+public sealed class CounterSales(IDbContextFactory<UnaykaDbContext> factory, IOrderNumberGenerator orderNumbers, IAuditLog audit, TimeProvider time) : ICounterSales
 {
     private const string OrderEntity = "Order";
     private const string DefaultCustomerName = "Cliente balcão";
@@ -73,7 +73,7 @@ public sealed class CounterSales(IDbContextFactory<UnaykaDbContext> factory, IAu
 
         var now = time.GetUtcNow();
         var hasCoffee = lines.Any(line => !line.IsFreeAmount && products[line.ProductId].Category?.Kind == CategoryKind.Coffee);
-        var order = BuildOrder(request, lines, total, PreparationFlow.InitialStatus(hasCoffee), await CounterOrderNumbers.NextAsync(database, cancellationToken), now);
+        var order = BuildOrder(request, lines, total, PreparationFlow.InitialStatus(hasCoffee), await orderNumbers.NextAsync(cancellationToken), now);
         database.Orders.Add(order);
         foreach (var line in lines.Where(line => !line.IsFreeAmount))
         {
