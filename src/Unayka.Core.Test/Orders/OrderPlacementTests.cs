@@ -22,7 +22,7 @@ public sealed class OrderPlacementTests : IDisposable
         var cart = await _fixture.Carts.AddAsync(null, null, product.Id, 2);
         await _fixture.Carts.ApplyCouponAsync(cart.CartId, "BEMVINDO10");
 
-        var result = await _fixture.Placement.PlaceAsync(Request(cart.CartId, FulfillmentKind.Delivery, "Bairro Central"));
+        var result = await _fixture.Placement.PlaceAsync(Request(cart.CartId));
 
         Assert.True(result.Succeeded);
         Assert.Matches(@"^UN-\d{6}$", result.OrderNumber);
@@ -33,8 +33,8 @@ public sealed class OrderPlacementTests : IDisposable
         Assert.Equal(OrderChannel.Online, order.Channel);
         Assert.Equal(subtotal, order.SubtotalMinor);
         Assert.Equal(subtotal / 10, order.DiscountMinor);
-        Assert.Equal(OrderPricing.DeliveryFeeMinor, order.DeliveryFeeMinor);
-        Assert.Equal(subtotal - subtotal / 10 + OrderPricing.DeliveryFeeMinor, order.TotalMinor);
+        Assert.Equal(0, order.DeliveryFeeMinor);
+        Assert.Equal(subtotal - subtotal / 10, order.TotalMinor);
         Assert.Equal(product.Name, order.Items.Single().ProductName);
         Assert.Equal(PaymentStatus.Pending, order.Payments.Single().Status);
         Assert.Equal(stockBefore - 2, await TestStock.TotalAsync(_fixture.Db, product.Id));
@@ -49,33 +49,15 @@ public sealed class OrderPlacementTests : IDisposable
     public async Task Digital_lines_skip_stock_and_have_no_location()
     {
         var ebook = await _fixture.Db.Products.SingleAsync(candidate => candidate.Slug == "e-book-receitas-com-cha");
-        var cart = await _fixture.Carts.AddAsync(null, null, ebook.Id, 1);
+        var cart = await _fixture.Carts.AddAsync(null, 7, ebook.Id, 1);
 
-        var result = await _fixture.Placement.PlaceAsync(Request(cart.CartId, FulfillmentKind.Pickup, null));
+        var result = await _fixture.Placement.PlaceAsync(Request(cart.CartId, 7));
 
         Assert.True(result.Succeeded);
         var item = (await _fixture.Db.Orders.Include(order => order.Items).SingleAsync(order => order.Number == result.OrderNumber)).Items.Single();
         Assert.Equal(ProductKind.Digital, item.Kind);
         Assert.Null(item.LocationId);
         Assert.False(string.IsNullOrEmpty(item.ImageUrl));
-    }
-
-    [Fact]
-    public async Task A_line_larger_than_any_single_location_is_split_across_locations()
-    {
-        var product = await _fixture.FirstProductAsync();
-        var stocks = await _fixture.Db.LocationStocks.Where(stock => stock.ProductId == product.Id).OrderBy(stock => stock.LocationId).ToListAsync();
-        stocks[0].Quantity = 3;
-        stocks[1].Quantity = 4;
-        await _fixture.Db.SaveChangesAsync();
-        var cart = await _fixture.Carts.AddAsync(null, null, product.Id, 6);
-
-        var result = await _fixture.Placement.PlaceAsync(Request(cart.CartId, FulfillmentKind.Pickup, null));
-
-        Assert.True(result.Succeeded);
-        var items = (await _fixture.Db.Orders.Include(order => order.Items).SingleAsync(order => order.Number == result.OrderNumber)).Items;
-        Assert.Equal([3, 3], items.OrderBy(item => item.LocationId).Select(item => item.Quantity));
-        Assert.Equal(1, await TestStock.TotalAsync(_fixture.Db, product.Id));
     }
 
     [Fact]
@@ -86,7 +68,7 @@ public sealed class OrderPlacementTests : IDisposable
         var cart = await _fixture.Carts.AddAsync(null, null, product.Id, 1);
 
         var first = await generator.NextAsync();
-        await _fixture.Placement.PlaceAsync(Request(cart.CartId, FulfillmentKind.Pickup, null));
+        await _fixture.Placement.PlaceAsync(Request(cart.CartId));
         var second = await generator.NextAsync();
 
         Assert.Equal("UN-000001", first);
@@ -99,7 +81,7 @@ public sealed class OrderPlacementTests : IDisposable
         var product = await _fixture.FirstProductAsync();
         var cart = await _fixture.Carts.AddAsync(null, null, product.Id, 1);
 
-        var result = await _fixture.Placement.PlaceAsync(Request(cart.CartId, FulfillmentKind.Pickup, null));
+        var result = await _fixture.Placement.PlaceAsync(Request(cart.CartId));
 
         var order = await _fixture.Db.Orders.SingleAsync(candidate => candidate.Number == result.OrderNumber);
         Assert.Equal(product.PriceMinor, order.TotalMinor);
@@ -114,10 +96,10 @@ public sealed class OrderPlacementTests : IDisposable
         await TestStock.SetTotalAsync(_fixture.Db, product.Id, 1);
         var ordersBefore = await _fixture.Db.Orders.CountAsync();
 
-        var result = await _fixture.Placement.PlaceAsync(Request(cart.CartId, FulfillmentKind.Pickup, null));
+        var result = await _fixture.Placement.PlaceAsync(Request(cart.CartId));
 
         Assert.Equal(PlaceOrderOutcome.OutOfStock, result.Outcome);
-        Assert.Equal(product.Name, result.Detail);
+        Assert.StartsWith(product.Name, result.Detail, StringComparison.Ordinal);
         Assert.Equal(ordersBefore, await _fixture.Db.Orders.CountAsync());
         Assert.False((await _fixture.Carts.GetAsync(cart.CartId)).IsEmpty);
     }
@@ -132,7 +114,7 @@ public sealed class OrderPlacementTests : IDisposable
         coupon.IsActive = false;
         await _fixture.Db.SaveChangesAsync();
 
-        var result = await _fixture.Placement.PlaceAsync(Request(cart.CartId, FulfillmentKind.Pickup, null));
+        var result = await _fixture.Placement.PlaceAsync(Request(cart.CartId));
 
         Assert.Equal(PlaceOrderOutcome.CouponNoLongerValid, result.Outcome);
     }
@@ -140,20 +122,19 @@ public sealed class OrderPlacementTests : IDisposable
     [Fact]
     public async Task Empty_cart_is_rejected()
     {
-        var result = await _fixture.Placement.PlaceAsync(Request(null, FulfillmentKind.Pickup, null));
+        var result = await _fixture.Placement.PlaceAsync(Request(null));
 
         Assert.Equal(PlaceOrderOutcome.EmptyCart, result.Outcome);
     }
 
     [Theory]
-    [InlineData("", Phone, Phone, "Pickup", null, PlaceOrderOutcome.InvalidName)]
-    [InlineData("Ana", "123", Phone, "Pickup", null, PlaceOrderOutcome.InvalidPhone)]
-    [InlineData("Ana", Phone, "12", "Pickup", null, PlaceOrderOutcome.InvalidWalletPhone)]
-    [InlineData("Ana", Phone, Phone, "Delivery", " ", PlaceOrderOutcome.AddressRequired)]
-    public async Task Invalid_input_is_rejected(string name, string phone, string wallet, string fulfillment, string? address, PlaceOrderOutcome expected)
+    [InlineData("", Phone, Phone, PlaceOrderOutcome.InvalidName)]
+    [InlineData("Ana", "123", Phone, PlaceOrderOutcome.InvalidPhone)]
+    [InlineData("Ana", Phone, "12", PlaceOrderOutcome.InvalidWalletPhone)]
+    public async Task Invalid_input_is_rejected(string name, string phone, string wallet, PlaceOrderOutcome expected)
     {
         var request = new PlaceOrderRequest(
-            null, null, name, phone, null, Enum.Parse<FulfillmentKind>(fulfillment), address, null, PaymentMethod.MPesa, wallet);
+            null, null, name, phone, null, null, PaymentMethod.MPesa, wallet);
 
         var result = await _fixture.Placement.PlaceAsync(request);
 
@@ -163,7 +144,7 @@ public sealed class OrderPlacementTests : IDisposable
     [Fact]
     public async Task Invalid_email_is_rejected()
     {
-        var request = Request(null, FulfillmentKind.Pickup, null) with { Email = "not an email" };
+        var request = Request(null) with { Email = "not an email" };
 
         var result = await _fixture.Placement.PlaceAsync(request);
 
@@ -182,6 +163,6 @@ public sealed class OrderPlacementTests : IDisposable
         Assert.False(OrderAccess.CanView(order, null, false, []));
     }
 
-    private static PlaceOrderRequest Request(Guid? cartId, FulfillmentKind fulfillment, string? address) =>
-        new(cartId, null, "Ana Silva", Phone, null, fulfillment, address, null, PaymentMethod.MPesa, Phone);
+    private static PlaceOrderRequest Request(Guid? cartId, int? userId = null) =>
+        new(cartId, userId, "Ana Silva", Phone, null, null, PaymentMethod.MPesa, Phone);
 }

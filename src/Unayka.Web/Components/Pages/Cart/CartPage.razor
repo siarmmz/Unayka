@@ -11,6 +11,10 @@
     @if (_notice is not null)
     {
         <p role="status" class="mt-8 rounded-xl bg-sage-soft px-4 py-3 text-sm text-espresso">@Text(_notice)</p>
+        @if (_showSignIn)
+        {
+            <a href="@Texts.SignInUrl" class="btn-outline mt-4">@Text(Texts.SignInLabel)</a>
+        }
     }
 
     @if (_rows.Count == 0)
@@ -23,39 +27,70 @@
     @if (_rows.Count > 0)
     {
         <div class="mt-12 grid gap-12 lg:grid-cols-3">
-            <ul class="divide-y divide-sand border-y border-sand lg:col-span-2">
-                @foreach (var row in _rows)
+            <div class="space-y-10 lg:col-span-2">
+                @foreach (var group in _groups)
                 {
-                    <li class="flex gap-5 py-6">
-                        <a href="@row.ProductUrl" class="shrink-0"><img src="@row.ImageUrl" alt="@row.Name" class="h-32 w-28 rounded-2xl bg-cream object-cover"/></a>
-                        <div class="flex flex-1 flex-col justify-between gap-4 sm:flex-row">
-                            <div class="space-y-1">
-                                <a href="@row.ProductUrl" class="font-serif text-xl text-espresso hover:text-clay">@Text(row.Name)</a>
-                                <p class="text-sm text-stone">@Text(row.UnitPrice)</p>
-                                @if (row.Warning is not null)
-                                {
-                                    <p class="text-sm text-red-700">@Text(row.Warning)</p>
-                                }
-                            </div>
-                            <div class="flex flex-col items-start gap-3 sm:items-end">
-                                <p class="font-serif text-xl text-espresso">@Text(row.LineTotal)</p>
-                                <form method="post" action="@Texts.UpdateAction" class="flex items-center gap-2">
-                                    <AntiforgeryToken/>
-                                    <input type="hidden" name="productId" value="@row.ProductId"/>
-                                    <label for="@row.QuantityId" class="sr-only">@Text(Texts.QuantityLabel)</label>
-                                    <input id="@row.QuantityId" name="quantity" type="number" min="1" max="@row.MaxQuantity" value="@row.Quantity" class="field w-20 py-2 text-center"/>
-                                    <button type="submit" class="btn-outline px-4 py-2">@Text(Texts.UpdateButton)</button>
-                                </form>
-                                <form method="post" action="@Texts.RemoveAction">
-                                    <AntiforgeryToken/>
-                                    <input type="hidden" name="productId" value="@row.ProductId"/>
-                                    <button type="submit" class="text-sm text-stone underline underline-offset-4 hover:text-clay">@Text(Texts.RemoveButton)</button>
-                                </form>
-                            </div>
-                        </div>
-                    </li>
+                    <section class="space-y-2">
+                        <h2 class="font-serif text-2xl text-espresso">@Text(group.Title)</h2>
+                        @if (group.Subtitle is not null)
+                        {
+                            <p class="text-sm text-stone">@Text(group.Subtitle)</p>
+                        }
+                        <ul class="divide-y divide-sand border-y border-sand">
+                            @foreach (var row in group.Rows)
+                            {
+                                <li class="flex flex-col gap-5 py-6 sm:flex-row">
+                                    <a href="@row.ProductUrl" class="shrink-0"><img src="@row.ImageUrl" alt="@row.Name" class="h-32 w-28 rounded-2xl bg-cream object-cover"/></a>
+                                    <div class="flex flex-1 flex-col justify-between gap-4 sm:flex-row">
+                                        <div class="space-y-1">
+                                            <a href="@row.ProductUrl" class="font-serif text-xl text-espresso hover:text-clay">@Text(row.Name)</a>
+                                            <p class="text-sm text-stone">@Text(row.UnitPrice)</p>
+                                            @if (row.PickupNote is not null)
+                                            {
+                                                <p class="text-sm text-stone">@Text(row.PickupNote)</p>
+                                            }
+                                            @if (row.Warning is not null)
+                                            {
+                                                <p role="alert" class="text-sm text-red-700">@Text(row.Warning)</p>
+                                            }
+                                            @if (row.LocationChoices.Count > 1)
+                                            {
+                                                <form method="post" action="@Texts.LocationAction" class="flex flex-wrap items-center gap-2 pt-2">
+                                                    <AntiforgeryToken/>
+                                                    <input type="hidden" name="productId" value="@row.ProductId"/>
+                                                    <label for="@row.LocationId" class="sr-only">@Text(Texts.LocationLabel)</label>
+                                                    <select id="@row.LocationId" name="locationId" class="field w-auto py-2">
+                                                        @foreach (var choice in row.LocationChoices)
+                                                        {
+                                                            <option value="@choice.Value" selected="@choice.IsSelected">@Text(choice.Label)</option>
+                                                        }
+                                                    </select>
+                                                    <button type="submit" class="btn-outline px-4 py-2">@Text(Texts.LocationButton)</button>
+                                                </form>
+                                            }
+                                        </div>
+                                        <div class="flex flex-col items-start gap-3 sm:items-end">
+                                            <p class="font-serif text-xl text-espresso">@Text(row.LineTotal)</p>
+                                            <form method="post" action="@Texts.UpdateAction" class="flex items-center gap-2">
+                                                <AntiforgeryToken/>
+                                                <input type="hidden" name="productId" value="@row.ProductId"/>
+                                                <label for="@row.QuantityId" class="sr-only">@Text(Texts.QuantityLabel)</label>
+                                                <input id="@row.QuantityId" name="quantity" type="number" min="1" max="@row.MaxQuantity" value="@row.Quantity" class="field w-20 py-2 text-center"/>
+                                                <button type="submit" class="btn-outline px-4 py-2">@Text(Texts.UpdateButton)</button>
+                                            </form>
+                                            <form method="post" action="@Texts.RemoveAction">
+                                                <AntiforgeryToken/>
+                                                <input type="hidden" name="productId" value="@row.ProductId"/>
+                                                <button type="submit" class="text-sm text-stone underline underline-offset-4 hover:text-clay">@Text(Texts.RemoveButton)</button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </li>
+                            }
+                        </ul>
+                    </section>
                 }
-            </ul>
+            </div>
 
             <aside class="h-fit space-y-8 rounded-3xl border border-sand bg-cream/60 p-8">
                 <h2 class="font-serif text-2xl text-espresso">@Text(Texts.SummaryTitle)</h2>
@@ -106,11 +141,18 @@
         string SubtotalLabel, string TotalLabel, string DiscountTemplate, string DeliveryNote,
         string CheckoutButton, string StockProblem, string ContinueShopping,
         string UpdateAction, string RemoveAction, string CouponAction,
-        string UnavailableWarning, string LimitedWarning);
+        string UnavailableWarning, string LimitedWarning, string LocationAction, string LocationLabel, string LocationButton,
+        string PickupGroupTemplate, string DigitalGroupTitle, string DigitalGroupSubtitle, string DigitalLine,
+        string WrongLocationWarning, string LocationOptionTemplate, string SignInUrl, string SignInLabel);
+
+    private sealed record LocationChoice(string Value, string Label, bool IsSelected);
 
     private sealed record LineRow(
         int ProductId, string Name, string ProductUrl, string ImageUrl, string UnitPrice, string LineTotal,
-        int Quantity, int MaxQuantity, string QuantityId, string? Warning);
+        int Quantity, int MaxQuantity, string QuantityId, string LocationId, string? PickupNote, string? Warning,
+        IReadOnlyList<LocationChoice> LocationChoices);
+
+    private sealed record LineGroup(string Title, string? Subtitle, IReadOnlyList<LineRow> Rows);
 
     private static readonly CartTexts Texts = new(
         "Carrinho | Unayka",
@@ -134,7 +176,7 @@
         "Subtotal",
         "Total",
         "Desconto ({0})",
-        "A entrega e o método de pagamento são escolhidos no passo seguinte.",
+        "O levantamento é na loja escolhida em cada produto. O método de pagamento é escolhido no passo seguinte.",
         "Continuar para pagamento",
         "Alguns produtos já não têm stock suficiente. Ajuste as quantidades para continuar.",
         "Continuar a comprar",
@@ -142,13 +184,25 @@
         "/carrinho/remover",
         "/carrinho/cupao",
         "Produto indisponível de momento.",
-        "Só temos {0} em stock.");
+        "Só temos {0} em stock nesta loja.",
+        "/carrinho/local",
+        "Loja de levantamento",
+        "Mudar de loja",
+        "Levantar em {0}",
+        "Produtos digitais",
+        "Sem levantamento. A descarga fica disponível na sua conta depois do pagamento.",
+        "Produto digital",
+        "Sem stock em {0}. Escolha outra loja ou remova o produto.",
+        "{0} ({1} em stock)",
+        StoreUrls.SignIn,
+        "Iniciar sessão");
 
     private static readonly Dictionary<string, string> Notices = new()
     {
         [nameof(CartChange.LimitedByStock)] = "Ajustámos a quantidade ao stock disponível.",
         [nameof(CartChange.OutOfStock)] = "Este produto está esgotado.",
         [nameof(CartChange.UnknownProduct)] = "Este produto já não está disponível.",
+        [nameof(CartChange.SignInRequired)] = "Inicie sessão para comprar produtos digitais.",
     };
 
     private static readonly Dictionary<string, string> CouponMessages = new()
@@ -178,6 +232,8 @@
     public string? CouponCode { get; set; }
 
     private List<LineRow> _rows = [];
+    private List<LineGroup> _groups = [];
+    private bool _showSignIn;
     private string? _notice;
     private string? _couponFeedback;
     private string _couponFeedbackClass = PositiveClass;
@@ -194,6 +250,7 @@
         var cartId = HttpContext is null ? null : CartCookies.Read(HttpContext.Request);
         var view = await Carts.GetAsync(cartId);
         _rows = view.Lines.Select(ToRow).ToList();
+        _groups = ToGroups(view);
         _canCheckout = !view.HasStockProblem;
         _subtotal = FormatMoney(view.SubtotalMinor);
         _total = FormatMoney(view.TotalMinor);
@@ -202,6 +259,7 @@
         _discount = view.DiscountMinor > 0 ? "-" + FormatMoney(view.DiscountMinor) : null;
         _discountLabel = string.Format(System.Globalization.CultureInfo.InvariantCulture, Texts.DiscountTemplate, view.CouponCode);
         _notice = NoticeCode is not null && Notices.TryGetValue(NoticeCode, out var notice) ? notice : null;
+        _showSignIn = NoticeCode == nameof(CartChange.SignInRequired);
         ResolveCouponFeedback(view);
     }
 
@@ -211,6 +269,32 @@
         _couponFeedback = key is not null && CouponMessages.TryGetValue(key, out var message) ? message : null;
         _couponFeedbackClass = key is not null && PositiveFeedback.Contains(key) ? PositiveClass : NegativeClass;
     }
+
+    private List<LineGroup> ToGroups(CartView view)
+    {
+        var rowsByProduct = _rows.ToDictionary(row => row.ProductId);
+        var groups = view.PickupGroups
+            .Select(group => new LineGroup(
+                string.Format(System.Globalization.CultureInfo.InvariantCulture, Texts.PickupGroupTemplate, group.LocationName),
+                null,
+                group.Lines.Select(line => rowsByProduct[line.ProductId]).ToList()))
+            .ToList();
+        if (view.HasDigital)
+        {
+            groups.Add(new LineGroup(Texts.DigitalGroupTitle, Texts.DigitalGroupSubtitle, view.DigitalLines.Select(line => rowsByProduct[line.ProductId]).ToList()));
+        }
+
+        return groups;
+    }
+
+    private static List<LocationChoice> ChoicesFor(CartLineView line) =>
+        line.LocationOptions
+            .Where(option => option.Quantity > 0 || option.LocationId == line.LocationId)
+            .Select(option => new LocationChoice(
+                option.LocationId.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                string.Format(System.Globalization.CultureInfo.InvariantCulture, Texts.LocationOptionTemplate, option.Name, option.Quantity),
+                option.LocationId == line.LocationId))
+            .ToList();
 
     private static LineRow ToRow(CartLineView line) =>
         new(
@@ -223,13 +307,18 @@
             line.Quantity,
             Math.Max(1, Math.Min(line.StockQuantity, CartService.MaxQuantityPerLine)),
             $"quantity-{line.ProductId}",
-            WarningFor(line));
+            $"location-{line.ProductId}",
+            line.IsDigital ? Texts.DigitalLine : null,
+            WarningFor(line),
+            ChoicesFor(line));
 
     private static string? WarningFor(CartLineView line)
     {
         if (!line.IsAvailable)
         {
-            return Texts.UnavailableWarning;
+            return line.LocationName is null
+                ? Texts.UnavailableWarning
+                : string.Format(System.Globalization.CultureInfo.InvariantCulture, Texts.WrongLocationWarning, line.LocationName);
         }
 
         return line.Quantity > line.StockQuantity

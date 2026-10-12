@@ -88,7 +88,7 @@ public sealed class PaymentTests : IDisposable
         var cart = await _fixture.Carts.AddAsync(null, null, product.Id, 1);
 
         var result = await _fixture.Placement.PlaceAsync(new PlaceOrderRequest(
-            cart.CartId, null, "Ana", GoodPhone, null, FulfillmentKind.Pickup, null, null, PaymentMethod.Card, null));
+            cart.CartId, null, "Ana", GoodPhone, null, null, PaymentMethod.Card, null));
         _fixture.Time.Advance(TimeSpan.FromSeconds(6));
         await _fixture.Payments.RefreshAsync(result.OrderNumber!);
         var order = await LoadOrderAsync(result.OrderNumber!);
@@ -106,7 +106,7 @@ public sealed class PaymentTests : IDisposable
         var cart = await _fixture.Carts.AddAsync(null, null, product.Id, 1);
 
         var result = await _fixture.Placement.PlaceAsync(new PlaceOrderRequest(
-            cart.CartId, null, "Ana", GoodPhone, null, FulfillmentKind.Pickup, null, null, PaymentMethod.Cash, null));
+            cart.CartId, null, "Ana", GoodPhone, null, null, PaymentMethod.Cash, null));
 
         Assert.Equal(PlaceOrderOutcome.InvalidPaymentMethod, result.Outcome);
     }
@@ -126,7 +126,7 @@ public sealed class PaymentTests : IDisposable
         var product = await _fixture.FirstProductAsync();
         var cart = await _fixture.Carts.AddAsync(null, null, product.Id, 1);
         var result = await _fixture.Placement.PlaceAsync(new PlaceOrderRequest(
-            cart.CartId, null, "Ana", GoodPhone, null, FulfillmentKind.Pickup, null, null, PaymentMethod.MPesa, walletPhone));
+            cart.CartId, null, "Ana", GoodPhone, null, null, PaymentMethod.MPesa, walletPhone));
         Assert.True(result.Succeeded);
         return result.OrderNumber!;
     }

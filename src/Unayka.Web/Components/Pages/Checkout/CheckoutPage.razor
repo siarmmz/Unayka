@@ -1,10 +1,13 @@
 @page "/checkout"
 @using System.Globalization
 @using System.Security.Claims
+@using Unayka.Core.Locations
 @using Unayka.Web.Components.Checkout
+@using Unayka.Web.Endpoints.Account
 @using Unayka.Web.Endpoints.Cart
 @using Unayka.Web.Endpoints.Checkout
 @inject ICartService Carts
+@inject ILocationDirectory Locations
 
 <SeoComponent Title="@Texts.SeoTitle" Description="@Texts.SeoDescription"/>
 
@@ -47,32 +50,49 @@
                             <input id="email" name="email" type="email" maxlength="120" autocomplete="email" value="@_email" class="field"/>
                         </div>
                     </div>
-                </fieldset>
-
-                <fieldset class="space-y-5 rounded-3xl border border-sand p-6 sm:p-8">
-                    <legend class="px-2 font-serif text-2xl text-espresso">@Text(Texts.FulfillmentTitle)</legend>
-                    <div class="grid gap-4 sm:grid-cols-2">
-                        @foreach (var option in _fulfillmentOptions)
-                        {
-                            <label class="flex cursor-pointer gap-4 rounded-2xl border border-sand bg-white p-5 transition hover:border-clay has-[:checked]:border-espresso has-[:checked]:bg-cream">
-                                <input type="radio" name="fulfillment" id="@option.Id" value="@option.Value" checked="@option.IsSelected" class="mt-1 accent-espresso"/>
-                                <span>
-                                    <span class="block font-medium text-espresso">@Text(option.Title)</span>
-                                    <span class="block text-sm text-stone">@Text(option.Description)</span>
-                                    <span class="mt-1 block text-sm text-clay">@Text(option.Price)</span>
-                                </span>
-                            </label>
-                        }
-                    </div>
-                    <div class="hidden group-has-[#fulfillment-delivery:checked]:block">
-                        <label for="address" class="field-label">@Text(Texts.AddressLabel)</label>
-                        <textarea id="address" name="address" rows="3" maxlength="300" placeholder="@Texts.AddressPlaceholder" class="field">@_address</textarea>
-                    </div>
                     <div>
                         <label for="notes" class="field-label">@Text(Texts.NotesLabel)</label>
                         <textarea id="notes" name="notes" rows="2" maxlength="500" placeholder="@Texts.NotesPlaceholder" class="field">@_notes</textarea>
                     </div>
                 </fieldset>
+
+                @if (_pickups.Count > 0)
+                {
+                    <fieldset class="space-y-5 rounded-3xl border border-sand p-6 sm:p-8">
+                        <legend class="px-2 font-serif text-2xl text-espresso">@Text(Texts.PickupTitle)</legend>
+                        <p class="text-sm text-stone">@Text(Texts.PickupIntro)</p>
+                        <div class="grid gap-4 md:grid-cols-2">
+                            @foreach (var pickup in _pickups)
+                            {
+                                <div class="space-y-2 rounded-2xl border border-sand bg-paper p-5">
+                                    <p class="font-serif text-xl text-espresso">@Text(pickup.Name)</p>
+                                    <p class="text-sm text-ink">@Text(pickup.Address)</p>
+                                    <p class="text-sm text-stone">@Text(pickup.Hours)</p>
+                                    <ul class="space-y-1 border-t border-sand pt-3 text-sm text-espresso">
+                                        @foreach (var item in pickup.Items)
+                                        {
+                                            <li>@Text(item)</li>
+                                        }
+                                    </ul>
+                                </div>
+                            }
+                        </div>
+                    </fieldset>
+                }
+
+                @if (_digitalItems.Count > 0)
+                {
+                    <fieldset class="space-y-3 rounded-3xl border border-sand p-6 sm:p-8">
+                        <legend class="px-2 font-serif text-2xl text-espresso">@Text(Texts.DigitalTitle)</legend>
+                        <p class="text-sm text-stone">@Text(Texts.DigitalIntro)</p>
+                        <ul class="space-y-1 text-sm text-espresso">
+                            @foreach (var item in _digitalItems)
+                            {
+                                <li>@Text(item)</li>
+                            }
+                        </ul>
+                    </fieldset>
+                }
 
                 <fieldset class="space-y-5 rounded-3xl border border-sand p-6 sm:p-8">
                     <legend class="px-2 font-serif text-2xl text-espresso">@Text(Texts.PaymentTitle)</legend>
@@ -113,6 +133,7 @@
                             <div class="flex-1 text-sm">
                                 <p class="text-espresso">@Text(line.Name)</p>
                                 <p class="text-stone">@Text(line.Quantity)</p>
+                                <p class="text-stone">@Text(line.Where)</p>
                             </div>
                             <p class="text-sm">@Text(line.Total)</p>
                         </li>
@@ -124,22 +145,20 @@
                     {
                         <div class="flex justify-between"><dt class="text-stone">@Text(_discountLabel)</dt><dd class="text-sage">@Text(_discount)</dd></div>
                     }
-                    <div class="flex justify-between">
-                        <dt class="text-stone">@Text(Texts.DeliveryLabel)</dt>
-                        <dd>
-                            <span class="group-has-[#fulfillment-delivery:checked]:hidden">@Text(Texts.FreeLabel)</span>
-                            <span class="hidden group-has-[#fulfillment-delivery:checked]:inline">@Text(_deliveryFee)</span>
-                        </dd>
-                    </div>
                     <div class="flex justify-between border-t border-sand pt-4 font-serif text-xl text-espresso">
                         <dt>@Text(Texts.TotalLabel)</dt>
-                        <dd>
-                            <span class="group-has-[#fulfillment-delivery:checked]:hidden">@Text(_totalPickup)</span>
-                            <span class="hidden group-has-[#fulfillment-delivery:checked]:inline">@Text(_totalDelivery)</span>
-                        </dd>
+                        <dd>@Text(_total)</dd>
                     </div>
                 </dl>
-                <button type="submit" class="btn-primary w-full">@Text(Texts.PlaceOrderButton)</button>
+                @if (_needsSignIn)
+                {
+                    <p role="alert" class="rounded-xl bg-rose-soft px-4 py-3 text-sm text-red-700">@Text(Texts.SignInNeeded)</p>
+                    <a href="@_signInUrl" class="btn-primary w-full">@Text(Texts.SignInLabel)</a>
+                }
+                @if (!_needsSignIn)
+                {
+                    <button type="submit" class="btn-primary w-full">@Text(Texts.PlaceOrderButton)</button>
+                }
                 <p class="text-center text-xs text-stone">@Text(Texts.PaymentNote)</p>
                 <a href="@Texts.CartUrl" class="block text-center text-sm text-stone underline underline-offset-4 hover:text-clay">@Text(Texts.BackToCart)</a>
             </aside>
@@ -152,18 +171,21 @@
         string SeoTitle, string SeoDescription, string Eyebrow, string Title, string Subtitle,
         string EmptyTitle, string EmptyMessage, string EmptyAction, string ShopUrl, string CartUrl, string ConfirmAction,
         string ContactTitle, string NameLabel, string PhoneLabel, string CountryCode, string PhonePlaceholder, string PhonePattern, string EmailLabel,
-        string FulfillmentTitle, string AddressLabel, string AddressPlaceholder, string NotesLabel, string NotesPlaceholder,
+        string PickupTitle, string PickupIntro, string DigitalTitle, string DigitalIntro, string NotesLabel, string NotesPlaceholder,
         string PaymentTitle, string WalletLabel, string WalletHint, string CardHint,
-        string SummaryTitle, string SubtotalLabel, string DiscountTemplate, string DeliveryLabel, string FreeLabel, string TotalLabel,
-        string PlaceOrderButton, string PaymentNote, string BackToCart, string QuantityTemplate, string StockTemplate);
+        string SummaryTitle, string SubtotalLabel, string DiscountTemplate, string TotalLabel,
+        string PlaceOrderButton, string PaymentNote, string BackToCart, string QuantityTemplate, string StockTemplate,
+        string SignInNeeded, string SignInLabel, string DigitalLine, string PickupLineTemplate, string ItemTemplate);
 
-    private sealed record ChoiceOption(string Id, string Value, string Title, string Description, string Price, bool IsSelected, IReadOnlyList<PaymentIcon> Icons);
+    private sealed record ChoiceOption(string Id, string Value, string Title, bool IsSelected, IReadOnlyList<PaymentIcon> Icons);
 
-    private sealed record SummaryLine(string Name, string Quantity, string Total, string ImageUrl);
+    private sealed record SummaryLine(string Name, string Quantity, string Total, string ImageUrl, string Where);
+
+    private sealed record PickupInfo(string Name, string Address, string Hours, IReadOnlyList<string> Items);
 
     private static readonly CheckoutTexts Texts = new(
         "Finalizar compra | Unayka",
-        "Indique os seus dados, escolha levantamento ou entrega e pague com M-Pesa, e-Mola, mKesh ou cartão.",
+        "Indique os seus dados, confirme a loja de levantamento e pague com M-Pesa, e-Mola, mKesh ou cartão.",
         "Quase lá",
         "Finalizar compra",
         "Uma única página, sem registos obrigatórios.",
@@ -180,11 +202,12 @@
         "84 123 4567",
         @"(\+?258)?\s?8\d[\s]?\d{3}[\s]?\d{4}",
         "Email (opcional)",
-        "Como quer receber",
-        "Morada de entrega",
-        "Bairro, rua e ponto de referência",
+        "Levantamento na loja",
+        "Pode alterar a loja de cada produto no carrinho. Avisamos por mensagem quando estiver pronto.",
+        "Produtos digitais",
+        "Sem levantamento. A descarga fica disponível na sua conta assim que o pagamento for confirmado.",
         "Notas para o pedido (opcional)",
-        "Alguma preferência ou indicação para a entrega",
+        "Alguma preferência ou indicação para o levantamento",
         "Pagamento",
         "Número da carteira móvel",
         "Vai receber um pedido de confirmação no telemóvel. Aceite com o seu PIN para concluir.",
@@ -192,14 +215,17 @@
         "Resumo do pedido",
         "Subtotal",
         "Desconto ({0})",
-        "Entrega",
-        "Grátis",
         "Total",
         "Confirmar e pagar",
         "Pagamento seguro por carteira móvel ou cartão. Só é cobrado depois de confirmar.",
         "Voltar ao carrinho",
         "Quantidade: {0}",
-        "Já não temos stock suficiente de {0}. Reveja o carrinho.");
+        "Já não temos stock suficiente de {0}. Reveja o carrinho.",
+        "Inicie sessão para comprar produtos digitais. Assim pode descarregar sempre que quiser.",
+        "Iniciar sessão",
+        "Produto digital",
+        "Levantar em {0}",
+        "{0} x {1}");
 
     private static readonly Dictionary<string, string> Errors = new()
     {
@@ -207,10 +233,10 @@
         [nameof(PlaceOrderOutcome.InvalidName)] = "Indique o seu nome.",
         [nameof(PlaceOrderOutcome.InvalidPhone)] = "Indique um número de telemóvel válido, com nove dígitos.",
         [nameof(PlaceOrderOutcome.InvalidEmail)] = "O email não parece válido.",
-        [nameof(PlaceOrderOutcome.AddressRequired)] = "Indique a morada para a entrega.",
         [nameof(PlaceOrderOutcome.InvalidWalletPhone)] = "Indique o número da carteira móvel, com nove dígitos.",
         [nameof(PlaceOrderOutcome.InvalidPaymentMethod)] = "Escolha M-Pesa, e-Mola, mKesh ou cartão.",
         [nameof(PlaceOrderOutcome.CouponNoLongerValid)] = "O cupão já não é válido. Reveja o carrinho.",
+        [nameof(PlaceOrderOutcome.SignInRequired)] = "Inicie sessão para comprar produtos digitais.",
     };
 
     [CascadingParameter]
@@ -231,12 +257,6 @@
     [Parameter, SupplyParameterFromQuery(Name = CheckoutEndpoints.EmailKey)]
     public string? EmailValue { get; set; }
 
-    [Parameter, SupplyParameterFromQuery(Name = CheckoutEndpoints.FulfillmentKey)]
-    public string? FulfillmentValue { get; set; }
-
-    [Parameter, SupplyParameterFromQuery(Name = CheckoutEndpoints.AddressKey)]
-    public string? AddressValue { get; set; }
-
     [Parameter, SupplyParameterFromQuery(Name = CheckoutEndpoints.NotesKey)]
     public string? NotesValue { get; set; }
 
@@ -247,22 +267,22 @@
     public string? WalletValue { get; set; }
 
     private bool _isEmpty = true;
+    private bool _needsSignIn;
     private string? _error;
     private string _name = string.Empty;
     private string _phone = string.Empty;
     private string _email = string.Empty;
-    private string _address = string.Empty;
     private string _notes = string.Empty;
     private string _wallet = string.Empty;
-    private List<ChoiceOption> _fulfillmentOptions = [];
+    private string _signInUrl = string.Empty;
     private List<ChoiceOption> _methodOptions = [];
     private List<SummaryLine> _lines = [];
+    private List<PickupInfo> _pickups = [];
+    private List<string> _digitalItems = [];
     private string _subtotal = string.Empty;
     private string? _discount;
     private string _discountLabel = string.Empty;
-    private string _deliveryFee = string.Empty;
-    private string _totalPickup = string.Empty;
-    private string _totalDelivery = string.Empty;
+    private string _total = string.Empty;
 
     protected override async Task OnInitializedAsync()
     {
@@ -274,36 +294,48 @@
             return;
         }
 
-        PrepareContact();
+        var locations = await Locations.ActiveAsync();
+        PrepareContact(view);
         PrepareOptions();
+        PreparePickups(view, locations);
         PrepareSummary(view);
         _error = ResolveError(view);
     }
 
-    private void PrepareContact()
+    private void PrepareContact(CartView view)
     {
         var user = HttpContext?.User;
         _name = NameValue ?? user?.FindFirstValue(ClaimTypes.Name) ?? string.Empty;
         _phone = PhoneValue ?? user?.FindFirstValue(ClaimTypes.MobilePhone) ?? string.Empty;
         _email = EmailValue ?? user?.FindFirstValue(ClaimTypes.Email) ?? string.Empty;
-        _address = AddressValue ?? string.Empty;
         _notes = NotesValue ?? string.Empty;
         _wallet = WalletValue ?? _phone;
+        _needsSignIn = view.HasDigital && CartCookies.ReadUserId(user ?? new ClaimsPrincipal()) is null;
+        _signInUrl = ToUrl($"{StoreUrls.SignIn}?{AccountEndpoints.ReturnUrlKey}={Uri.EscapeDataString(StoreUrls.Checkout)}");
     }
 
     private void PrepareOptions()
     {
-        var isDelivery = FulfillmentValue == nameof(FulfillmentKind.Delivery);
-        _fulfillmentOptions =
-        [
-            new("fulfillment-pickup", nameof(FulfillmentKind.Pickup), "Levantamento na loja", "Pronto para levantar quando estiver confirmado.", "Grátis", !isDelivery, []),
-            new("fulfillment-delivery", nameof(FulfillmentKind.Delivery), "Entrega em Maputo", "Entregamos à porta, dentro da cidade de Maputo.", FormatMoney(OrderPricing.DeliveryFeeMinor), isDelivery, []),
-        ];
         var selected = OnlineMethods.All.FirstOrDefault(method => method.ToString() == MethodValue, OnlineMethods.All[0]);
         _methodOptions = OnlineMethods.All
-            .Select(method => new ChoiceOption($"method-{method.ToString().ToLowerInvariant()}", method.ToString(), PaymentChoices.Label(method), string.Empty, string.Empty, method == selected, PaymentChoices.Icons(method)))
+            .Select(method => new ChoiceOption($"method-{method.ToString().ToLowerInvariant()}", method.ToString(), PaymentChoices.Label(method), method == selected, PaymentChoices.Icons(method)))
             .ToList();
     }
+
+    private void PreparePickups(CartView view, IReadOnlyList<LocationSummary> locations)
+    {
+        _pickups = view.PickupGroups
+            .Select(group =>
+            {
+                var location = locations.FirstOrDefault(candidate => candidate.Id == group.LocationId);
+                return new PickupInfo(group.LocationName, location?.Address ?? string.Empty, location?.OpeningHours ?? string.Empty, group.Lines.Select(ItemLabel).ToList());
+            })
+            .ToList();
+        _digitalItems = view.DigitalLines.Select(ItemLabel).ToList();
+    }
+
+    private static string ItemLabel(CartLineView line) =>
+        string.Format(CultureInfo.InvariantCulture, Texts.ItemTemplate, line.Quantity, line.Name);
 
     private void PrepareSummary(CartView view)
     {
@@ -312,14 +344,13 @@
                 line.Name,
                 string.Format(CultureInfo.InvariantCulture, Texts.QuantityTemplate, line.Quantity),
                 FormatMoney(line.LineTotalMinor),
-                line.ImageUrl))
+                line.ImageUrl,
+                line.IsDigital ? Texts.DigitalLine : string.Format(CultureInfo.InvariantCulture, Texts.PickupLineTemplate, line.LocationName)))
             .ToList();
         _subtotal = FormatMoney(view.SubtotalMinor);
         _discount = view.DiscountMinor > 0 ? "-" + FormatMoney(view.DiscountMinor) : null;
         _discountLabel = string.Format(CultureInfo.InvariantCulture, Texts.DiscountTemplate, view.CouponCode);
-        _deliveryFee = FormatMoney(OrderPricing.DeliveryFeeMinor);
-        _totalPickup = FormatMoney(view.TotalMinor);
-        _totalDelivery = FormatMoney(view.TotalMinor + OrderPricing.DeliveryFeeMinor);
+        _total = FormatMoney(view.TotalMinor);
     }
 
     private string? ResolveError(CartView view)

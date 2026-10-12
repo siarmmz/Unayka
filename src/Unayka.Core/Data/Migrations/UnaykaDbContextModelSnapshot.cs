@@ -173,6 +173,9 @@ namespace Unayka.Core.Data.Migrations
                     b.Property<Guid>("CartId")
                         .HasColumnType("TEXT");
 
+                    b.Property<int?>("LocationId")
+                        .HasColumnType("INTEGER");
+
                     b.Property<int>("ProductId")
                         .HasColumnType("INTEGER");
 

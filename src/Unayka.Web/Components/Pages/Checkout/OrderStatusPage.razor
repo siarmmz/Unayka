@@ -19,10 +19,10 @@
         <SectionHeading Title="@_heading" Eyebrow="@Texts.Eyebrow" Subtitle="@_subtitle"/>
         <div class="mt-12 grid gap-12 lg:grid-cols-5">
             <div class="lg:col-span-3">
-                <OrderStatusLive Number="@Number" @rendermode="InteractiveServer"/>
+                <OrderStatusLive Number="@Number" ViewerUserId="@_viewerUserId" @rendermode="InteractiveServer"/>
             </div>
             <div class="lg:col-span-2">
-                <OrderSummaryCard Order="_order"/>
+                <OrderSummaryCard Order="_order" ViewerUserId="@_viewerUserId"/>
             </div>
         </div>
     }
@@ -47,6 +47,7 @@
     public string Number { get; set; } = string.Empty;
 
     private OrderDetail? _order;
+    private int? _viewerUserId;
     private string _seoTitle = string.Empty;
     private string _heading = string.Empty;
     private string _subtitle = string.Empty;
@@ -67,6 +68,7 @@
         }
 
         _order = order;
+        _viewerUserId = CartCookies.ReadUserId(HttpContext.User);
         _heading = string.Format(System.Globalization.CultureInfo.InvariantCulture, Texts.HeadingTemplate, order.Number);
         _subtitle = string.Format(System.Globalization.CultureInfo.InvariantCulture, Texts.SubtitleTemplate, FormatDate(order.CreatedAt));
     }

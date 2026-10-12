@@ -11,6 +11,8 @@ using Unayka.Web.Components;
 using Unayka.Web.Endpoints;
 using Unayka.Web.Endpoints.Account;
 using Unayka.Web.Endpoints.Checkout;
+using Unayka.Web.Endpoints.Downloads;
+using Unayka.Web.Endpoints.Locations;
 using Unayka.Web.Endpoints.Security;
 
 DotNetEnv.Env.NoClobber().Load();
@@ -53,6 +55,8 @@ app.MapHealthEndpoint();
 // Feature endpoints: at most one line per feature.
 app.MapAccountEndpoints();
 app.MapCheckoutEndpoints();
+app.MapDownloadEndpoints();
+app.MapLocationEndpoints();
 
 app.MapRazorComponents<App>().AddInteractiveServerRenderMode();
 

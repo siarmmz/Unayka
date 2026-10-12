@@ -1,5 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Unayka.Core.Orders.Downloads;
 using Unayka.Core.Payments;
 
 namespace Unayka.Core.Orders;
@@ -14,6 +15,8 @@ public static class OrderServiceExtensions
         services.AddScoped<IOrderNumberGenerator, OrderNumberGenerator>();
         services.AddScoped<IOrderPlacement, OrderPlacement>();
         services.AddScoped<IOrderQueries, OrderQueries>();
+        services.AddSingleton<IDigitalFileStore, LocalDigitalFileStore>();
+        services.AddScoped<IDigitalDownloads, DigitalDownloads>();
         return services;
     }
 }

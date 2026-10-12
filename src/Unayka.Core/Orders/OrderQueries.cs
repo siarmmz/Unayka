@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Unayka.Core.Catalog;
 using Unayka.Core.Data;
 
 namespace Unayka.Core.Orders;
@@ -7,19 +8,21 @@ public sealed class OrderQueries(UnaykaDbContext database) : IOrderQueries
 {
     public async Task<IReadOnlyList<OrderListItem>> ListForUserAsync(int userId, CancellationToken cancellationToken = default)
     {
-        var rows = await database.Orders.AsNoTracking()
+        var orders = await database.Orders.AsNoTracking()
+            .Include(order => order.Items)
             .Where(order => order.UserId == userId)
             .OrderByDescending(order => order.CreatedAt)
-            .Select(order => new
-            {
+            .ToListAsync(cancellationToken);
+        var lines = await LoadLinesAsync(orders.SelectMany(order => order.Items).ToList(), cancellationToken);
+        return orders
+            .Select(order => new OrderListItem(
                 order.Number,
                 order.CreatedAt,
                 order.Status,
                 order.TotalMinor,
-                ItemCount = order.Items.Sum(item => item.Quantity),
-            })
-            .ToListAsync(cancellationToken);
-        return rows.Select(row => new OrderListItem(row.Number, row.CreatedAt, row.Status, row.TotalMinor, row.ItemCount)).ToList();
+                order.Items.Sum(item => item.Quantity),
+                order.Items.Select(item => lines[item.Id]).ToList()))
+            .ToList();
     }
 
     public async Task<OrderDetail?> GetByNumberAsync(string number, CancellationToken cancellationToken = default)
@@ -33,6 +36,7 @@ public sealed class OrderQueries(UnaykaDbContext database) : IOrderQueries
             return null;
         }
 
+        var lines = await LoadLinesAsync(order.Items, cancellationToken);
         var payment = order.Payments.OrderByDescending(candidate => candidate.Id).FirstOrDefault();
         return new OrderDetail(
             order.Number,
@@ -49,7 +53,38 @@ public sealed class OrderQueries(UnaykaDbContext database) : IOrderQueries
             order.TotalMinor,
             order.CouponCode,
             order.CreatedAt,
-            order.Items.Select(item => new OrderLineDetail(item.ProductName, item.UnitPriceMinor, item.Quantity)).ToList(),
+            order.Items.OrderBy(item => item.Id).Select(item => lines[item.Id]).ToList(),
             payment is null ? null : new OrderPaymentDetail(payment.Method, payment.Phone, payment.Status, payment.FailureReason));
+    }
+
+    private async Task<Dictionary<int, OrderLineDetail>> LoadLinesAsync(IReadOnlyList<OrderItem> items, CancellationToken cancellationToken)
+    {
+        var productIds = items.Select(item => item.ProductId).Distinct().ToList();
+        var locationIds = items.Where(item => item.LocationId is not null).Select(item => item.LocationId!.Value).Distinct().ToList();
+        var slugs = await database.Products.AsNoTracking()
+            .Where(ProductVisibility.IsPublic)
+            .Where(product => productIds.Contains(product.Id))
+            .ToDictionaryAsync(product => product.Id, product => product.Slug, cancellationToken);
+        var locations = await database.Locations.AsNoTracking()
+            .Where(location => locationIds.Contains(location.Id))
+            .ToDictionaryAsync(location => location.Id, cancellationToken);
+        return items.ToDictionary(
+            item => item.Id,
+            item =>
+            {
+                var location = item.LocationId is { } id && locations.TryGetValue(id, out var found) ? found : null;
+                return new OrderLineDetail(
+                    item.Id,
+                    item.ProductName,
+                    item.ImageUrl,
+                    item.UnitPriceMinor,
+                    item.Quantity,
+                    item.Kind,
+                    slugs.GetValueOrDefault(item.ProductId),
+                    item.LocationId,
+                    location?.Name,
+                    location?.Address,
+                    location?.OpeningHours);
+            });
     }
 }

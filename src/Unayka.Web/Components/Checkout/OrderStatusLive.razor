@@ -1,4 +1,5 @@
 @implements IAsyncDisposable
+@using Unayka.Web.Endpoints.Downloads
 @inject IServiceScopeFactory ScopeFactory
 
 <div class="space-y-8 rounded-3xl border border-sand p-8 sm:p-10">
@@ -20,6 +21,18 @@
     {
         <div class="space-y-4">
             <p class="rounded-2xl bg-sage-soft px-5 py-4 text-sm text-espresso">@Text(_fulfillmentNote)</p>
+            @if (_downloads.Count > 0)
+            {
+                <ul class="space-y-3">
+                    @foreach (var download in _downloads)
+                    {
+                        <li class="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-sand px-5 py-4">
+                            <span class="text-espresso">@Text(download.Name)</span>
+                            <a href="@download.Url" class="btn-primary">@Text(Texts.DownloadButton)</a>
+                        </li>
+                    }
+                </ul>
+            }
             <a href="@Texts.ShopUrl" class="btn-outline">@Text(Texts.ContinueShopping)</a>
         </div>
     }
@@ -65,7 +78,7 @@
 
     private sealed record LiveTexts(
         string PendingTitle, string PendingMessageTemplate, string WaitingLabel, string PaidTitle, string PaidMessage,
-        string PickupNote, string DeliveryNote, string ContinueShopping, string ShopUrl,
+        string PickupNote, string DigitalNote, string DownloadButton, string ContinueShopping, string ShopUrl,
         string FailedTitle, string FailedMessage, string FailureTemplate, string RetryTitle, string MethodLabel, string WalletLabel,
         string PhonePlaceholder, string RetryButton, string InvalidPhone, string RetryUnavailable,
         string CancelledTitle, string CancelledMessage);
@@ -79,7 +92,8 @@
         "Pagamento confirmado",
         "Obrigado pela sua compra. Já recebemos o pagamento e vamos preparar o seu pedido.",
         "Pode levantar o pedido na loja assim que o avisarmos por mensagem.",
-        "Vamos entregar o pedido na morada indicada. Entraremos em contacto se for preciso.",
+        "Os seus produtos digitais já podem ser descarregados, sempre que quiser, enquanto tiver sessão iniciada.",
+        "Descarregar",
         "Continuar a comprar",
         StoreUrls.Shop,
         "O pagamento não passou",
@@ -101,6 +115,13 @@
 
     [Parameter, EditorRequired]
     public string Number { get; set; } = string.Empty;
+
+    [Parameter]
+    public int? ViewerUserId { get; set; }
+
+    private sealed record DownloadLink(string Name, string Url);
+
+    private List<DownloadLink> _downloads = [];
 
     private readonly CancellationTokenSource _stop = new();
     private Phase _phase = Phase.Pending;
@@ -191,7 +212,12 @@
             Phase.Cancelled => (Texts.CancelledTitle, Texts.CancelledMessage),
             _ => (Texts.PendingTitle, string.Format(culture, Texts.PendingMessageTemplate, FormatMoney(order.TotalMinor), FormatPhone(order.Payment?.Phone))),
         };
-        _fulfillmentNote = order.Fulfillment == FulfillmentKind.Delivery ? Texts.DeliveryNote : Texts.PickupNote;
+        var hasPickup = order.Lines.Any(line => !line.IsDigital);
+        _fulfillmentNote = hasPickup ? Texts.PickupNote : Texts.DigitalNote;
+        _downloads = order.Lines
+            .Where(line => OrderPayments.CanDownload(order, line, ViewerUserId))
+            .Select(line => new DownloadLink(line.ProductName, DownloadEndpoints.UrlFor(line.ItemId)))
+            .ToList();
         _failureText = string.Format(culture, Texts.FailureTemplate, order.Payment?.FailureReason);
         if (string.IsNullOrEmpty(_retryPhone))
         {

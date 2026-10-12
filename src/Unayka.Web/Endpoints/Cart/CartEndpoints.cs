@@ -23,6 +23,7 @@ public static class CartEndpoints
         group.MapPost("/adicionar", (Delegate)AddAsync);
         group.MapPost("/comprar-agora", (Delegate)BuyNowAsync);
         group.MapPost("/atualizar", (Delegate)UpdateAsync);
+        group.MapPost("/local", (Delegate)LocationAsync);
         group.MapPost("/remover", (Delegate)RemoveAsync);
         group.MapPost("/cupao", (Delegate)CouponAsync);
         return endpoints;
@@ -59,6 +60,20 @@ public static class CartEndpoints
         }
 
         return Results.LocalRedirect(StoreUrls.Cart);
+    }
+
+    private static async Task<IResult> LocationAsync([FromForm] LocationForm form, HttpContext context, ICartService carts)
+    {
+        var cartId = CartCookies.Read(context.Request);
+        if (cartId is null)
+        {
+            return Results.LocalRedirect(StoreUrls.Cart);
+        }
+
+        var change = await carts.SetLocationAsync(cartId.Value, form.ProductId, form.LocationId, context.RequestAborted);
+        return change is CartChange.LocationChanged
+            ? Results.LocalRedirect(StoreUrls.Cart)
+            : Results.LocalRedirect(QueryHelpers.AddQueryString(StoreUrls.Cart, NoticeKey, change.ToString()));
     }
 
     private static async Task<IResult> RemoveAsync([FromForm] RemoveForm form, HttpContext context, ICartService carts)
@@ -123,6 +138,12 @@ public static class CartEndpoints
     {
         public int ProductId { get; set; }
         public int Quantity { get; set; }
+    }
+
+    public sealed class LocationForm
+    {
+        public int ProductId { get; set; }
+        public int LocationId { get; set; }
     }
 
     public sealed class RemoveForm

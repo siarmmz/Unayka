@@ -1,40 +1,43 @@
-@page "/contact"
+@page "/contacto"
+@using Unayka.Core.Locations
+@using Unayka.Web.Components.Locations
+@inject ILocationDirectory Locations
 
 <SeoComponent Title="@Data.Seo.Title" Description="@Data.Seo.Description"/>
 
 <PageHero Title="@Data.Title" Eyebrow="@Data.Eyebrow" Subtitle="@Data.Subtitle" ImageUrl="@Data.HeroImage"/>
 
-<section class="container-page py-20">
-    <div class="grid gap-6 md:grid-cols-3">
-        @foreach (var channel in Data.Channels)
-        {
-            <div class="rounded-3xl bg-cream p-8 text-center">
-                <p class="font-script text-3xl text-clay">@Text(channel.Title)</p>
-                <p class="mt-3 text-espresso">@Text(channel.Value)</p>
-            </div>
-        }
-    </div>
+<section class="container-page py-12 lg:py-20">
+    @if (_locations.Count == 0)
+    {
+        <EmptyState Title="@Data.EmptyTitle" Message="@Data.EmptyMessage" ActionLabel="@Data.ShopLabel" ActionUrl="@Data.ShopUrl"/>
+    }
 
-    <p class="mx-auto mt-12 max-w-xl text-center text-stone">@Text(Data.Note)</p>
-    <div class="mt-8 text-center">
-        <a href="@ToUrl(Data.LocationUrl)" class="btn-outline">@Text(Data.LocationLabel)</a>
+    <div class="grid gap-8 lg:grid-cols-2">
+        @foreach (var location in _locations)
+        {
+            <LocationCard Location="location"/>
+        }
     </div>
 </section>
 
 @code {
-    private static readonly (string Title, string Eyebrow, string Subtitle, string HeroImage, string Note, string LocationLabel, string LocationUrl, (string Title, string Value)[] Channels, (string Title, string Description) Seo) Data = (
+    private static readonly (string Title, string Eyebrow, string Subtitle, string HeroImage, string EmptyTitle, string EmptyMessage, string ShopLabel, string ShopUrl, (string Title, string Description) Seo) Data = (
         "Contacto",
         "Fale connosco",
-        "Teremos prazer em ouvir a sua mensagem.",
+        "Escolha a loja mais perto de si e fale connosco.",
         SiteImages.ContactUrl,
-        "Os canais de contacto da loja serão publicados aqui muito em breve. Até lá, passe pelo balcão ou faça o seu pedido online.",
-        "Ver localização",
-        "/location",
-        [
-            ("Telemóvel", "Em breve"),
-            ("Email", "Em breve"),
-            ("Balcão", "Avenida 24 de Julho, Maputo"),
-        ],
-        ("Contacto | Unayka", "Fale com a Unayka.")
+        "Contactos em breve",
+        "Os contactos das lojas serão publicados aqui muito em breve.",
+        "Ver a loja",
+        StoreUrls.Shop,
+        ("Contacto | Unayka", "Contactos, morada, horário e mapa de cada loja Unayka.")
     );
+
+    private IReadOnlyList<LocationSummary> _locations = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        _locations = await Locations.ActiveAsync();
+    }
 }
