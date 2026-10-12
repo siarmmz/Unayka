@@ -17,7 +17,6 @@ public sealed class UnaykaDbContext(DbContextOptions<UnaykaDbContext> options) :
     public DbSet<ProductMedia> ProductMedia => Set<ProductMedia>();
     public DbSet<ProductFact> ProductFacts => Set<ProductFact>();
     public DbSet<User> Users => Set<User>();
-    public DbSet<OtpCode> OtpCodes => Set<OtpCode>();
     public DbSet<LoginAttempt> LoginAttempts => Set<LoginAttempt>();
     public DbSet<Cart> Carts => Set<Cart>();
     public DbSet<CartItem> CartItems => Set<CartItem>();
@@ -66,9 +65,9 @@ public sealed class UnaykaDbContext(DbContextOptions<UnaykaDbContext> options) :
         {
             entity.HasIndex(user => user.Email).IsUnique();
             entity.HasIndex(user => user.Phone).IsUnique();
+            entity.HasIndex(user => new { user.ExternalProvider, user.ExternalKey }).IsUnique();
         });
 
-        modelBuilder.Entity<OtpCode>().HasIndex(code => code.Phone);
         modelBuilder.Entity<LoginAttempt>().HasIndex(attempt => new { attempt.Identifier, attempt.At });
 
         modelBuilder.Entity<Cart>(entity =>

@@ -10,8 +10,6 @@ public static class AccountServiceExtensions
     {
         services.TryAddSingleton(TimeProvider.System);
         services.AddSingleton<IPasswordHasher<User>, PasswordHasher<User>>();
-        services.AddSingleton<IDevelopmentOtpInbox, DevelopmentOtpInbox>();
-        services.AddSingleton<IOtpSender, DevelopmentOtpSender>();
         services.AddScoped<IAccountService, AccountService>();
         return services;
     }

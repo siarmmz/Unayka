@@ -11,7 +11,6 @@ public static class AppEnvConfig
     private const string SourceFolderName = "src";
     private const int DefaultPostgresPort = 5432;
     private const int DefaultLoginPerMinute = 5;
-    private const int DefaultOtpPerHour = 5;
     private const int DefaultCheckoutPerMinute = 10;
     private const int DefaultWebhookPerMinute = 120;
 
@@ -55,13 +54,12 @@ public static class AppEnvConfig
 
     public static string GoogleClientId => GetText("AUTH_GOOGLE_CLIENT_ID");
     public static string GoogleClientSecret => GetText("AUTH_GOOGLE_CLIENT_SECRET");
-    public static string SmsProvider => GetText("AUTH_SMS_PROVIDER");
-    public static string SmsApiKey => GetText("AUTH_SMS_API_KEY");
+    public static string FacebookAppId => GetText("AUTH_FACEBOOK_APP_ID");
+    public static string FacebookAppSecret => GetText("AUTH_FACEBOOK_APP_SECRET");
     public static string AdminBootstrapEmail => GetText("AUTH_ADMIN_BOOTSTRAP_EMAIL");
     public static string AuthSeedStaffPassword => GetText("AUTH_SEED_STAFF_PASSWORD");
 
     public static int RateLimitLoginPerMinute => GetNumber("RATE_LIMIT_LOGIN_PER_MINUTE", DefaultLoginPerMinute);
-    public static int RateLimitOtpPerHour => GetNumber("RATE_LIMIT_OTP_PER_HOUR", DefaultOtpPerHour);
     public static int RateLimitCheckoutPerMinute => GetNumber("RATE_LIMIT_CHECKOUT_PER_MINUTE", DefaultCheckoutPerMinute);
     public static int RateLimitWebhookPerMinute => GetNumber("RATE_LIMIT_WEBHOOK_PER_MINUTE", DefaultWebhookPerMinute);
 

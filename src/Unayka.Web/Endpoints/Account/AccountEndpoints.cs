@@ -12,45 +12,75 @@ namespace Unayka.Web.Endpoints.Account;
 
 public static class AccountEndpoints
 {
-    public const string VerifyStep = "verify";
-    public const string StepKey = "step";
-    public const string PhoneKey = "phone";
     public const string ErrorKey = "error";
     public const string ReturnUrlKey = "returnUrl";
 
     private const string Prefix = "/conta";
+    private const string ExternalPath = "/conta/entrar/externo/";
+    private const string ExternalDonePath = "/conta/entrar/externo/concluir";
+    private const string MockKeyPrefix = "local-";
+    private const string MockName = "Cliente de teste";
+    private const string MockEmailDomain = "@exemplo.local";
 
     public static IEndpointRouteBuilder MapAccountEndpoints(this IEndpointRouteBuilder endpoints)
     {
         var group = endpoints.MapGroup(Prefix);
-        group.MapPost("/entrar/codigo", (Delegate)RequestCodeAsync).RequireRateLimiting(RateLimitPolicies.Code);
-        group.MapPost("/entrar/verificar", (Delegate)VerifyCodeAsync).RequireRateLimiting(RateLimitPolicies.Login);
+        group.MapGet("/entrar/externo/concluir", (Delegate)CompleteExternalAsync).RequireRateLimiting(RateLimitPolicies.Login);
+        group.MapGet("/entrar/externo/{provider}", (Delegate)StartExternalAsync).RequireRateLimiting(RateLimitPolicies.Login);
         group.MapPost("/entrar/equipa", (Delegate)SignInStaffAsync).RequireRateLimiting(RateLimitPolicies.Login);
         group.MapPost("/sair", (Delegate)SignOutAsync);
         return endpoints;
     }
 
-    private static async Task<IResult> RequestCodeAsync(
-        [FromForm] PhoneForm form, HttpContext context, IAccountService accounts)
-    {
-        var outcome = await accounts.RequestCodeAsync(form.Phone, ClientHash(context), context.RequestAborted);
-        return outcome == AccountOutcome.Succeeded
-            ? Results.Redirect(LoginUrl(form.ReturnUrl, (StepKey, VerifyStep), (PhoneKey, PhoneNumber.Normalize(form.Phone))))
-            : Results.Redirect(LoginUrl(form.ReturnUrl, (ErrorKey, outcome.ToString())));
-    }
+    public static string ExternalUrl(string provider, string? returnUrl) =>
+        IsLocalPath(returnUrl)
+            ? QueryHelpers.AddQueryString(ExternalPath + provider, ReturnUrlKey, returnUrl!)
+            : ExternalPath + provider;
 
-    private static async Task<IResult> VerifyCodeAsync(
-        [FromForm] VerifyForm form, HttpContext context, IAccountService accounts)
+    private static async Task<IResult> StartExternalAsync(
+        string provider, string? returnUrl, HttpContext context, IAccountService accounts)
     {
-        var result = await accounts.VerifyCodeAsync(
-            form.Phone, form.Code, form.Name, ClientHash(context), context.RequestAborted);
-        if (!result.Succeeded)
+        var known = ExternalProviders.All.FirstOrDefault(candidate => string.Equals(candidate, provider, StringComparison.OrdinalIgnoreCase));
+        if (known is null || !ExternalProviders.IsAvailable(known))
         {
-            return Results.Redirect(LoginUrl(
-                form.ReturnUrl, (StepKey, VerifyStep), (PhoneKey, PhoneNumber.Normalize(form.Phone)), (ErrorKey, result.Outcome.ToString())));
+            return Results.NotFound();
         }
 
-        return await SignInAsync(context, result.User!, form.ReturnUrl);
+        if (ExternalProviders.IsMocked(known))
+        {
+            var mock = new ExternalIdentity(known, MockKeyPrefix + known.ToLowerInvariant(), $"{MockName} {known}", known.ToLowerInvariant() + MockEmailDomain);
+            return await CompleteAsync(context, accounts, mock, returnUrl);
+        }
+
+        var done = IsLocalPath(returnUrl) ? QueryHelpers.AddQueryString(ExternalDonePath, ReturnUrlKey, returnUrl!) : ExternalDonePath;
+        var properties = new AuthenticationProperties { RedirectUri = done };
+        properties.Items[ExternalAuthentication.ProviderItem] = known;
+        return Results.Challenge(properties, [known]);
+    }
+
+    private static async Task<IResult> CompleteExternalAsync(string? returnUrl, HttpContext context, IAccountService accounts)
+    {
+        var external = await context.AuthenticateAsync(ExternalAuthentication.Scheme);
+        await context.SignOutAsync(ExternalAuthentication.Scheme);
+        var principal = external.Principal;
+        string? provider = null;
+        external.Properties?.Items.TryGetValue(ExternalAuthentication.ProviderItem, out provider);
+        var key = principal?.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!external.Succeeded || !ExternalProviders.IsKnown(provider) || key is null)
+        {
+            return Results.Redirect(LoginUrl(returnUrl, (ErrorKey, nameof(AccountOutcome.InvalidIdentity))));
+        }
+
+        var identity = new ExternalIdentity(provider!, key, principal!.FindFirstValue(ClaimTypes.Name) ?? string.Empty, principal!.FindFirstValue(ClaimTypes.Email));
+        return await CompleteAsync(context, accounts, identity, returnUrl);
+    }
+
+    private static async Task<IResult> CompleteAsync(HttpContext context, IAccountService accounts, ExternalIdentity identity, string? returnUrl)
+    {
+        var result = await accounts.SignInExternalAsync(identity, ClientHash(context), context.RequestAborted);
+        return result.Succeeded
+            ? await SignInAsync(context, result.User!, returnUrl)
+            : Results.Redirect(LoginUrl(returnUrl, (ErrorKey, result.Outcome.ToString())));
     }
 
     private static async Task<IResult> SignInStaffAsync(
@@ -132,20 +162,6 @@ public static class AccountEndpoints
         }
 
         return QueryHelpers.AddQueryString(StoreUrls.SignIn, query);
-    }
-
-    public sealed class PhoneForm
-    {
-        public string? Phone { get; set; }
-        public string? ReturnUrl { get; set; }
-    }
-
-    public sealed class VerifyForm
-    {
-        public string? Phone { get; set; }
-        public string? Code { get; set; }
-        public string? Name { get; set; }
-        public string? ReturnUrl { get; set; }
     }
 
     public sealed class StaffForm

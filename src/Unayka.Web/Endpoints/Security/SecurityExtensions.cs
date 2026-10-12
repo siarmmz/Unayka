@@ -15,7 +15,6 @@ public static class SecurityExtensions
     private const string UnknownClient = "unknown";
     private static readonly TimeSpan SessionLength = TimeSpan.FromDays(14);
     private static readonly TimeSpan MinuteWindow = TimeSpan.FromMinutes(1);
-    private static readonly TimeSpan HourWindow = TimeSpan.FromHours(1);
 
     private static readonly string ContentSecurityPolicy = string.Join("; ",
         "default-src 'self'",
@@ -45,7 +44,8 @@ public static class SecurityExtensions
                 options.SlidingExpiration = true;
                 options.LoginPath = StoreUrls.SignIn;
                 options.AccessDeniedPath = StoreUrls.SignIn;
-            });
+            })
+            .AddUnaykaExternalProviders(securePolicy);
 
         services.AddAuthorizationBuilder()
             .AddPolicy(UnaykaPolicies.Staff, policy => policy.RequireRole(
@@ -70,7 +70,6 @@ public static class SecurityExtensions
         {
             options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
             AddFixedWindowPolicy(options, RateLimitPolicies.Login, () => AppEnvConfig.RateLimitLoginPerMinute, MinuteWindow);
-            AddFixedWindowPolicy(options, RateLimitPolicies.Code, () => AppEnvConfig.RateLimitOtpPerHour, HourWindow);
             AddFixedWindowPolicy(options, RateLimitPolicies.Checkout, () => AppEnvConfig.RateLimitCheckoutPerMinute, MinuteWindow);
             AddFixedWindowPolicy(options, RateLimitPolicies.Webhook, () => AppEnvConfig.RateLimitWebhookPerMinute, MinuteWindow);
         });

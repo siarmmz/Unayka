@@ -8,81 +8,32 @@ namespace Unayka.Core.Accounts;
 public sealed class AccountService(
     UnaykaDbContext database,
     IPasswordHasher<User> passwordHasher,
-    IOtpSender otpSender,
     TimeProvider time) : IAccountService
 {
     private const int MaxNameLength = 80;
+    private const string DefaultCustomerName = "Cliente";
     private const int MaxFailuresBeforeLockout = 10;
     private static readonly TimeSpan LockoutWindow = TimeSpan.FromMinutes(15);
-    private static readonly TimeSpan CodeRequestWindow = TimeSpan.FromHours(1);
 
-    public async Task<AccountOutcome> RequestCodeAsync(
-        string? phone, string ipHash, CancellationToken cancellationToken = default)
+    public async Task<AccountResult> SignInExternalAsync(
+        ExternalIdentity identity, string ipHash, CancellationToken cancellationToken = default)
     {
-        var normalized = PhoneNumber.Normalize(phone);
-        if (normalized is null)
+        if (!ExternalProviders.IsKnown(identity.Provider) || string.IsNullOrWhiteSpace(identity.Key))
         {
-            return AccountOutcome.InvalidPhone;
+            return new AccountResult(AccountOutcome.InvalidIdentity);
         }
 
         var now = time.GetUtcNow();
-        var since = now - CodeRequestWindow;
-        var recent = await database.OtpCodes.CountAsync(
-            code => code.Phone == normalized && code.CreatedAt > since, cancellationToken);
-        if (recent >= AppEnvConfig.RateLimitOtpPerHour)
-        {
-            return AccountOutcome.TooManyRequests;
-        }
+        var email = NormalizeEmail(identity.Email);
+        var user = await database.Users.FirstOrDefaultAsync(
+                       candidate => candidate.ExternalProvider == identity.Provider && candidate.ExternalKey == identity.Key, cancellationToken)
+                   ?? await FindCustomerByEmailAsync(email, cancellationToken);
+        user ??= CreateCustomer(identity.Name, email, now);
 
-        var plainCode = OtpCodes.Generate();
-        database.OtpCodes.Add(new OtpCode
-        {
-            Phone = normalized,
-            CodeHash = OtpCodes.Hash(normalized, plainCode),
-            CreatedAt = now,
-            ExpiresAt = now + OtpCodes.ValidFor,
-        });
-        await database.SaveChangesAsync(cancellationToken);
-        await otpSender.SendAsync(normalized, plainCode, cancellationToken);
-        return AccountOutcome.Succeeded;
-    }
-
-    public async Task<AccountResult> VerifyCodeAsync(
-        string? phone, string? code, string? name, string ipHash, CancellationToken cancellationToken = default)
-    {
-        var normalized = PhoneNumber.Normalize(phone);
-        if (normalized is null)
-        {
-            return new AccountResult(AccountOutcome.InvalidPhone);
-        }
-
-        var otp = await database.OtpCodes
-            .Where(candidate => candidate.Phone == normalized && candidate.ConsumedAt == null)
-            .OrderByDescending(candidate => candidate.CreatedAt)
-            .FirstOrDefaultAsync(cancellationToken);
-        var now = time.GetUtcNow();
-        var rejection = Reject(otp, now);
-        if (rejection is not null)
-        {
-            return await FailAsync(normalized, ipHash, rejection.Value, cancellationToken);
-        }
-
-        if (!OtpCodes.Matches(normalized, code ?? string.Empty, otp!.CodeHash))
-        {
-            otp.Attempts++;
-            return await FailAsync(normalized, ipHash, AccountOutcome.InvalidCode, cancellationToken);
-        }
-
-        var user = await database.Users.FirstOrDefaultAsync(candidate => candidate.Phone == normalized, cancellationToken);
-        if (user is null && string.IsNullOrWhiteSpace(name))
-        {
-            return new AccountResult(AccountOutcome.NameRequired);
-        }
-
-        user ??= CreateCustomer(normalized, name!, now);
-        otp.ConsumedAt = now;
+        user.ExternalProvider ??= identity.Provider;
+        user.ExternalKey ??= identity.Key;
         user.LastLoginAt = now;
-        RecordAttempt(normalized, true, ipHash, now);
+        RecordAttempt($"{identity.Provider}:{identity.Key}", true, ipHash, now);
         await database.SaveChangesAsync(cancellationToken);
         return new AccountResult(AccountOutcome.Succeeded, user);
     }
@@ -112,21 +63,6 @@ public sealed class AccountService(
         return new AccountResult(AccountOutcome.Succeeded, user);
     }
 
-    private static AccountOutcome? Reject(OtpCode? otp, DateTimeOffset now)
-    {
-        if (otp is null)
-        {
-            return AccountOutcome.InvalidCode;
-        }
-
-        if (otp.ExpiresAt <= now)
-        {
-            return AccountOutcome.CodeExpired;
-        }
-
-        return otp.Attempts >= OtpCodes.MaxAttempts ? AccountOutcome.TooManyAttempts : null;
-    }
-
     private static void PromoteBootstrapAdministrator(User user)
     {
         var bootstrapEmail = AppEnvConfig.AdminBootstrapEmail.ToLowerInvariant();
@@ -147,18 +83,29 @@ public sealed class AccountService(
         return result != PasswordVerificationResult.Failed;
     }
 
-    private User CreateCustomer(string phone, string name, DateTimeOffset now)
+    private User CreateCustomer(string name, string? email, DateTimeOffset now)
     {
-        var trimmed = name.Trim();
+        var trimmed = string.IsNullOrWhiteSpace(name) ? DefaultCustomerName : name.Trim();
         var user = new User
         {
             Name = trimmed.Length > MaxNameLength ? trimmed[..MaxNameLength] : trimmed,
-            Phone = phone,
+            Email = email,
             Role = UserRole.Customer,
             CreatedAt = now,
         };
         database.Users.Add(user);
         return user;
+    }
+
+    private async Task<User?> FindCustomerByEmailAsync(string? email, CancellationToken cancellationToken) =>
+        email is null
+            ? null
+            : await database.Users.FirstOrDefaultAsync(candidate => candidate.Email == email && candidate.Role == UserRole.Customer, cancellationToken);
+
+    private static string? NormalizeEmail(string? email)
+    {
+        var trimmed = email?.Trim().ToLowerInvariant();
+        return string.IsNullOrEmpty(trimmed) ? null : trimmed;
     }
 
     private async Task<bool> IsLockedOutAsync(string identifier, DateTimeOffset now, CancellationToken cancellationToken)

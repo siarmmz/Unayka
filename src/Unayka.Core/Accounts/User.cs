@@ -8,6 +8,8 @@ public sealed class User
     public string? Email { get; set; }
     public string? Phone { get; set; }
     public string? PasswordHash { get; set; }
+    public string? ExternalProvider { get; set; }
+    public string? ExternalKey { get; set; }
     public UserRole Role { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
     public DateTimeOffset? LastLoginAt { get; set; }
