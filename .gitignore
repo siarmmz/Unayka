@@ -1,0 +1,14 @@
+bin/
+obj/
+.vs/
+.idea/
+*.user
+
+.env
+src/Unayka.Web/wwwroot/styles/app.css
+data/
+
+PLAN.md
+.claude/
+
+node_modules/
