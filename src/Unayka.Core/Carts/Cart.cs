@@ -5,6 +5,7 @@ public sealed class Cart
 {
     public Guid Id { get; set; }
     public int? UserId { get; set; }
+    public string? CouponCode { get; set; }
     public DateTimeOffset UpdatedAt { get; set; }
     public List<CartItem> Items { get; set; } = [];
 }
