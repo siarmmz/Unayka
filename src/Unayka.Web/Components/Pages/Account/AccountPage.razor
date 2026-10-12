@@ -1,0 +1,100 @@
+@page "/conta"
+@using System.Security.Claims
+@using Unayka.Web.Endpoints.Cart
+@attribute [Authorize]
+@inject IOrderQueries OrderQueries
+
+<SeoComponent Title="@Texts.SeoTitle" Description="@Texts.SeoDescription"/>
+
+<section class="container-page py-12 lg:py-20">
+    <div class="flex flex-wrap items-end justify-between gap-6">
+        <SectionHeading Title="@_greeting" Eyebrow="@Texts.Eyebrow" Subtitle="@_phone"/>
+        <form method="post" action="@Texts.SignOutAction">
+            <AntiforgeryToken/>
+            <button type="submit" class="btn-outline">@Text(Texts.SignOutButton)</button>
+        </form>
+    </div>
+
+    <div class="mt-14 space-y-6">
+        <h2 class="font-serif text-3xl text-espresso">@Text(Texts.OrdersTitle)</h2>
+
+        @if (_orders.Count == 0)
+        {
+            <EmptyState Title="@Texts.EmptyTitle" Message="@Texts.EmptyMessage" ActionLabel="@Texts.EmptyAction" ActionUrl="@Texts.ShopUrl"/>
+        }
+
+        @if (_orders.Count > 0)
+        {
+            <ul class="divide-y divide-sand border-y border-sand">
+                @foreach (var order in _orders)
+                {
+                    <li>
+                        <a href="@order.Url" class="flex flex-wrap items-center justify-between gap-4 py-6 transition hover:bg-cream/60 sm:px-4">
+                            <div>
+                                <p class="font-serif text-xl text-espresso">@Text(order.Number)</p>
+                                <p class="text-sm text-stone">@Text(order.Summary)</p>
+                            </div>
+                            <div class="flex items-center gap-6">
+                                <StatusBadge Order="order.Status"/>
+                                <span class="font-serif text-xl text-espresso">@Text(order.Total)</span>
+                            </div>
+                        </a>
+                    </li>
+                }
+            </ul>
+        }
+    </div>
+</section>
+
+@code {
+    private sealed record OrderRow(string Number, string Url, string Summary, OrderStatus Status, string Total);
+
+    private static readonly (string SeoTitle, string SeoDescription, string Eyebrow, string GreetingTemplate, string SignOutAction, string SignOutButton, string OrdersTitle, string EmptyTitle, string EmptyMessage, string EmptyAction, string ShopUrl, string SummaryTemplate) Texts = (
+        "A minha conta | Unayka",
+        "Veja os seus dados e o histórico de pedidos na Unayka.",
+        "A minha conta",
+        "Olá, {0}",
+        StoreUrls.SignOut,
+        "Sair",
+        "Os seus pedidos",
+        "Ainda sem pedidos",
+        "Quando fizer a primeira compra, ela aparece aqui.",
+        "Ver a loja",
+        StoreUrls.Shop,
+        "{0}, {1} artigos");
+
+    [CascadingParameter]
+    private Task<AuthenticationState>? AuthenticationState { get; set; }
+
+    private string _greeting = string.Empty;
+    private string _phone = string.Empty;
+    private List<OrderRow> _orders = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        var state = AuthenticationState is null ? null : await AuthenticationState;
+        var user = state?.User;
+        if (user is null)
+        {
+            return;
+        }
+
+        _greeting = string.Format(System.Globalization.CultureInfo.InvariantCulture, Texts.GreetingTemplate, user.FindFirstValue(ClaimTypes.Name));
+        _phone = FormatPhone(user.FindFirstValue(ClaimTypes.MobilePhone));
+        var userId = CartCookies.ReadUserId(user);
+        if (userId is null)
+        {
+            return;
+        }
+
+        var orders = await OrderQueries.ListForUserAsync(userId.Value);
+        _orders = orders
+            .Select(order => new OrderRow(
+                order.Number,
+                ToUrl($"/pedido/{order.Number}"),
+                string.Format(System.Globalization.CultureInfo.InvariantCulture, Texts.SummaryTemplate, FormatDate(order.CreatedAt), order.ItemCount),
+                order.Status,
+                FormatMoney(order.TotalMinor)))
+            .ToList();
+    }
+}

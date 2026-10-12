@@ -107,6 +107,44 @@ src/Unayka.Web.Test/Pages/LoginFlowTests.cs: login page, antiforgery and sign in
 src/Unayka.Core.Test: tests for configuration and presentation helpers
 src/Unayka.Web.Test: in memory server tests for pages, health and the no loose text rule
 
+<!-- checkout feature (L3) -->
+src/Unayka.Core/Carts/CartModels.cs: cart line and cart view records, change and coupon apply results
+src/Unayka.Core/Carts/CartCalculator.cs: pure totals from lines and coupon
+src/Unayka.Core/Carts/ICartService.cs: server cart contract (add, quantity, remove, clear, coupon)
+src/Unayka.Core/Carts/CartService.cs: cart service with stock limits and totals recalculated from current prices
+src/Unayka.Core/Coupons/CouponEvaluator.cs: pure coupon rules returning a discount or a rejection reason
+src/Unayka.Core/Orders/OrderPlacementModels.cs: place order request, outcomes, delivery fee constant
+src/Unayka.Core/Orders/IOrderPlacement.cs: online order placement contract
+src/Unayka.Core/Orders/OrderPlacement.cs: validates checkout, reserves stock, creates order and pending payment, audits
+src/Unayka.Core/Orders/IOrderNumberGenerator.cs: next order number contract (UN-000123)
+src/Unayka.Core/Orders/OrderNumberGenerator.cs: order number generator from the highest stored number
+src/Unayka.Core/Orders/IOrderQueries.cs: customer order list and detail records and contract
+src/Unayka.Core/Orders/OrderQueries.cs: order list and detail queries
+src/Unayka.Core/Orders/OrderAccess.cs: who may view an order (staff, owner, placing browser)
+src/Unayka.Core/Orders/OrderServiceExtensions.cs: services.AddUnaykaOrders()
+src/Unayka.Core/Payments/IPaymentGateway.cs: provider gateway contract and request/status records
+src/Unayka.Core/Payments/MockPaymentGateway.cs: mock wallet push (paid after 5 seconds, phone ending in 0 fails)
+src/Unayka.Core/Payments/IPaymentService.cs: payment start, refresh and retry contract
+src/Unayka.Core/Payments/PaymentService.cs: creates payments, resolves status, marks order paid, records events and audit
+src/Unayka.Web/Endpoints/Cart/CartCookies.cs: unayka_cart cookie read/write and user id claim helper
+src/Unayka.Web/Endpoints/Cart/CartEndpoints.cs: POST /carrinho/adicionar, comprar-agora, atualizar, remover, cupao
+src/Unayka.Web/Endpoints/Checkout/CheckoutEndpoints.cs: MapCheckoutEndpoints and POST /checkout/confirmar
+src/Unayka.Web/Endpoints/Checkout/PlacedOrdersCookie.cs: protected cookie with the order numbers placed in this browser
+src/Unayka.Web/Components/Pages/Cart/CartPage.razor: /carrinho with lines, quantity forms, coupon and summary
+src/Unayka.Web/Components/Pages/Checkout/CheckoutPage.razor: /checkout single page form (contact, fulfillment, wallet payment, summary)
+src/Unayka.Web/Components/Pages/Checkout/OrderStatusPage.razor: /pedido/{number} access check, summary and live status
+src/Unayka.Web/Components/Checkout/OrderStatusLive.razor: interactive payment status with polling and retry
+src/Unayka.Web/Components/Checkout/OrderSummaryCard.razor: order lines, totals and fulfillment information
+src/Unayka.Web/Components/Pages/Account/AccountPage.razor: /conta with greeting, orders list and sign out
+src/Unayka.Core.Test/Coupons/CouponEvaluatorTests.cs: coupon rule tests
+src/Unayka.Core.Test/Carts/CartServiceTests.cs: cart totals, stock and coupon tests
+src/Unayka.Core.Test/Orders/CheckoutFixture.cs: seeded in memory services for checkout tests
+src/Unayka.Core.Test/Orders/OrderPlacementTests.cs: placement integration tests on SQLite
+src/Unayka.Core.Test/Payments/PaymentTests.cs: mock gateway and payment transition tests
+src/Unayka.Web.Test/Pages/CheckoutFlowTests.cs: cart to order flow tests over HTTP
+
 ## Interactive render modes
 
 None yet. AddInteractiveServerComponents is enabled in Program.cs; there is no global render mode.
+
+src/Unayka.Web/Components/Checkout/OrderStatusLive.razor: InteractiveServer to poll the payment status every 2 seconds and retry the payment without a page reload.
