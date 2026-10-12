@@ -1,0 +1,59 @@
+<PageTitle>@_title</PageTitle>
+<HeadContent>
+    <meta name="description" content="@Description"/>
+    <link rel="canonical" href="@_canonicalUrl"/>
+    <meta property="og:type" content="website"/>
+    <meta property="og:site_name" content="@SiteName"/>
+    <meta property="og:locale" content="@Locale"/>
+    <meta property="og:title" content="@_title"/>
+    <meta property="og:description" content="@Description"/>
+    <meta property="og:url" content="@_canonicalUrl"/>
+    <script type="application/ld+json">@_structuredData</script>
+</HeadContent>
+
+@code {
+    private const string SiteName = "Unayka";
+    private const string Locale = "pt_MZ";
+    private const string SchemaContext = "https://schema.org";
+    private const string WebPageType = "WebPage";
+    private const string LanguageTag = "pt-MZ";
+
+    [Parameter, EditorRequired]
+    public string Title { get; set; } = string.Empty;
+
+    [Parameter, EditorRequired]
+    public string Description { get; set; } = string.Empty;
+
+    [Parameter]
+    public string? StructuredDataJson { get; set; }
+
+    private string _title = string.Empty;
+    private string _canonicalUrl = string.Empty;
+    private MarkupString _structuredData;
+
+    protected override void OnParametersSet()
+    {
+        _title = Title;
+        _canonicalUrl = BuildCanonicalUrl();
+        _structuredData = new MarkupString(StructuredDataJson ?? BuildDefaultStructuredData());
+    }
+
+    private string BuildCanonicalUrl()
+    {
+        var path = new Uri(Navigation.Uri).AbsolutePath;
+        var configuredBaseUrl = Unayka.Core.Configuration.AppEnvConfig.PublicBaseUrl;
+        var root = string.IsNullOrEmpty(configuredBaseUrl) ? Navigation.BaseUri : configuredBaseUrl;
+        return root.TrimEnd('/') + path;
+    }
+
+    private string BuildDefaultStructuredData() =>
+        System.Text.Json.JsonSerializer.Serialize(new Dictionary<string, string>
+        {
+            ["@context"] = SchemaContext,
+            ["@type"] = WebPageType,
+            ["name"] = Title,
+            ["description"] = Description,
+            ["url"] = _canonicalUrl,
+            ["inLanguage"] = LanguageTag,
+        });
+}

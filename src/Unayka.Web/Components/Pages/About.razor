@@ -1,0 +1,21 @@
+@page "/about"
+
+<SeoComponent Title="@Data.Seo.Title" Description="@Data.Seo.Description"/>
+
+<h1 class="font-script text-5xl leading-tight">@Text(Data.Title)</h1>
+
+@foreach (var paragraph in Data.Paragraphs)
+{
+    <p class="mt-6 text-lg">@Text(paragraph)</p>
+}
+
+@code {
+    private static readonly (string Title, string[] Paragraphs, (string Title, string Description) Seo) Data = (
+        "Sobre a Unayka",
+        [
+            "A Unayka nasceu da vontade de juntar dois gestos de cuidado: uma boa chávena de café e um produto de beleza bem escolhido.",
+            "O espaço é pensado como um salão moderno, calmo e acolhedor, onde cada visita é sem pressa.",
+        ],
+        ("Sobre | Unayka", "Conheça a Unayka, uma loja de cafés e cosméticos com ambiente de salão moderno.")
+    );
+}

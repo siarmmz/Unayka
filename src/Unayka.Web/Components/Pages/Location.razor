@@ -1,0 +1,14 @@
+@page "/location"
+
+<SeoComponent Title="@Data.Seo.Title" Description="@Data.Seo.Description"/>
+
+<h1 class="font-script text-5xl leading-tight">@Text(Data.Title)</h1>
+<p class="mt-6 text-lg">@Text(Data.Message)</p>
+
+@code {
+    private static readonly (string Title, string Message, (string Title, string Description) Seo) Data = (
+        "Localização",
+        "O endereço e o horário da loja serão publicados aqui muito em breve.",
+        ("Localização | Unayka", "Onde encontrar a Unayka e o horário de funcionamento.")
+    );
+}
