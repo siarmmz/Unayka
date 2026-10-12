@@ -1,0 +1,272 @@
+@page "/admin/cupoes"
+@rendermode InteractiveServer
+@attribute [Authorize(Policy = UnaykaPolicies.Management)]
+@inject IAdminCoupons CouponService
+@inject IAdminCatalog Catalog
+
+<PageTitle>@Texts.PageTitle</PageTitle>
+
+<div class="mx-auto max-w-6xl space-y-8">
+    <AdminPageHeader Title="@Texts.Title" Eyebrow="@Texts.Eyebrow" Subtitle="@Texts.Subtitle">
+        <button type="button" class="btn-primary px-6 py-2" @onclick="StartNew">@Text(Texts.NewLabel)</button>
+    </AdminPageHeader>
+
+    @if (_form is not null)
+    {
+        <form class="space-y-5 rounded-2xl border border-sand bg-white p-5 shadow-sm sm:p-8" @onsubmit="SaveAsync">
+            <h2 class="font-serif text-2xl">@Text(_formTitle)</h2>
+            <ErrorList Messages="@_errors"/>
+            <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                <div>
+                    <label for="coupon-code" class="field-label">@Text(Texts.CodeLabel)</label>
+                    <input id="coupon-code" type="text" maxlength="30" class="field uppercase" @bind="_form.Code"/>
+                </div>
+                <div>
+                    <label for="coupon-kind" class="field-label">@Text(Texts.KindLabel)</label>
+                    <select id="coupon-kind" class="field" @bind="_form.Kind">
+                        @foreach (var option in AdminOptions.CouponKinds)
+                        {
+                            <option value="@option.Value">@Text(option.Label)</option>
+                        }
+                    </select>
+                </div>
+                <div>
+                    <label for="coupon-value" class="field-label">@Text(ValueLabel)</label>
+                    <input id="coupon-value" type="number" step="0.01" min="0" class="field" @bind="_form.Value"/>
+                </div>
+                <div>
+                    <label for="coupon-min" class="field-label">@Text(Texts.MinLabel)</label>
+                    <input id="coupon-min" type="number" step="0.01" min="0" class="field" @bind="_form.MinSubtotal"/>
+                </div>
+                <div>
+                    <label for="coupon-category" class="field-label">@Text(Texts.CategoryLabel)</label>
+                    <select id="coupon-category" class="field" @bind="_form.CategoryId">
+                        <option value="">@Text(Texts.AllCategories)</option>
+                        @foreach (var category in _categories)
+                        {
+                            <option value="@category.Id">@Text(category.Name)</option>
+                        }
+                    </select>
+                </div>
+                <div>
+                    <label for="coupon-limit" class="field-label">@Text(Texts.LimitLabel)</label>
+                    <input id="coupon-limit" type="number" step="1" min="1" class="field" @bind="_form.UsageLimit"/>
+                </div>
+                <div>
+                    <label for="coupon-start" class="field-label">@Text(Texts.StartLabel)</label>
+                    <input id="coupon-start" type="date" class="field" @bind="_form.StartsOn"/>
+                </div>
+                <div>
+                    <label for="coupon-end" class="field-label">@Text(Texts.EndLabel)</label>
+                    <input id="coupon-end" type="date" class="field" @bind="_form.EndsOn"/>
+                </div>
+                <label class="flex items-center gap-3 self-end pb-3 text-sm">
+                    <input type="checkbox" class="h-4 w-4 accent-clay" @bind="_form.IsActive"/>
+                    <span>@Text(Texts.ActiveLabel)</span>
+                </label>
+                <div class="sm:col-span-2 lg:col-span-3">
+                    <label for="coupon-description" class="field-label">@Text(Texts.DescriptionLabel)</label>
+                    <input id="coupon-description" type="text" maxlength="160" class="field" @bind="_form.Description"/>
+                </div>
+            </div>
+            <div class="flex gap-3">
+                <button type="submit" class="btn-primary px-8">@Text(Texts.Save)</button>
+                <button type="button" class="btn-outline px-8" @onclick="CancelEdit">@Text(Texts.Cancel)</button>
+            </div>
+        </form>
+    }
+
+    @if (_notice is not null)
+    {
+        <p class="rounded-xl bg-sage-soft px-4 py-3 text-sm text-espresso">@Text(_notice)</p>
+    }
+
+    @if (_rows.Count == 0)
+    {
+        <EmptyState Title="@Texts.EmptyTitle" Message="@Texts.EmptyMessage"/>
+    }
+
+    @if (_rows.Count > 0)
+    {
+        <section class="overflow-hidden rounded-2xl border border-sand bg-white shadow-sm">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-sm">
+                    <thead class="bg-cream text-xs uppercase tracking-widest text-stone">
+                        <tr>
+                            <th class="px-5 py-3 font-medium">@Text(Texts.CodeColumn)</th>
+                            <th class="px-5 py-3 font-medium">@Text(Texts.DiscountColumn)</th>
+                            <th class="px-5 py-3 font-medium">@Text(Texts.UsageColumn)</th>
+                            <th class="px-5 py-3 text-right font-medium">@Text(Texts.RevenueColumn)</th>
+                            <th class="px-5 py-3 font-medium">@Text(Texts.ValidityColumn)</th>
+                            <th class="px-5 py-3 font-medium">@Text(Texts.StatusColumn)</th>
+                            <th class="px-5 py-3"></th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-sand">
+                        @foreach (var coupon in _rows)
+                        {
+                            <tr class="hover:bg-cream/60">
+                                <td class="px-5 py-3"><p class="font-medium text-espresso">@Text(coupon.Code)</p><p class="text-xs text-stone">@Text(coupon.Description)</p></td>
+                                <td class="whitespace-nowrap px-5 py-3">@Text(DiscountLabel(coupon))</td>
+                                <td class="whitespace-nowrap px-5 py-3">@Text(UsageLabel(coupon))</td>
+                                <td class="whitespace-nowrap px-5 py-3 text-right">@Text(FormatMoney(coupon.RevenueMinor))</td>
+                                <td class="whitespace-nowrap px-5 py-3 text-stone">@Text(ValidityLabel(coupon))</td>
+                                <td class="px-5 py-3"><span class="@StatusClass(coupon.IsActive)">@Text(StatusLabel(coupon.IsActive))</span></td>
+                                <td class="whitespace-nowrap px-5 py-3 text-right">
+                                    <button type="button" class="mr-4 text-clay hover:text-espresso" @onclick="EditHandler(coupon.Id)">@Text(Texts.Edit)</button>
+                                    <button type="button" class="text-stone hover:text-espresso" @onclick="ToggleHandler(coupon)">@Text(ToggleLabel(coupon.IsActive))</button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    }
+</div>
+
+@code {
+    private static class Texts
+    {
+        public const string PageTitle = "Cupões | Unayka";
+        public const string Title = "Cupões";
+        public const string Eyebrow = "Promoções";
+        public const string Subtitle = "Códigos de desconto, utilização e receita gerada.";
+        public const string NewLabel = "Novo cupão";
+        public const string NewTitle = "Novo cupão";
+        public const string EditTitle = "Editar cupão";
+        public const string CodeLabel = "Código";
+        public const string KindLabel = "Tipo";
+        public const string PercentLabel = "Percentagem (%)";
+        public const string AmountLabel = "Valor (MZN)";
+        public const string MinLabel = "Subtotal mínimo (MZN)";
+        public const string CategoryLabel = "Categoria";
+        public const string AllCategories = "Todas as categorias";
+        public const string LimitLabel = "Limite de utilizações";
+        public const string StartLabel = "Início";
+        public const string EndLabel = "Fim";
+        public const string ActiveLabel = "Ativo";
+        public const string DescriptionLabel = "Descrição";
+        public const string Save = "Guardar";
+        public const string Cancel = "Cancelar";
+        public const string Edit = "Editar";
+        public const string Pause = "Pausar";
+        public const string Resume = "Retomar";
+        public const string Saved = "Cupão guardado.";
+        public const string EmptyTitle = "Sem cupões";
+        public const string EmptyMessage = "Crie o primeiro código de desconto.";
+        public const string CodeColumn = "Código";
+        public const string DiscountColumn = "Desconto";
+        public const string UsageColumn = "Utilizações";
+        public const string RevenueColumn = "Receita gerada";
+        public const string ValidityColumn = "Validade";
+        public const string StatusColumn = "Estado";
+        public const string ActiveStatus = "Ativo";
+        public const string PausedStatus = "Pausado";
+        public const string Unlimited = "sem limite";
+        public const string NoDates = "Sem datas";
+        public const string From = "desde";
+        public const string Until = "até";
+    }
+
+    private const string ActiveClass = "rounded-full bg-emerald-50 px-3 py-1 text-xs text-emerald-700";
+    private const string PausedClass = "rounded-full bg-cream px-3 py-1 text-xs text-stone";
+    private const int BasisPointsPerPercent = 100;
+
+    private IReadOnlyList<CouponRow> _rows = [];
+    private IReadOnlyList<CategoryOption> _categories = [];
+    private IReadOnlyList<string> _errors = [];
+    private CouponForm? _form;
+    private string _formTitle = Texts.NewTitle;
+    private string? _notice;
+
+    private string ValueLabel => _form?.Kind == Core.Coupons.CouponKind.Percentage ? Texts.PercentLabel : Texts.AmountLabel;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        _categories = await Catalog.ListCategoryOptionsAsync();
+        await ReloadAsync();
+    }
+
+    private static string DiscountLabel(CouponRow coupon) => coupon.Kind == Core.Coupons.CouponKind.Percentage
+        ? $"{coupon.Value / BasisPointsPerPercent}%"
+        : FormatMoney(coupon.Value);
+
+    private static string UsageLabel(CouponRow coupon) =>
+        $"{FormatNumber(coupon.UsedCount)} / {(coupon.UsageLimit is { } limit ? FormatNumber(limit) : Texts.Unlimited)}";
+
+    private static string ValidityLabel(CouponRow coupon)
+    {
+        if (coupon.StartsAt is null && coupon.EndsAt is null)
+        {
+            return Texts.NoDates;
+        }
+
+        var start = coupon.StartsAt is { } startsAt ? $"{Texts.From} {FormatDate(startsAt)}" : string.Empty;
+        var end = coupon.EndsAt is { } endsAt ? $"{Texts.Until} {FormatDate(endsAt)}" : string.Empty;
+        return $"{start} {end}".Trim();
+    }
+
+    private static string StatusClass(bool isActive) => isActive ? ActiveClass : PausedClass;
+
+    private static string StatusLabel(bool isActive) => isActive ? Texts.ActiveStatus : Texts.PausedStatus;
+
+    private static string ToggleLabel(bool isActive) => isActive ? Texts.Pause : Texts.Resume;
+
+    private Func<Task> EditHandler(int id) => () => EditAsync(id);
+
+    private Func<Task> ToggleHandler(CouponRow coupon) => () => ToggleAsync(coupon);
+
+    private async Task ReloadAsync()
+    {
+        _rows = await CouponService.ListAsync();
+    }
+
+    private void StartNew()
+    {
+        _form = new CouponForm();
+        _formTitle = Texts.NewTitle;
+        _errors = [];
+        _notice = null;
+    }
+
+    private async Task EditAsync(int id)
+    {
+        _form = await CouponService.GetAsync(id);
+        _formTitle = Texts.EditTitle;
+        _errors = [];
+        _notice = null;
+    }
+
+    private void CancelEdit()
+    {
+        _form = null;
+        _errors = [];
+    }
+
+    private async Task ToggleAsync(CouponRow coupon)
+    {
+        await CouponService.SetActiveAsync(ActorUserId, coupon.Id, !coupon.IsActive);
+        await ReloadAsync();
+    }
+
+    private async Task SaveAsync()
+    {
+        if (_form is null)
+        {
+            return;
+        }
+
+        var result = await CouponService.SaveAsync(ActorUserId, _form);
+        _errors = result.Errors;
+        if (!result.Succeeded)
+        {
+            return;
+        }
+
+        _form = null;
+        _notice = Texts.Saved;
+        await ReloadAsync();
+    }
+}

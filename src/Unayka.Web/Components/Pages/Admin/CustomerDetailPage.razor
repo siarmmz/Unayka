@@ -1,0 +1,100 @@
+@page "/admin/clientes/{Id:int}"
+@rendermode InteractiveServer
+@attribute [Authorize(Policy = UnaykaPolicies.Management)]
+@inject IAdminCustomers CustomerService
+
+<PageTitle>@Texts.PageTitle</PageTitle>
+
+<div class="mx-auto max-w-6xl space-y-8">
+    @if (_loaded && _detail is null)
+    {
+        <EmptyState Title="@Texts.NotFoundTitle" Message="@Texts.NotFoundMessage" ActionLabel="@Texts.BackLabel" ActionUrl="@Texts.ListUrl"/>
+    }
+
+    @if (_detail is not null)
+    {
+        <AdminPageHeader Title="@_detail.Customer.Name" Eyebrow="@Texts.Eyebrow" Subtitle="@_subtitle">
+            <a href="@ToUrl(Texts.ListUrl)" class="btn-outline px-5 py-2">@Text(Texts.BackLabel)</a>
+        </AdminPageHeader>
+
+        <section class="grid grid-cols-2 gap-4 lg:grid-cols-4">
+            @foreach (var tile in _tiles)
+            {
+                <StatTile Label="@tile.Label" Value="@tile.Value"/>
+            }
+        </section>
+
+        <section class="rounded-2xl border border-sand bg-white p-5 shadow-sm sm:p-8">
+            <h2 class="font-serif text-2xl">@Text(Texts.OrdersTitle)</h2>
+            @if (_detail.Orders.Count == 0)
+            {
+                <p class="mt-4 text-sm text-stone">@Text(Texts.NoOrders)</p>
+            }
+            <div class="mt-4 overflow-x-auto">
+                <table class="w-full text-left text-sm">
+                    <tbody class="divide-y divide-sand">
+                        @foreach (var order in _detail.Orders)
+                        {
+                            <tr class="hover:bg-cream/60">
+                                <td class="py-3 pr-4"><a href="@ToUrl(OrderUrl(order.Number))" class="font-medium text-espresso hover:text-clay">@Text(order.Number)</a></td>
+                                <td class="py-3 pr-4 text-stone">@Text(ChannelLabel(order.Channel))</td>
+                                <td class="py-3 pr-4"><StatusBadge Order="@order.Status"/></td>
+                                <td class="whitespace-nowrap py-3 pr-4 text-right">@Text(FormatMoney(order.TotalMinor))</td>
+                                <td class="whitespace-nowrap py-3 text-stone">@Text(FormatDateTime(order.CreatedAt))</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    }
+</div>
+
+@code {
+    private static class Texts
+    {
+        public const string PageTitle = "Cliente | Unayka";
+        public const string Eyebrow = "Cliente";
+        public const string ListUrl = "/admin/clientes";
+        public const string BackLabel = "Voltar aos clientes";
+        public const string NotFoundTitle = "Cliente não encontrado";
+        public const string NotFoundMessage = "Este cliente já não existe.";
+        public const string OrdersTitle = "Pedidos";
+        public const string NoOrders = "Ainda sem pedidos.";
+        public const string OrdersLabel = "Pedidos";
+        public const string SpentLabel = "Total gasto";
+        public const string LastLabel = "Último pedido";
+        public const string SegmentLabel = "Perfil";
+        public const string NoOrder = "Nunca";
+    }
+
+    [Parameter]
+    public int Id { get; set; }
+
+    private CustomerDetail? _detail;
+    private bool _loaded;
+    private string _subtitle = string.Empty;
+    private List<(string Label, string Value)> _tiles = [];
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _detail = await CustomerService.GetAsync(Id);
+        _loaded = true;
+        if (_detail is null)
+        {
+            return;
+        }
+
+        var customer = _detail.Customer;
+        _subtitle = string.Join(" | ", new[] { string.IsNullOrEmpty(customer.Phone) ? null : FormatPhone(customer.Phone), customer.Email }.Where(part => !string.IsNullOrEmpty(part)));
+        _tiles =
+        [
+            (Texts.OrdersLabel, FormatNumber(customer.OrderCount)),
+            (Texts.SpentLabel, FormatMoney(customer.TotalSpentMinor)),
+            (Texts.LastLabel, customer.LastOrderAt is { } at ? FormatDate(at) : Texts.NoOrder),
+            (Texts.SegmentLabel, CustomerSegments.Label(customer.Segment)),
+        ];
+    }
+
+    private static string OrderUrl(string number) => $"/admin/pedidos/{number}";
+}

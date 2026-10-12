@@ -8,6 +8,8 @@ public sealed class UnaykaWebFactory : WebApplicationFactory<Program>
     private const string DevelopmentEnvironment = "Development";
     private const string SqlitePathVariable = "DATABASE_SQLITE_FILE_PATH";
     private const string KeysPathVariable = "STORAGE_LOCAL_KEYS_PATH";
+    private const string LoginRateLimitVariable = "RATE_LIMIT_LOGIN_PER_MINUTE";
+    private const string TestLoginRateLimit = "100";
 
     private readonly string _workFolder = Path.Combine(Path.GetTempPath(), $"unayka-web-test-{Guid.NewGuid():N}");
 
@@ -17,6 +19,7 @@ public sealed class UnaykaWebFactory : WebApplicationFactory<Program>
         Environment.SetEnvironmentVariable(EnvironmentVariableName, DevelopmentEnvironment);
         Environment.SetEnvironmentVariable(SqlitePathVariable, Path.Combine(_workFolder, "test.sqlite"));
         Environment.SetEnvironmentVariable(KeysPathVariable, Path.Combine(_workFolder, "keys"));
+        Environment.SetEnvironmentVariable(LoginRateLimitVariable, TestLoginRateLimit);
     }
 
     protected override void Dispose(bool disposing)

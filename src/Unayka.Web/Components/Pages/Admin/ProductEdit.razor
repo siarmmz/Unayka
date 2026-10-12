@@ -1,0 +1,288 @@
+@page "/admin/produtos/novo"
+@page "/admin/produtos/{Id:int}"
+@rendermode InteractiveServer
+@attribute [Authorize(Policy = UnaykaPolicies.Management)]
+@inject IAdminCatalog Catalog
+
+<PageTitle>@Texts.PageTitle</PageTitle>
+
+<div class="mx-auto max-w-4xl space-y-8">
+    <AdminPageHeader Title="@_title" Eyebrow="@Texts.Eyebrow">
+        <a href="@ToUrl(Texts.ListUrl)" class="btn-outline px-5 py-2">@Text(Texts.BackLabel)</a>
+    </AdminPageHeader>
+
+    @if (_notFound)
+    {
+        <EmptyState Title="@Texts.NotFoundTitle" Message="@Texts.NotFoundMessage" ActionLabel="@Texts.BackLabel" ActionUrl="@Texts.ListUrl"/>
+    }
+
+    @if (_form is not null)
+    {
+        <form class="space-y-8" @onsubmit="SaveAsync">
+            <ErrorList Messages="@_errors"/>
+            @if (_notice is not null)
+            {
+                <p class="rounded-xl bg-sage-soft px-4 py-3 text-sm text-espresso">@Text(_notice)</p>
+            }
+
+            <section class="grid gap-5 rounded-2xl border border-sand bg-white p-5 shadow-sm sm:grid-cols-2 sm:p-8">
+                <div class="sm:col-span-2">
+                    <label for="product-name" class="field-label">@Text(Texts.NameLabel)</label>
+                    <input id="product-name" type="text" maxlength="120" class="field" @bind="_form.Name" @bind:event="oninput" @bind:after="OnNameChanged"/>
+                </div>
+                <div>
+                    <label for="product-slug" class="field-label">@Text(Texts.SlugLabel)</label>
+                    <input id="product-slug" type="text" maxlength="80" class="field" @bind="_form.Slug" @bind:after="OnSlugEdited"/>
+                </div>
+                <div>
+                    <label for="product-category" class="field-label">@Text(Texts.CategoryLabel)</label>
+                    <select id="product-category" class="field" @bind="_form.CategoryId">
+                        <option value="0">@Text(Texts.ChooseCategory)</option>
+                        @foreach (var category in _categories)
+                        {
+                            <option value="@category.Id">@Text(category.Name)</option>
+                        }
+                    </select>
+                </div>
+                <div class="sm:col-span-2">
+                    <label for="product-short" class="field-label">@Text(Texts.ShortDescriptionLabel)</label>
+                    <input id="product-short" type="text" maxlength="200" class="field" @bind="_form.ShortDescription"/>
+                </div>
+                <div class="sm:col-span-2">
+                    <label for="product-description" class="field-label">@Text(Texts.DescriptionLabel)</label>
+                    <textarea id="product-description" rows="5" class="field" @bind="_form.Description"></textarea>
+                </div>
+            </section>
+
+            <section class="grid gap-5 rounded-2xl border border-sand bg-white p-5 shadow-sm sm:grid-cols-2 sm:p-8 lg:grid-cols-3">
+                <div>
+                    <label for="product-price" class="field-label">@Text(Texts.PriceLabel)</label>
+                    <input id="product-price" type="number" step="0.01" min="0" class="field" @bind="_form.Price"/>
+                </div>
+                <div>
+                    <label for="product-compare" class="field-label">@Text(Texts.CompareLabel)</label>
+                    <input id="product-compare" type="number" step="0.01" min="0" class="field" @bind="_form.CompareAtPrice"/>
+                </div>
+                <div>
+                    <label for="product-stock" class="field-label">@Text(Texts.StockLabel)</label>
+                    <input id="product-stock" type="number" step="1" min="0" class="field" @bind="_form.StockQuantity"/>
+                </div>
+                <div>
+                    <label for="product-badge" class="field-label">@Text(Texts.BadgeLabel)</label>
+                    <input id="product-badge" type="text" maxlength="30" class="field" @bind="_form.Badge"/>
+                </div>
+                <label class="flex items-center gap-3 text-sm">
+                    <input type="checkbox" class="h-4 w-4 accent-clay" @bind="_form.IsFeatured"/>
+                    <span>@Text(Texts.FeaturedLabel)</span>
+                </label>
+                <label class="flex items-center gap-3 text-sm">
+                    <input type="checkbox" class="h-4 w-4 accent-clay" @bind="_form.IsActive"/>
+                    <span>@Text(Texts.ActiveLabel)</span>
+                </label>
+            </section>
+
+            <section class="space-y-4 rounded-2xl border border-sand bg-white p-5 shadow-sm sm:p-8">
+                <div class="flex items-center justify-between gap-4">
+                    <h2 class="font-serif text-2xl">@Text(Texts.MediaTitle)</h2>
+                    <button type="button" class="btn-outline px-5 py-2" @onclick="AddMedia">@Text(Texts.AddMedia)</button>
+                </div>
+                @foreach (var media in _form.Media)
+                {
+                    <div class="grid items-end gap-3 rounded-xl border border-sand p-4 sm:grid-cols-12">
+                        <div class="sm:col-span-5">
+                            <label class="field-label">@Text(Texts.MediaUrlLabel)</label>
+                            <input type="url" class="field" @bind="media.Url"/>
+                        </div>
+                        <div class="sm:col-span-3">
+                            <label class="field-label">@Text(Texts.MediaKindLabel)</label>
+                            <select class="field" @bind="media.Kind">
+                                @foreach (var option in AdminOptions.MediaKinds)
+                                {
+                                    <option value="@option.Value">@Text(option.Label)</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="sm:col-span-2">
+                            <label class="field-label">@Text(Texts.OrderLabel)</label>
+                            <input type="number" step="1" class="field" @bind="media.SortOrder"/>
+                        </div>
+                        <div class="sm:col-span-2">
+                            <button type="button" class="btn-outline w-full px-4 py-3" @onclick="RemoveMediaHandler(media)">@Text(Texts.Remove)</button>
+                        </div>
+                        <div class="sm:col-span-12">
+                            <label class="field-label">@Text(Texts.MediaAltLabel)</label>
+                            <input type="text" maxlength="160" class="field" @bind="media.Alt"/>
+                        </div>
+                    </div>
+                }
+            </section>
+
+            <section class="space-y-4 rounded-2xl border border-sand bg-white p-5 shadow-sm sm:p-8">
+                <div class="flex items-center justify-between gap-4">
+                    <h2 class="font-serif text-2xl">@Text(Texts.FactsTitle)</h2>
+                    <button type="button" class="btn-outline px-5 py-2" @onclick="AddFact">@Text(Texts.AddFact)</button>
+                </div>
+                @foreach (var fact in _form.Facts)
+                {
+                    <div class="grid items-end gap-3 rounded-xl border border-sand p-4 sm:grid-cols-12">
+                        <div class="sm:col-span-3">
+                            <label class="field-label">@Text(Texts.FactGroupLabel)</label>
+                            <input type="text" maxlength="60" class="field" @bind="fact.Group"/>
+                        </div>
+                        <div class="sm:col-span-3">
+                            <label class="field-label">@Text(Texts.FactLabelLabel)</label>
+                            <input type="text" maxlength="80" class="field" @bind="fact.Label"/>
+                        </div>
+                        <div class="sm:col-span-3">
+                            <label class="field-label">@Text(Texts.FactValueLabel)</label>
+                            <input type="text" maxlength="160" class="field" @bind="fact.Value"/>
+                        </div>
+                        <div class="sm:col-span-1">
+                            <label class="field-label">@Text(Texts.OrderLabel)</label>
+                            <input type="number" step="1" class="field px-2" @bind="fact.SortOrder"/>
+                        </div>
+                        <div class="sm:col-span-2">
+                            <button type="button" class="btn-outline w-full px-4 py-3" @onclick="RemoveFactHandler(fact)">@Text(Texts.Remove)</button>
+                        </div>
+                    </div>
+                }
+            </section>
+
+            <div class="flex gap-3">
+                <button type="submit" class="btn-primary px-8" disabled="@_saving">@Text(Texts.Save)</button>
+                <a href="@ToUrl(Texts.ListUrl)" class="btn-outline px-8">@Text(Texts.Cancel)</a>
+            </div>
+        </form>
+    }
+</div>
+
+@code {
+    private static class Texts
+    {
+        public const string PageTitle = "Produto | Unayka";
+        public const string Eyebrow = "Catálogo";
+        public const string NewTitle = "Novo produto";
+        public const string EditTitle = "Editar produto";
+        public const string ListUrl = "/admin/produtos";
+        public const string BackLabel = "Voltar aos produtos";
+        public const string NotFoundTitle = "Produto não encontrado";
+        public const string NotFoundMessage = "Este produto já não existe.";
+        public const string NameLabel = "Nome";
+        public const string SlugLabel = "Endereço (slug)";
+        public const string CategoryLabel = "Categoria";
+        public const string ChooseCategory = "Escolha uma categoria";
+        public const string ShortDescriptionLabel = "Descrição curta";
+        public const string DescriptionLabel = "Descrição";
+        public const string PriceLabel = "Preço (MZN)";
+        public const string CompareLabel = "Preço anterior (MZN)";
+        public const string StockLabel = "Stock";
+        public const string BadgeLabel = "Etiqueta";
+        public const string FeaturedLabel = "Em destaque";
+        public const string ActiveLabel = "Visível na loja";
+        public const string MediaTitle = "Imagens";
+        public const string AddMedia = "Adicionar imagem";
+        public const string MediaUrlLabel = "Endereço da imagem";
+        public const string MediaKindLabel = "Tipo";
+        public const string MediaAltLabel = "Texto alternativo";
+        public const string OrderLabel = "Ordem";
+        public const string Remove = "Remover";
+        public const string FactsTitle = "Informação do produto";
+        public const string AddFact = "Adicionar linha";
+        public const string FactGroupLabel = "Grupo";
+        public const string FactLabelLabel = "Nome";
+        public const string FactValueLabel = "Valor";
+        public const string Save = "Guardar";
+        public const string Cancel = "Cancelar";
+        public const string Saved = "Produto guardado.";
+        public const string EditUrlPrefix = "/admin/produtos/";
+    }
+
+    [Parameter]
+    public int? Id { get; set; }
+
+    private ProductForm? _form;
+    private IReadOnlyList<CategoryOption> _categories = [];
+    private IReadOnlyList<string> _errors = [];
+    private string _title = Texts.NewTitle;
+    private string? _notice;
+    private bool _notFound;
+    private bool _saving;
+    private bool _slugEdited;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _categories = await Catalog.ListCategoryOptionsAsync();
+        _notFound = false;
+        _slugEdited = Id is not null;
+        _title = Id is null ? Texts.NewTitle : Texts.EditTitle;
+        if (Id is null)
+        {
+            _form = new ProductForm { CategoryId = _categories.FirstOrDefault()?.Id ?? 0 };
+            return;
+        }
+
+        _form = await Catalog.GetProductAsync(Id.Value);
+        _notFound = _form is null;
+    }
+
+    private void OnNameChanged()
+    {
+        if (_form is not null && !_slugEdited)
+        {
+            _form.Slug = Slugs.FromName(_form.Name);
+        }
+    }
+
+    private void OnSlugEdited()
+    {
+        _slugEdited = true;
+    }
+
+    private Action RemoveMediaHandler(ProductMediaForm media) => () => RemoveMedia(media);
+
+    private Action RemoveFactHandler(ProductFactForm fact) => () => RemoveFact(fact);
+
+    private void AddMedia()
+    {
+        _form?.Media.Add(new ProductMediaForm { SortOrder = _form.Media.Count });
+    }
+
+    private void RemoveMedia(ProductMediaForm media)
+    {
+        _form?.Media.Remove(media);
+    }
+
+    private void AddFact()
+    {
+        _form?.Facts.Add(new ProductFactForm { SortOrder = _form.Facts.Count });
+    }
+
+    private void RemoveFact(ProductFactForm fact)
+    {
+        _form?.Facts.Remove(fact);
+    }
+
+    private async Task SaveAsync()
+    {
+        if (_form is null)
+        {
+            return;
+        }
+
+        _saving = true;
+        _notice = null;
+        var result = await Catalog.SaveProductAsync(ActorUserId, _form);
+        _saving = false;
+        _errors = result.Errors;
+        if (!result.Succeeded)
+        {
+            return;
+        }
+
+        _notice = Texts.Saved;
+        if (_form.Id is null && result.EntityId is { } createdId)
+        {
+            Navigation.NavigateTo($"{Texts.EditUrlPrefix}{createdId}");
+        }
+    }
+}

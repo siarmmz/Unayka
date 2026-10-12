@@ -1,0 +1,38 @@
+<div class="flex h-56 items-stretch gap-1.5 sm:gap-3">
+    @foreach (var bar in _bars)
+    {
+        <div class="flex min-w-0 flex-1 flex-col" title="@bar.Tooltip">
+            <div class="flex flex-1 items-end">
+                <div class="w-full rounded-t-md bg-clay/80 transition hover:bg-espresso @bar.HeightClass"></div>
+            </div>
+            <p class="mt-2 truncate text-center text-[10px] text-stone sm:text-xs">@Text(bar.Label)</p>
+        </div>
+    }
+</div>
+
+@code {
+    private static readonly string[] HeightClasses =
+    [
+        "h-px", "h-[5%]", "h-[10%]", "h-[15%]", "h-[20%]", "h-[25%]", "h-[30%]", "h-[35%]", "h-[40%]", "h-[45%]", "h-[50%]",
+        "h-[55%]", "h-[60%]", "h-[65%]", "h-[70%]", "h-[75%]", "h-[80%]", "h-[85%]", "h-[90%]", "h-[95%]", "h-full",
+    ];
+
+    private sealed record Bar(string Label, string Tooltip, string HeightClass);
+
+    [Parameter, EditorRequired]
+    public IReadOnlyList<DailySales> Days { get; set; } = [];
+
+    private List<Bar> _bars = [];
+
+    protected override void OnParametersSet()
+    {
+        var maximum = Days.Count == 0 ? 0 : Days.Max(day => day.TotalMinor);
+        var steps = HeightClasses.Length - 1;
+        _bars = Days
+            .Select(day => new Bar(
+                day.Day.ToString("dd/MM", System.Globalization.CultureInfo.InvariantCulture),
+                $"{day.Day.ToString("dd/MM", System.Globalization.CultureInfo.InvariantCulture)}: {FormatMoney(day.TotalMinor)}",
+                HeightClasses[maximum <= 0 || day.TotalMinor <= 0 ? 0 : (int)Math.Ceiling(day.TotalMinor * (double)steps / maximum)]))
+            .ToList();
+    }
+}

@@ -1,0 +1,138 @@
+@page "/admin/produtos"
+@rendermode InteractiveServer
+@attribute [Authorize(Policy = UnaykaPolicies.Management)]
+@inject IAdminCatalog Catalog
+
+<PageTitle>@Texts.PageTitle</PageTitle>
+
+<div class="mx-auto max-w-6xl space-y-8">
+    <AdminPageHeader Title="@Texts.Title" Eyebrow="@Texts.Eyebrow" Subtitle="@Texts.Subtitle">
+        <a href="@ToUrl(Texts.NewUrl)" class="btn-primary px-6 py-2">@Text(Texts.NewLabel)</a>
+    </AdminPageHeader>
+
+    <section class="flex flex-wrap items-end gap-4 rounded-2xl border border-sand bg-white p-5 shadow-sm">
+        <div class="min-w-64 flex-1">
+            <label for="product-search" class="field-label">@Text(Texts.SearchLabel)</label>
+            <input id="product-search" type="search" class="field" placeholder="@Texts.SearchPlaceholder" @bind="_search" @bind:event="oninput" @onkeydown="OnSearchKey"/>
+        </div>
+        <button type="button" class="btn-primary px-6 py-2" @onclick="SearchAsync">@Text(Texts.Apply)</button>
+    </section>
+
+    @if (_result is not null && _result.Items.Count == 0)
+    {
+        <EmptyState Title="@Texts.EmptyTitle" Message="@Texts.EmptyMessage"/>
+    }
+
+    @if (_result is not null && _result.Items.Count > 0)
+    {
+        <section class="overflow-hidden rounded-2xl border border-sand bg-white shadow-sm">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-sm">
+                    <thead class="bg-cream text-xs uppercase tracking-widest text-stone">
+                        <tr>
+                            <th class="px-5 py-3 font-medium">@Text(Texts.ProductColumn)</th>
+                            <th class="px-5 py-3 font-medium">@Text(Texts.CategoryColumn)</th>
+                            <th class="px-5 py-3 text-right font-medium">@Text(Texts.PriceColumn)</th>
+                            <th class="px-5 py-3 text-right font-medium">@Text(Texts.StockColumn)</th>
+                            <th class="px-5 py-3 font-medium">@Text(Texts.ActiveColumn)</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-sand">
+                        @foreach (var product in _result.Items)
+                        {
+                            <tr class="hover:bg-cream/60">
+                                <td class="px-5 py-3">
+                                    <div class="flex items-center gap-4">
+                                        <ThumbnailImage Url="@product.ImageUrl"/>
+                                        <a href="@ToUrl(EditUrl(product.Id))" class="font-medium text-espresso hover:text-clay">@Text(product.Name)</a>
+                                    </div>
+                                </td>
+                                <td class="px-5 py-3 text-stone">@Text(product.CategoryName)</td>
+                                <td class="whitespace-nowrap px-5 py-3 text-right">@Text(FormatMoney(product.PriceMinor))</td>
+                                <td class="px-5 py-3 text-right"><span class="@StockClass(product.StockQuantity)">@Text(FormatNumber(product.StockQuantity))</span></td>
+                                <td class="px-5 py-3">
+                                    <button type="button" role="switch" aria-checked="@product.IsActive" aria-label="@Texts.ToggleLabel" class="@SwitchClass(product.IsActive)" @onclick="ToggleHandler(product)">
+                                        <span class="@KnobClass(product.IsActive)"></span>
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </section>
+        <AdminPager Page="@_result.Page" PageCount="@_result.PageCount" OnPage="LoadPageAsync"/>
+    }
+</div>
+
+@code {
+    private static class Texts
+    {
+        public const string PageTitle = "Produtos | Unayka";
+        public const string Title = "Produtos";
+        public const string Eyebrow = "Catálogo";
+        public const string Subtitle = "Preços, stock e visibilidade na loja.";
+        public const string NewLabel = "Novo produto";
+        public const string NewUrl = "/admin/produtos/novo";
+        public const string SearchLabel = "Pesquisar";
+        public const string SearchPlaceholder = "Nome ou endereço do produto";
+        public const string Apply = "Pesquisar";
+        public const string EmptyTitle = "Sem produtos";
+        public const string EmptyMessage = "Nenhum produto corresponde à pesquisa.";
+        public const string ProductColumn = "Produto";
+        public const string CategoryColumn = "Categoria";
+        public const string PriceColumn = "Preço";
+        public const string StockColumn = "Stock";
+        public const string ActiveColumn = "Ativo";
+        public const string ToggleLabel = "Ativar ou desativar";
+        public const string EnterKey = "Enter";
+    }
+
+    private const string SwitchOnClass = "relative inline-flex h-6 w-11 items-center rounded-full bg-sage transition";
+    private const string SwitchOffClass = "relative inline-flex h-6 w-11 items-center rounded-full bg-sand transition";
+    private const string KnobOnClass = "inline-block h-5 w-5 translate-x-5 rounded-full bg-white shadow transition";
+    private const string KnobOffClass = "inline-block h-5 w-5 translate-x-0.5 rounded-full bg-white shadow transition";
+    private const string LowStockClass = "rounded-full bg-amber-50 px-3 py-1 text-xs text-amber-700";
+    private const string NormalStockClass = "text-stone";
+    private const int LowStock = AdminDashboardService.LowStockThreshold;
+
+    private string _search = string.Empty;
+    private PagedResult<ProductRow>? _result;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        await LoadPageAsync(1);
+    }
+
+    private static string EditUrl(int id) => $"/admin/produtos/{id}";
+
+    private static string SwitchClass(bool isActive) => isActive ? SwitchOnClass : SwitchOffClass;
+
+    private static string KnobClass(bool isActive) => isActive ? KnobOnClass : KnobOffClass;
+
+    private static string StockClass(int stock) => stock <= LowStock ? LowStockClass : NormalStockClass;
+
+    private Task SearchAsync() => LoadPageAsync(1);
+
+    private async Task OnSearchKey(KeyboardEventArgs args)
+    {
+        if (args.Key == Texts.EnterKey)
+        {
+            await LoadPageAsync(1);
+        }
+    }
+
+    private async Task LoadPageAsync(int page)
+    {
+        _result = await Catalog.ListProductsAsync(_search, page);
+    }
+
+    private Func<Task> ToggleHandler(ProductRow product) => () => ToggleAsync(product);
+
+    private async Task ToggleAsync(ProductRow product)
+    {
+        await Catalog.SetProductActiveAsync(ActorUserId, product.Id, !product.IsActive);
+        await LoadPageAsync(_result?.Page ?? 1);
+    }
+}

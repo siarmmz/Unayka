@@ -1,0 +1,176 @@
+@page "/admin/pagamentos"
+@rendermode InteractiveServer
+@attribute [Authorize(Policy = UnaykaPolicies.Management)]
+@inject IAdminPayments PaymentService
+
+<PageTitle>@Texts.PageTitle</PageTitle>
+
+<div class="mx-auto max-w-6xl space-y-8">
+    <AdminPageHeader Title="@Texts.Title" Eyebrow="@Texts.Eyebrow" Subtitle="@Texts.Subtitle"/>
+
+    @if (_overview is not null)
+    {
+        <section class="grid grid-cols-2 gap-4 lg:grid-cols-4">
+            @foreach (var total in _overview.Totals)
+            {
+                <StatTile Label="@StatusText(total.Status)" Value="@FormatMoney(total.AmountMinor)" Hint="@CountText(total.Count)"/>
+            }
+        </section>
+    }
+
+    <section class="grid gap-4 rounded-2xl border border-sand bg-white p-5 shadow-sm sm:grid-cols-2 lg:grid-cols-5">
+        <div>
+            <label for="payment-status" class="field-label">@Text(Texts.StatusLabel)</label>
+            <select id="payment-status" class="field" @bind="_status">
+                @foreach (var option in AdminOptions.PaymentStatuses)
+                {
+                    <option value="@option.Value">@Text(option.Label)</option>
+                }
+            </select>
+        </div>
+        <div>
+            <label for="payment-method" class="field-label">@Text(Texts.MethodLabel)</label>
+            <select id="payment-method" class="field" @bind="_method">
+                @foreach (var option in AdminOptions.PaymentMethods)
+                {
+                    <option value="@option.Value">@Text(option.Label)</option>
+                }
+            </select>
+        </div>
+        <div>
+            <label for="payment-provider" class="field-label">@Text(Texts.ProviderLabel)</label>
+            <select id="payment-provider" class="field" @bind="_provider">
+                <option value="">@Text(Texts.AllLabel)</option>
+                @foreach (var provider in _providers)
+                {
+                    <option value="@provider">@Text(provider)</option>
+                }
+            </select>
+        </div>
+        <div>
+            <label for="payment-from" class="field-label">@Text(Texts.FromLabel)</label>
+            <input id="payment-from" type="date" class="field" @bind="_from"/>
+        </div>
+        <div>
+            <label for="payment-to" class="field-label">@Text(Texts.ToLabel)</label>
+            <input id="payment-to" type="date" class="field" @bind="_to"/>
+        </div>
+        <div class="flex gap-3 sm:col-span-2 lg:col-span-5">
+            <button type="button" class="btn-primary px-6 py-2" @onclick="ApplyAsync">@Text(Texts.Apply)</button>
+            <button type="button" class="btn-outline px-6 py-2" @onclick="ClearAsync">@Text(Texts.Clear)</button>
+        </div>
+    </section>
+
+    @if (_overview is not null && _overview.Page.Items.Count == 0)
+    {
+        <EmptyState Title="@Texts.EmptyTitle" Message="@Texts.EmptyMessage"/>
+    }
+
+    @if (_overview is not null && _overview.Page.Items.Count > 0)
+    {
+        <section class="overflow-hidden rounded-2xl border border-sand bg-white shadow-sm">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-sm">
+                    <thead class="bg-cream text-xs uppercase tracking-widest text-stone">
+                        <tr>
+                            <th class="px-5 py-3 font-medium">@Text(Texts.OrderColumn)</th>
+                            <th class="px-5 py-3 font-medium">@Text(Texts.MethodColumn)</th>
+                            <th class="px-5 py-3 font-medium">@Text(Texts.ProviderColumn)</th>
+                            <th class="px-5 py-3 font-medium">@Text(Texts.StatusColumn)</th>
+                            <th class="px-5 py-3 text-right font-medium">@Text(Texts.AmountColumn)</th>
+                            <th class="px-5 py-3 text-right font-medium">@Text(Texts.FeeColumn)</th>
+                            <th class="px-5 py-3 font-medium">@Text(Texts.DateColumn)</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-sand">
+                        @foreach (var payment in _overview.Page.Items)
+                        {
+                            <tr class="hover:bg-cream/60">
+                                <td class="px-5 py-3"><a href="@ToUrl(OrderUrl(payment.OrderNumber))" class="font-medium text-espresso hover:text-clay">@Text(payment.OrderNumber)</a></td>
+                                <td class="px-5 py-3">@Text(StatusLabels.For(payment.Method))</td>
+                                <td class="px-5 py-3 text-stone">@Text(payment.Provider)</td>
+                                <td class="px-5 py-3"><StatusBadge Payment="@payment.Status"/></td>
+                                <td class="whitespace-nowrap px-5 py-3 text-right">@Text(FormatMoney(payment.AmountMinor))</td>
+                                <td class="whitespace-nowrap px-5 py-3 text-right text-stone">@Text(FormatMoney(payment.FeeMinor))</td>
+                                <td class="whitespace-nowrap px-5 py-3 text-stone">@Text(FormatDateTime(payment.CreatedAt))</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </section>
+        <AdminPager Page="@_overview.Page.Page" PageCount="@_overview.Page.PageCount" OnPage="LoadPageAsync"/>
+    }
+</div>
+
+@code {
+    private static class Texts
+    {
+        public const string PageTitle = "Pagamentos | Unayka";
+        public const string Title = "Pagamentos";
+        public const string Eyebrow = "Finanças";
+        public const string Subtitle = "Carteiras móveis, dinheiro e cartão, com taxas.";
+        public const string StatusLabel = "Estado";
+        public const string MethodLabel = "Método";
+        public const string ProviderLabel = "Fornecedor";
+        public const string AllLabel = "Todos";
+        public const string FromLabel = "De";
+        public const string ToLabel = "Até";
+        public const string Apply = "Filtrar";
+        public const string Clear = "Limpar";
+        public const string EmptyTitle = "Sem pagamentos";
+        public const string EmptyMessage = "Nenhum pagamento corresponde aos filtros escolhidos.";
+        public const string OrderColumn = "Pedido";
+        public const string MethodColumn = "Método";
+        public const string ProviderColumn = "Fornecedor";
+        public const string StatusColumn = "Estado";
+        public const string AmountColumn = "Valor";
+        public const string FeeColumn = "Taxa";
+        public const string DateColumn = "Data";
+        public const string Payments = "pagamentos";
+    }
+
+    private string _status = string.Empty;
+    private string _method = string.Empty;
+    private string _provider = string.Empty;
+    private DateOnly? _from;
+    private DateOnly? _to;
+    private PaymentsOverview? _overview;
+    private IReadOnlyList<string> _providers = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        await LoadPageAsync(1);
+    }
+
+    private static string OrderUrl(string number) => $"/admin/pedidos/{number}";
+
+    private static string StatusText(PaymentStatus status) => StatusLabels.For(status).Label;
+
+    private static string CountText(int count) => $"{FormatNumber(count)} {Texts.Payments}";
+
+    private Task ApplyAsync() => LoadPageAsync(1);
+
+    private async Task ClearAsync()
+    {
+        _status = string.Empty;
+        _method = string.Empty;
+        _provider = string.Empty;
+        _from = null;
+        _to = null;
+        await LoadPageAsync(1);
+    }
+
+    private async Task LoadPageAsync(int page)
+    {
+        var filter = new PaymentFilter(
+            AdminOptions.ParseOrNull<PaymentStatus>(_status),
+            AdminOptions.ParseOrNull<PaymentMethod>(_method),
+            _provider,
+            _from,
+            _to);
+        _overview = await PaymentService.ListAsync(filter, page);
+        _providers = _overview.Providers;
+    }
+}
