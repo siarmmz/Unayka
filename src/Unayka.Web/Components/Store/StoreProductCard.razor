@@ -45,12 +45,13 @@
 
     private sealed record CardBadge(string Label, string CssClass);
 
-    private static readonly (string AddAction, string AddLabel, string ShortLabel, string SoldOutLabel, string NewLabel, string DigitalLabel) Data = (
+    private static readonly (string AddAction, string AddLabel, string ShortLabel, string SoldOutLabel, string NewLabel, string FeaturedLabel, string DigitalLabel) Data = (
         "/carrinho/adicionar",
         "Adicionar ao carrinho",
         "Adicionar",
         "Esgotado",
         "Novo",
+        "Destaque",
         "Digital");
 
     [Parameter, EditorRequired]
@@ -82,6 +83,11 @@
         if (Model.IsNew)
         {
             badges.Add(new CardBadge(Data.NewLabel, NewBadgeClass));
+        }
+
+        if (Model.IsFeatured)
+        {
+            badges.Add(new CardBadge(Data.FeaturedLabel, NewBadgeClass));
         }
 
         if (Model.Badge is not null && !string.Equals(Model.Badge, Data.NewLabel, StringComparison.OrdinalIgnoreCase))

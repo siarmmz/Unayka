@@ -14,6 +14,7 @@ public sealed record ProductCardModel(
     IReadOnlyList<string> ImageUrls,
     string? Badge,
     bool IsNew,
+    bool IsFeatured,
     ProductKind Kind,
     bool InStock)
 {
@@ -28,6 +29,7 @@ public sealed record ProductCardModel(
         product.Media.OrderBy(media => media.SortOrder).Select(media => media.Url).ToList(),
         product.Badge,
         product.IsNew,
+        product.IsFeatured,
         product.Kind,
         product.Kind == ProductKind.Digital
         || product.Stocks.Any(stock => stock.Quantity > 0 && stock.Location!.Status == CatalogStatus.Active));

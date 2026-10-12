@@ -27,7 +27,7 @@ public sealed record AdminOrderPaymentDetail(
     IReadOnlyList<PaymentTimelineEntry> Timeline);
 
 /// <summary>Line of an order.</summary>
-public sealed record OrderLineDetail(string ProductName, long UnitPriceMinor, int Quantity);
+public sealed record AdminOrderLineDetail(string ProductName, long UnitPriceMinor, int Quantity);
 
 /// <summary>Full order for the detail page.</summary>
 public sealed record AdminOrderDetail(
@@ -47,7 +47,7 @@ public sealed record AdminOrderDetail(
     long TotalMinor,
     string? CouponCode,
     DateTimeOffset CreatedAt,
-    IReadOnlyList<OrderLineDetail> Lines,
+    IReadOnlyList<AdminOrderLineDetail> Lines,
     IReadOnlyList<AdminOrderPaymentDetail> Payments);
 
 public interface IAdminOrders
@@ -183,7 +183,7 @@ public sealed class AdminOrdersService(IDbContextFactory<UnaykaDbContext> factor
         order.TotalMinor,
         order.CouponCode,
         order.CreatedAt,
-        order.Items.Select(item => new OrderLineDetail(item.ProductName, item.UnitPriceMinor, item.Quantity)).ToList(),
+        order.Items.Select(item => new AdminOrderLineDetail(item.ProductName, item.UnitPriceMinor, item.Quantity)).ToList(),
         order.Payments
             .OrderBy(payment => payment.CreatedAt)
             .Select(payment => new AdminOrderPaymentDetail(

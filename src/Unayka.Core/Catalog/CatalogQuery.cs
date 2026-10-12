@@ -250,6 +250,7 @@ public sealed class CatalogQuery(UnaykaDbContext db) : ICatalogQuery
             product.CompareAtPriceMinor,
             product.Badge,
             product.IsNew,
+            product.IsFeatured,
             ProductStock.Total(product),
             product.Category!.Slug,
             product.Category.Name,

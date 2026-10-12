@@ -141,7 +141,7 @@
 
     private sealed record DetailBadge(string Label, string CssClass);
 
-    private static readonly (string AddAction, string BuyNowAction, string AddLabel, string SoldOutLabel, string BuyNowLabel, string QuantityLabel, string InStock, string LowStock, string OutOfStock, string StoryEyebrow, string DetailsEyebrow, string DetailsTitle, string RelatedEyebrow, string RelatedTitle, string NewLabel, string AvailableAt, string DigitalNote, string[] PhysicalPromises, string[] DigitalPromises) Data = (
+    private static readonly (string AddAction, string BuyNowAction, string AddLabel, string SoldOutLabel, string BuyNowLabel, string QuantityLabel, string InStock, string LowStock, string OutOfStock, string StoryEyebrow, string DetailsEyebrow, string DetailsTitle, string RelatedEyebrow, string RelatedTitle, string NewLabel, string FeaturedLabel, string AvailableAt, string DigitalNote, string[] PhysicalPromises, string[] DigitalPromises) Data = (
         "/carrinho/adicionar",
         "/carrinho/comprar-agora",
         "Adicionar ao carrinho",
@@ -157,6 +157,7 @@
         "Continue a explorar",
         "Também vai gostar",
         "Novo",
+        "Destaque",
         "Disponível em ",
         "Produto digital, descarregue após o pagamento.",
         [
@@ -241,6 +242,11 @@
         if (product.IsNew)
         {
             badges.Add(new DetailBadge(Data.NewLabel, NewBadgeClass));
+        }
+
+        if (product.IsFeatured)
+        {
+            badges.Add(new DetailBadge(Data.FeaturedLabel, NewBadgeClass));
         }
 
         if (product.Badge is not null && !string.Equals(product.Badge, Data.NewLabel, StringComparison.OrdinalIgnoreCase))

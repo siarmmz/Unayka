@@ -56,6 +56,7 @@ public sealed record ProductDetail(
     long? CompareAtPriceMinor,
     string? Badge,
     bool IsNew,
+    bool IsFeatured,
     int StockQuantity,
     string CategorySlug,
     string CategoryName,
