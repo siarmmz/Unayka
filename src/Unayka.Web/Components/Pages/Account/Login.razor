@@ -1,0 +1,193 @@
+@page "/conta/entrar"
+@using Unayka.Web.Endpoints.Account
+@inject IHostEnvironment HostEnvironment
+@inject IDevelopmentOtpInbox DevelopmentInbox
+
+<SeoComponent Title="@Texts.SeoTitle" Description="@Texts.SeoDescription"/>
+
+<section class="grid min-h-[calc(100vh-8rem)] lg:grid-cols-2">
+    <div class="relative hidden lg:block">
+        <img src="@LoginImageUrl" alt="" class="absolute inset-0 h-full w-full object-cover"/>
+        <div class="absolute inset-0 bg-espresso/40"></div>
+        <div class="absolute inset-x-0 bottom-0 p-14">
+            <p class="max-w-md font-script text-5xl leading-tight text-paper">@Text(Texts.Quote)</p>
+        </div>
+    </div>
+
+    <div class="flex items-center justify-center px-4 py-14 sm:px-10">
+        <div class="w-full max-w-md space-y-12">
+            <header>
+                <p class="font-script text-3xl text-clay">@Text(Texts.Eyebrow)</p>
+                <h1 class="mt-1 font-serif text-5xl text-espresso">@Text(Texts.Title)</h1>
+                <p class="mt-4 text-stone">@Text(Texts.Intro)</p>
+            </header>
+
+            <div class="space-y-6">
+                <h2 class="font-serif text-2xl">@Text(Texts.PhoneTitle)</h2>
+                @if (_phoneError is not null)
+                {
+                    <p role="alert" class="rounded-xl bg-rose-soft px-4 py-3 text-sm text-red-700">@Text(_phoneError)</p>
+                }
+                @if (!_isVerifyStep)
+                {
+                    <form method="post" action="@Texts.RequestCodeAction" class="space-y-5">
+                        <AntiforgeryToken/>
+                        <input type="hidden" name="returnUrl" value="@_returnUrl"/>
+                        <div>
+                            <label for="phone" class="field-label">@Text(Texts.PhoneLabel)</label>
+                            <div class="flex items-stretch gap-2">
+                                <span class="flex items-center rounded-xl border border-sand bg-cream px-4 text-sm text-stone">@Text(Texts.CountryCode)</span>
+                                <input id="phone" name="phone" type="tel" inputmode="numeric" autocomplete="tel-national" required placeholder="@Texts.PhonePlaceholder" class="field"/>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn-primary w-full">@Text(Texts.RequestCodeButton)</button>
+                    </form>
+                }
+                @if (_isVerifyStep)
+                {
+                    <form method="post" action="@Texts.VerifyAction" class="space-y-5">
+                        <AntiforgeryToken/>
+                        <input type="hidden" name="returnUrl" value="@_returnUrl"/>
+                        <input type="hidden" name="phone" value="@_phone"/>
+                        <p class="text-sm text-stone">@Text(_codeSentMessage)</p>
+                        @if (_developmentCode is not null)
+                        {
+                            <p class="rounded-xl bg-sage-soft px-4 py-3 text-sm text-espresso">@Text(_developmentCode)</p>
+                        }
+                        <div>
+                            <label for="code" class="field-label">@Text(Texts.CodeLabel)</label>
+                            <input id="code" name="code" type="text" maxlength="6" autocapitalize="characters" autocomplete="one-time-code" required class="field text-center text-2xl uppercase tracking-[0.4em]"/>
+                        </div>
+                        <div>
+                            <label for="name" class="field-label">@Text(Texts.NameLabel)</label>
+                            <input id="name" name="name" type="text" maxlength="80" autocomplete="name" placeholder="@Texts.NamePlaceholder" class="field"/>
+                        </div>
+                        <button type="submit" class="btn-primary w-full">@Text(Texts.VerifyButton)</button>
+                        <a href="@RestartUrl" class="block text-center text-sm text-stone underline underline-offset-4 hover:text-clay">@Text(Texts.ChangePhoneLink)</a>
+                    </form>
+                }
+            </div>
+
+            <details class="rounded-2xl border border-sand bg-cream/60 p-5" open="@_staffOpen">
+                <summary class="cursor-pointer font-serif text-xl text-espresso">@Text(Texts.StaffTitle)</summary>
+                <form method="post" action="@Texts.StaffAction" class="mt-5 space-y-5">
+                    <AntiforgeryToken/>
+                    <input type="hidden" name="returnUrl" value="@_returnUrl"/>
+                    @if (_staffError is not null)
+                    {
+                        <p role="alert" class="rounded-xl bg-rose-soft px-4 py-3 text-sm text-red-700">@Text(_staffError)</p>
+                    }
+                    <div>
+                        <label for="email" class="field-label">@Text(Texts.EmailLabel)</label>
+                        <input id="email" name="email" type="email" autocomplete="username" required class="field"/>
+                    </div>
+                    <div>
+                        <label for="password" class="field-label">@Text(Texts.PasswordLabel)</label>
+                        <input id="password" name="password" type="password" autocomplete="current-password" required class="field"/>
+                    </div>
+                    <button type="submit" class="btn-outline w-full">@Text(Texts.StaffButton)</button>
+                </form>
+            </details>
+        </div>
+    </div>
+</section>
+
+@code {
+    private sealed record LoginTexts(
+        string SeoTitle, string SeoDescription, string Quote, string Eyebrow, string Title, string Intro,
+        string PhoneTitle, string PhoneLabel, string PhonePlaceholder, string CountryCode, string RequestCodeButton,
+        string CodeSentTemplate, string DevelopmentCodeTemplate, string CodeLabel, string NameLabel, string NamePlaceholder,
+        string VerifyButton, string ChangePhoneLink, string StaffTitle, string EmailLabel, string PasswordLabel, string StaffButton,
+        string RequestCodeAction, string VerifyAction, string StaffAction);
+
+    private static readonly LoginTexts Texts = new(
+        "Entrar | Unayka",
+        "Entre na sua conta Unayka com o número de telemóvel ou com o acesso da equipa.",
+        "Um café bem tirado e um momento só seu.",
+        "Bem-vinda, bem-vindo",
+        "Entrar",
+        "Receba um código por mensagem e entre sem palavra-passe. Se for a sua primeira vez, criamos a conta por si.",
+        "Com o telemóvel",
+        "Número de telemóvel",
+        "84 123 4567",
+        "+258",
+        "Receber código",
+        "Enviámos um código para {0}. Vale durante 10 minutos.",
+        "Código de teste: {0}",
+        "Código recebido",
+        "O seu nome (apenas na primeira vez)",
+        "Como lhe devemos chamar",
+        "Entrar",
+        "Usar outro número",
+        "Acesso da equipa",
+        "Email",
+        "Palavra-passe",
+        "Entrar na administração",
+        "/conta/entrar/codigo",
+        "/conta/entrar/verificar",
+        "/conta/entrar/equipa");
+
+    private static readonly Dictionary<string, string> ErrorMessages = new()
+    {
+        [nameof(AccountOutcome.InvalidPhone)] = "Indique um número de telemóvel válido, com nove dígitos.",
+        [nameof(AccountOutcome.InvalidCode)] = "O código não está correto. Verifique e tente novamente.",
+        [nameof(AccountOutcome.CodeExpired)] = "O código expirou. Peça um novo código.",
+        [nameof(AccountOutcome.TooManyAttempts)] = "Demasiadas tentativas. Peça um novo código.",
+        [nameof(AccountOutcome.TooManyRequests)] = "Já pediu códigos a mais. Tente novamente dentro de uma hora.",
+        [nameof(AccountOutcome.NameRequired)] = "Indique o seu nome para criarmos a conta.",
+        [nameof(AccountOutcome.InvalidCredentials)] = "Email ou palavra-passe incorretos.",
+        [nameof(AccountOutcome.LockedOut)] = "Demasiadas tentativas falhadas. Tente novamente dentro de alguns minutos.",
+    };
+
+    private static readonly string[] StaffErrors = [nameof(AccountOutcome.InvalidCredentials), nameof(AccountOutcome.LockedOut)];
+
+    [Parameter, SupplyParameterFromQuery(Name = AccountEndpoints.StepKey)]
+    public string? Step { get; set; }
+
+    [Parameter, SupplyParameterFromQuery(Name = AccountEndpoints.PhoneKey)]
+    public string? Phone { get; set; }
+
+    [Parameter, SupplyParameterFromQuery(Name = AccountEndpoints.ErrorKey)]
+    public string? Error { get; set; }
+
+    [Parameter, SupplyParameterFromQuery(Name = AccountEndpoints.ReturnUrlKey)]
+    public string? ReturnUrl { get; set; }
+
+    private static readonly string LoginImageUrl = ToUrl(SiteImages.LoginUrl);
+    private static readonly string RestartUrl = ToUrl(StoreUrls.SignIn);
+    private bool _isVerifyStep;
+    private bool _staffOpen;
+    private string _phone = string.Empty;
+    private string _returnUrl = string.Empty;
+    private string _codeSentMessage = string.Empty;
+    private string? _developmentCode;
+    private string? _phoneError;
+    private string? _staffError;
+
+    protected override void OnParametersSet()
+    {
+        var normalized = PhoneNumber.Normalize(Phone);
+        _isVerifyStep = Step == AccountEndpoints.VerifyStep && normalized is not null;
+        _phone = normalized ?? string.Empty;
+        _returnUrl = ReturnUrl ?? string.Empty;
+        _codeSentMessage = string.Format(System.Globalization.CultureInfo.InvariantCulture, Texts.CodeSentTemplate, FormatPhone(_phone));
+        _developmentCode = ResolveDevelopmentCode();
+
+        var message = Error is not null && ErrorMessages.TryGetValue(Error, out var found) ? found : null;
+        var isStaffError = Error is not null && StaffErrors.Contains(Error);
+        _staffError = isStaffError ? message : null;
+        _phoneError = isStaffError ? null : message;
+        _staffOpen = isStaffError;
+    }
+
+    private string? ResolveDevelopmentCode()
+    {
+        if (!_isVerifyStep || !HostEnvironment.IsDevelopment())
+        {
+            return null;
+        }
+
+        var code = DevelopmentInbox.Peek(_phone);
+        return code is null ? null : string.Format(System.Globalization.CultureInfo.InvariantCulture, Texts.DevelopmentCodeTemplate, code);
+    }
+}

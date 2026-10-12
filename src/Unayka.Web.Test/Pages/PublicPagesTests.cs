@@ -3,14 +3,10 @@ using System.Text.RegularExpressions;
 
 namespace Unayka.Web.Test.Pages;
 
-public sealed partial class PublicPagesTests : IClassFixture<UnaykaWebFactory>
+[Collection(SharedWebServer.Name)]
+public sealed partial class PublicPagesTests(UnaykaWebFactory factory)
 {
-    private readonly HttpClient _client;
-
-    public PublicPagesTests(UnaykaWebFactory factory)
-    {
-        _client = factory.CreateClient();
-    }
+    private readonly HttpClient _client = factory.CreateClient();
 
     [Theory]
     [InlineData("/")]
@@ -18,6 +14,7 @@ public sealed partial class PublicPagesTests : IClassFixture<UnaykaWebFactory>
     [InlineData("/about")]
     [InlineData("/location")]
     [InlineData("/contact")]
+    [InlineData("/conta/entrar")]
     public async Task Public_page_responds_with_seo_title_and_description(string path)
     {
         var response = await _client.GetAsync(path);
@@ -49,6 +46,16 @@ public sealed partial class PublicPagesTests : IClassFixture<UnaykaWebFactory>
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
         Assert.Matches(TitleRegex(), html);
+    }
+
+    [Fact]
+    public async Task Responses_carry_security_headers()
+    {
+        var response = await _client.GetAsync("/");
+
+        Assert.Equal("nosniff", response.Headers.GetValues("X-Content-Type-Options").Single());
+        Assert.Equal("DENY", response.Headers.GetValues("X-Frame-Options").Single());
+        Assert.Contains("images.unsplash.com", string.Join(" ", response.Headers.GetValues("Content-Security-Policy")), StringComparison.Ordinal);
     }
 
     [GeneratedRegex(@"<title>[^<]*Unayka[^<]*</title>")]

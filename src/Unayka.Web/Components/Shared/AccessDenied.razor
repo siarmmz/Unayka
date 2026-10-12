@@ -1,0 +1,33 @@
+@if (_isSignedIn)
+{
+    <section class="container-page py-24">
+        <EmptyState Title="@Data.Title" Message="@Data.Message" ActionLabel="@Data.HomeLabel" ActionUrl="@Data.HomeUrl"/>
+    </section>
+}
+
+@code {
+    private static readonly (string Title, string Message, string HomeLabel, string HomeUrl) Data = (
+        "Acesso reservado",
+        "A sua conta não tem permissão para ver esta página.",
+        "Voltar ao início",
+        "/"
+    );
+
+    [CascadingParameter]
+    private Task<AuthenticationState>? AuthenticationState { get; set; }
+
+    private bool _isSignedIn;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var state = AuthenticationState is null ? null : await AuthenticationState;
+        _isSignedIn = state?.User.Identity?.IsAuthenticated == true;
+        if (_isSignedIn)
+        {
+            return;
+        }
+
+        var returnUrl = Uri.EscapeDataString("/" + Navigation.ToBaseRelativePath(Navigation.Uri));
+        Navigation.NavigateTo($"{StoreUrls.SignIn}?returnUrl={returnUrl}");
+    }
+}

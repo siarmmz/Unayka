@@ -71,6 +71,8 @@ Production styles build:
 tailwindcss -i ./wwwroot/styles/globals.css -o ./wwwroot/styles/app.css --minify
 ```
 
+Development login (never in production): on first run in a non production environment the database is created and seeded with the catalog, three coupons, demo customers and demo orders. Staff accounts are admin@unayka.co.mz (Administrator), gerente@unayka.co.mz (Manager) and caixa@unayka.co.mz (Cashier). Their password is the value of AUTH_SEED_STAFF_PASSWORD, or "unayka2026" when the variable is empty and the environment is not Production. In Production no staff is seeded unless AUTH_SEED_STAFF_PASSWORD is set. Customers sign in at /conta/entrar with a phone code; in Development the code is shown on the page as "Código de teste". The demo customer phone is 841234567.
+
 Tests:
 
 ```

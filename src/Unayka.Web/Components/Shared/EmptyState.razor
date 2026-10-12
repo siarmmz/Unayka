@@ -1,0 +1,29 @@
+<div class="mx-auto max-w-md rounded-3xl border border-sand bg-cream px-8 py-14 text-center">
+    <p class="font-script text-3xl text-clay">@Text(Title)</p>
+    <p class="mt-3 text-stone">@Text(Message)</p>
+    @if (ActionLabel is not null && ActionUrl is not null)
+    {
+        <a href="@_actionUrl" class="btn-primary mt-8">@Text(ActionLabel)</a>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public string Title { get; set; } = string.Empty;
+
+    [Parameter, EditorRequired]
+    public string Message { get; set; } = string.Empty;
+
+    [Parameter]
+    public string? ActionLabel { get; set; }
+
+    [Parameter]
+    public string? ActionUrl { get; set; }
+
+    private string _actionUrl = string.Empty;
+
+    protected override void OnParametersSet()
+    {
+        _actionUrl = ToUrl(ActionUrl);
+    }
+}
