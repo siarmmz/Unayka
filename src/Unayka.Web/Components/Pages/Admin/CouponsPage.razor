@@ -7,15 +7,30 @@
 <PageTitle>@Texts.PageTitle</PageTitle>
 
 <div class="mx-auto max-w-6xl space-y-8">
-    <AdminPageHeader Title="@Texts.Title" Eyebrow="@Texts.Eyebrow" Subtitle="@Texts.Subtitle">
+    <header class="flex flex-wrap items-end justify-between gap-4">
+        <div>
+            <p class="font-script text-2xl text-accent">@Text(Texts.Eyebrow)</p>
+            <h1 class="font-serif text-4xl text-accent-strong sm:text-5xl">@Text(Texts.Title)</h1>
+            <p class="mt-2 max-w-2xl text-sm text-muted">@Text(Texts.Subtitle)</p>
+        </div>
+        <div class="flex flex-wrap items-center gap-3">
         <button type="button" class="btn-primary px-6 py-2" @onclick="StartNew">@Text(Texts.NewLabel)</button>
-    </AdminPageHeader>
+        </div>
+    </header>
 
     @if (_form is not null)
     {
         <form class="space-y-5 rounded-2xl border border-border bg-surface p-5 shadow-sm sm:p-8" @onsubmit="SaveAsync">
             <h2 class="font-serif text-2xl">@Text(_formTitle)</h2>
-            <ErrorList Messages="@_errors"/>
+            @if (_errors.Count > 0)
+            {
+                <div role="alert" class="space-y-1 rounded-xl bg-accent-soft px-4 py-3 text-sm text-danger">
+                    @foreach (var errorMessage in _errors)
+                    {
+                        <p>@Text(errorMessage)</p>
+                    }
+                </div>
+            }
             <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
                 <div>
                     <label for="coupon-code" class="field-label">@Text(Texts.CodeLabel)</label>
@@ -24,7 +39,7 @@
                 <div>
                     <label for="coupon-kind" class="field-label">@Text(Texts.KindLabel)</label>
                     <select id="coupon-kind" class="field" @bind="_form.Kind">
-                        @foreach (var option in AdminOptions.CouponKinds)
+                        @foreach (var option in CouponKinds)
                         {
                             <option value="@option.Value">@Text(option.Label)</option>
                         }
@@ -83,7 +98,10 @@
 
     @if (_rows.Count == 0)
     {
-        <EmptyState Title="@Texts.EmptyTitle" Message="@Texts.EmptyMessage"/>
+        <div class="mx-auto max-w-md rounded-3xl border border-border bg-surface-alt px-8 py-14 text-center">
+            <p class="font-script text-3xl text-accent">@Text(Texts.EmptyTitle)</p>
+            <p class="mt-3 text-muted">@Text(Texts.EmptyMessage)</p>
+        </div>
     }
 
     @if (_rows.Count > 0)

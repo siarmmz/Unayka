@@ -8,17 +8,36 @@
 <div class="mx-auto max-w-6xl space-y-8">
     @if (_loaded && _order is null)
     {
-        <EmptyState Title="@Texts.NotFoundTitle" Message="@Texts.NotFoundMessage" ActionLabel="@Texts.BackLabel" ActionUrl="@Texts.ListUrl"/>
+        <div class="mx-auto max-w-md rounded-3xl border border-border bg-surface-alt px-8 py-14 text-center">
+            <p class="font-script text-3xl text-accent">@Text(Texts.NotFoundTitle)</p>
+            <p class="mt-3 text-muted">@Text(Texts.NotFoundMessage)</p>
+            <a href="@ToUrl(Texts.ListUrl)" class="btn-primary mt-8">@Text(Texts.BackLabel)</a>
+        </div>
     }
 
     @if (_order is not null)
     {
-        <AdminPageHeader Title="@_order.Number" Eyebrow="@Texts.Eyebrow" Subtitle="@_subtitle">
-            <StatusBadge Order="@_order.Status"/>
+        <header class="flex flex-wrap items-end justify-between gap-4">
+            <div>
+                <p class="font-script text-2xl text-accent">@Text(Texts.Eyebrow)</p>
+                <h1 class="font-serif text-4xl text-accent-strong sm:text-5xl">@Text(_order.Number)</h1>
+                <p class="mt-2 max-w-2xl text-sm text-muted">@Text(_subtitle)</p>
+            </div>
+            <div class="flex flex-wrap items-center gap-3">
+            <span class="@OrderBadge(_order.Status).CssClass">@Text(OrderBadge(_order.Status).Label)</span>
             <a href="@ToUrl(Texts.ListUrl)" class="btn-outline px-5 py-2">@Text(Texts.BackLabel)</a>
-        </AdminPageHeader>
+            </div>
+        </header>
 
-        <ErrorList Messages="@_errors"/>
+        @if (_errors.Count > 0)
+        {
+            <div role="alert" class="space-y-1 rounded-xl bg-accent-soft px-4 py-3 text-sm text-danger">
+                @foreach (var errorMessage in _errors)
+                {
+                    <p>@Text(errorMessage)</p>
+                }
+            </div>
+        }
         @if (_notice is not null)
         {
             <p class="rounded-xl bg-success-soft px-4 py-3 text-sm text-accent-strong">@Text(_notice)</p>
@@ -73,7 +92,7 @@
                         <article class="mt-5 rounded-xl border border-border p-4">
                             <div class="flex flex-wrap items-center justify-between gap-3">
                                 <p class="text-sm font-medium">@Text(PaymentHeadline(payment))</p>
-                                <StatusBadge Payment="@payment.Status"/>
+                                <span class="@PaymentBadge(payment.Status).CssClass">@Text(PaymentBadge(payment.Status).Label)</span>
                             </div>
                             <p class="mt-1 text-xs text-muted">@Text(PaymentDetail(payment))</p>
                             @if (payment.FailureReason is not null)

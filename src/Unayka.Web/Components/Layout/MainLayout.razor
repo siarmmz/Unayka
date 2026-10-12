@@ -1,15 +1,285 @@
 @inherits UnaykaLayoutBase
+@using Microsoft.AspNetCore.WebUtilities
+@using Unayka.Core.Locations
+@inject ICartSummary CartSummary
+@inject ICatalogQuery Catalog
+@inject ILocationDirectory Locations
+@inject ISiteContent Site
+@inject IPaymentService Payments
+@inject NavigationManager Navigation
 
 <div class="flex min-h-screen flex-col bg-surface text-ink">
-    <div class="bg-success-soft px-4 py-2 text-center text-sm text-accent-strong">@Text(Announcement)</div>
-    <SiteHeader/>
+    @if (_announcement.Length > 0)
+    {
+        <div class="bg-success-soft px-4 py-2 text-center text-sm text-accent-strong">@Text(_announcement)</div>
+    }
+
+    <header class="sticky top-0 z-40 border-b border-border bg-surface/90 backdrop-blur">
+        <div class="container-page flex h-16 items-center gap-2 sm:gap-3 lg:h-20 lg:gap-8">
+            <details class="relative lg:hidden">
+                <summary class="flex h-11 w-11 cursor-pointer list-none items-center justify-center rounded-full text-2xl text-accent-strong hover:bg-surface-alt [&::-webkit-details-marker]:hidden" aria-label="@MenuLabel"><i class="bi bi-list"></i></summary>
+                <div class="absolute left-0 top-12 w-72 rounded-2xl border border-border bg-surface p-5 shadow-xl">
+                    <form method="get" action="@SearchUrl">
+                        <input type="search" name="q" placeholder="@SearchPlaceholder" aria-label="@SearchPlaceholder" class="field"/>
+                    </form>
+                    <nav class="mt-5 flex flex-col text-base">
+                        @foreach (var item in NavItems)
+                        {
+                            <a href="@item.Url" class="flex min-h-11 items-center text-accent-strong hover:text-accent">@Text(item.Label)</a>
+                        }
+                    </nav>
+                </div>
+            </details>
+
+            <a href="@HomeUrl" class="font-script text-4xl leading-none text-accent-strong">@Text(_brand.Title)</a>
+
+            <nav class="hidden items-center gap-7 text-sm lg:ml-6 lg:flex">
+                @foreach (var item in NavItems)
+                {
+                    <a href="@item.Url" class="text-accent-strong transition hover:text-accent">@Text(item.Label)</a>
+                }
+            </nav>
+
+            <div class="flex-1"></div>
+
+            <form method="get" action="@SearchUrl" class="hidden md:block">
+                <input type="search" name="q" placeholder="@SearchPlaceholder" aria-label="@SearchPlaceholder" class="field w-56 rounded-full py-2"/>
+            </form>
+
+            @if (_isSignedIn)
+            {
+                <details class="relative">
+                    <summary class="flex h-11 cursor-pointer list-none items-center gap-2 rounded-full px-3 text-sm text-accent-strong hover:bg-surface-alt [&::-webkit-details-marker]:hidden" aria-label="@AccountLabel">
+                        <i class="bi bi-person text-xl"></i>
+                        <span class="hidden sm:inline">@Text(_firstName)</span>
+                    </summary>
+                    <div class="absolute right-0 top-12 w-52 rounded-2xl border border-border bg-surface p-3 text-sm shadow-xl">
+                        <a href="@AccountUrl" class="block rounded-xl px-3 py-2 text-accent-strong hover:bg-surface-alt">@Text(AccountLabel)</a>
+                        @if (_isStaff)
+                        {
+                            <a href="@AdminUrl" class="block rounded-xl px-3 py-2 text-accent-strong hover:bg-surface-alt">@Text(AdminLabel)</a>
+                        }
+                        <form method="post" action="@StoreUrls.SignOut">
+                            <AntiforgeryToken/>
+                            <button type="submit" class="block w-full rounded-xl px-3 py-2 text-left text-accent-strong hover:bg-surface-alt">@Text(SignOutLabel)</button>
+                        </form>
+                    </div>
+                </details>
+            }
+            @if (!_isSignedIn)
+            {
+                <a href="@SignInUrl" class="flex h-11 items-center gap-2 rounded-full px-3 text-sm text-accent-strong hover:bg-surface-alt" aria-label="@SignInLabel">
+                    <i class="bi bi-person text-xl"></i>
+                    <span class="hidden sm:inline">@Text(SignInLabel)</span>
+                </a>
+            }
+
+            <a href="@CartUrl" class="flex h-11 items-center gap-2 rounded-full px-3 text-sm text-accent-strong hover:bg-surface-alt" aria-label="@_cartAriaLabel">
+                <span class="relative flex text-xl">
+                    <i class="bi bi-bag"></i>
+                    @if (_cartCount > 0)
+                    {
+                        <span class="absolute -right-2 -top-2 flex h-5 min-w-5 items-center justify-center rounded-full bg-accent px-1 text-[11px] font-medium text-surface">@Text(_cartCountText)</span>
+                    }
+                </span>
+                <span class="hidden min-[26rem]:inline">@Text(CartLabel)</span>
+            </a>
+        </div>
+    </header>
+
     <main class="flex-1">
         @Body
     </main>
-    <SiteFooter/>
-    <CartAddedNotice/>
+
+    <footer class="mt-24 border-t border-border bg-surface-alt text-muted">
+        <div class="container-page grid gap-10 py-14 lg:grid-cols-6 lg:gap-12 lg:py-16">
+            <div class="lg:col-span-2">
+                <p class="font-script text-5xl text-accent-strong">@Text(_brand.Title)</p>
+                <p class="mt-4 max-w-xs text-sm leading-relaxed text-muted">@Text(_brand.Body)</p>
+                <p class="mt-6 text-sm text-accent">@Text(_paymentNote)</p>
+                <ul class="mt-3 flex flex-wrap gap-2">
+                    @foreach (var option in _paymentOptions)
+                    {
+                        <li title="@option.Label">
+                            @if (option.LogoUrl is not null)
+                            {
+                                <img src="@option.LogoUrl" alt="@option.Label" width="40" height="40" loading="lazy" class="h-10 w-10 rounded-lg border border-border bg-surface object-contain p-0.5"/>
+                            }
+                            @if (option.LogoUrl is null)
+                            {
+                                <span class="flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-surface text-xl text-accent-strong"><i class="bi @option.Icon"></i></span>
+                            }
+                        </li>
+                    }
+                </ul>
+                <ul class="mt-6 flex gap-3">
+                    @foreach (var link in _social)
+                    {
+                        <li>
+                            <a href="@link.Url" target="_blank" rel="noopener noreferrer" aria-label="@link.Label" class="flex h-11 w-11 items-center justify-center rounded-full border border-border bg-surface text-xl text-accent-strong transition hover:border-accent hover:text-accent"><i class="bi @link.Icon"></i></a>
+                        </li>
+                    }
+                </ul>
+            </div>
+
+            <unayka-collapse class="grid md:grid-cols-3 md:gap-10 lg:col-span-4">
+                @foreach (var column in _columns)
+                {
+                    <details open class="group border-b border-border md:border-0">
+                        <summary class="@SummaryClass">
+                            <span>@Text(column.Title)</span>
+                            <i class="bi bi-chevron-down transition group-open:rotate-180 md:hidden"></i>
+                        </summary>
+                        <ul class="space-y-1 pb-5 text-sm md:pb-0">
+                            @foreach (var link in column.Links)
+                            {
+                                <li><a href="@link.Url" class="flex min-h-11 items-center text-muted transition hover:text-accent md:min-h-9">@Text(link.Label)</a></li>
+                            }
+                        </ul>
+                    </details>
+                }
+                <details open class="group border-b border-border md:border-0">
+                    <summary class="@SummaryClass">
+                        <span>@Text(ContactTitle)</span>
+                        <i class="bi bi-chevron-down transition group-open:rotate-180 md:hidden"></i>
+                    </summary>
+                    <div class="space-y-5 pb-5 text-sm md:pb-0">
+                        @foreach (var location in _locations)
+                        {
+                            <div>
+                                <p class="font-medium text-accent-strong">@Text(location.Name)</p>
+                                <p>@Text(location.Address)</p>
+                                <p>@Text(location.OpeningHours)</p>
+                                <ul>
+                                    @foreach (var contact in location.Contacts)
+                                    {
+                                        <li><a href="@contact.Href" class="flex min-h-11 items-center gap-2 text-muted transition hover:text-accent md:min-h-9"><i class="bi @contact.Icon"></i>@Text(contact.Value)</a></li>
+                                    }
+                                </ul>
+                            </div>
+                        }
+                    </div>
+                </details>
+            </unayka-collapse>
+        </div>
+
+        <div class="border-t border-border">
+            <div class="container-page py-6 text-sm text-muted">@Text(_copyright)</div>
+        </div>
+    </footer>
+
+    @if (_addedMessage is not null)
+    {
+        <div role="status" class="fixed inset-x-4 bottom-24 z-50 mx-auto max-w-md rounded-2xl border border-border bg-surface p-4 shadow-xl md:bottom-6 md:left-auto md:right-6 md:mx-0">
+            <div class="flex items-start gap-3">
+                <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-success-soft text-success"><i class="bi bi-check-lg"></i></span>
+                <p class="text-base text-accent-strong">@Text(_addedMessage)</p>
+            </div>
+            <div class="mt-4 flex flex-col gap-2 sm:flex-row">
+                <a href="@CartUrl" class="btn-compact sm:flex-1">@Text(ViewCartLabel)</a>
+                <a href="@_continueUrl" class="inline-flex min-h-11 items-center justify-center rounded-full border border-border px-4 text-sm text-accent-strong transition hover:border-accent sm:flex-1">@Text(ContinueLabel)</a>
+            </div>
+        </div>
+    }
 </div>
 
 @code {
-    private static readonly string Announcement = "Levantamento nas nossas lojas. Pague com carteira móvel ou cartão.";
+    private const int MaxBadgeCount = 99;
+    private const string MenuLabel = "Abrir o menu";
+    private const string SearchPlaceholder = "Pesquisar na loja";
+    private const string SignInLabel = "Entrar";
+    private const string AccountLabel = "A minha conta";
+    private const string AdminLabel = "Administração";
+    private const string SignOutLabel = "Sair";
+    private const string CartLabel = "Carrinho";
+    private const string ShopTitle = "Loja";
+    private const string AllProductsLabel = "Todos os produtos";
+    private const string HelpTitle = "Ajuda";
+    private const string ContactTitle = "Contactos";
+    private const string AddedSuffix = " foi adicionado ao carrinho.";
+    private const string ViewCartLabel = "Ver carrinho";
+    private const string ContinueLabel = "Continuar a comprar";
+    private const string CopyrightSuffix = ". Todos os direitos reservados.";
+    private const string SummaryClass = "flex min-h-12 cursor-pointer list-none items-center justify-between text-xs font-medium uppercase tracking-widest text-accent md:pointer-events-none md:mb-3 md:min-h-0 [&::-webkit-details-marker]:hidden";
+    private static readonly string HomeUrl = ToUrl("/");
+    private static readonly string SearchUrl = ToUrl(StoreUrls.AllProducts);
+    private static readonly string SignInUrl = ToUrl(StoreUrls.SignIn);
+    private static readonly string AccountUrl = ToUrl(StoreUrls.Account);
+    private static readonly string AdminUrl = ToUrl(StoreUrls.Admin);
+    private static readonly string CartUrl = ToUrl(StoreUrls.Cart);
+    private static readonly (string Label, string Url)[] NavItems = [("Início", ToUrl("/")), ("Loja", ToUrl(StoreUrls.Shop)), ("Contacto", ToUrl("/contacto"))];
+    private static readonly string[] StaffRoles = [nameof(UserRole.Cashier), nameof(UserRole.Manager), nameof(UserRole.Administrator)];
+
+    [CascadingParameter]
+    private Task<AuthenticationState>? AuthenticationState { get; set; }
+
+    [CascadingParameter]
+    private HttpContext? HttpContext { get; set; }
+
+    private SiteBlockView _brand = new SitePage([]).One(SitePlacements.Brand);
+    private string _announcement = string.Empty;
+    private string _paymentNote = string.Empty;
+    private string _copyright = string.Empty;
+    private bool _isSignedIn;
+    private bool _isStaff;
+    private string _firstName = string.Empty;
+    private int _cartCount;
+    private string _cartCountText = string.Empty;
+    private string _cartAriaLabel = CartLabel;
+    private List<(string Label, string? LogoUrl, string Icon)> _paymentOptions = [];
+    private List<(string Label, string Url, string Icon)> _social = [];
+    private List<(string Title, List<(string Label, string Url)> Links)> _columns = [];
+    private IReadOnlyList<LocationSummary> _locations = [];
+    private string? _addedMessage;
+    private string _continueUrl = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var shared = await Site.PageAsync(SitePages.Shared);
+        _brand = shared.One(SitePlacements.Brand);
+        _announcement = shared.One(SitePlacements.Announcement).Title;
+        _paymentNote = shared.One(SitePlacements.PaymentNote).Title;
+        _copyright = $"© {DateTime.UtcNow.Year} {_brand.Title}{CopyrightSuffix}";
+        _social = shared.Many(SitePlacements.Social).Select(link => (link.Title, ToUrl(link.ActionUrl), link.Icon)).ToList();
+        _paymentOptions = (await Payments.OnlineOptionsAsync())
+            .Select(option => (option.Label, string.IsNullOrEmpty(option.LogoUrl) ? null : ToUrl(option.LogoUrl), option.Icon))
+            .ToList();
+        var shopLinks = (await Catalog.SectionsAsync()).Select(section => (section.Name, ToUrl(StoreUrls.Section(section.Slug)))).Prepend((AllProductsLabel, ToUrl(StoreUrls.AllProducts))).ToList();
+        var helpLinks = shared.Many(SitePlacements.HelpLink).Select(link => (link.Title, ToUrl(link.ActionUrl))).ToList();
+        _columns = [(ShopTitle, shopLinks), (HelpTitle, helpLinks)];
+        _locations = await Locations.ActiveAsync();
+        await PrepareVisitorAsync();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _addedMessage = null;
+        var query = QueryHelpers.ParseQuery(new Uri(Navigation.Uri).Query);
+        if (!query.TryGetValue(StoreUrls.AddedKey, out var slug) || string.IsNullOrWhiteSpace(slug))
+        {
+            return;
+        }
+
+        var product = await Catalog.FindProductAsync(slug.ToString());
+        _addedMessage = product is null ? null : product.Name + AddedSuffix;
+        _continueUrl = Navigation.GetUriWithQueryParameter(StoreUrls.AddedKey, (string?)null);
+    }
+
+    private async Task PrepareVisitorAsync()
+    {
+        var state = AuthenticationState is null ? null : await AuthenticationState;
+        var user = state?.User;
+        _isSignedIn = user?.Identity?.IsAuthenticated == true;
+        if (_isSignedIn)
+        {
+            _firstName = (user!.Identity!.Name ?? string.Empty).Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? string.Empty;
+            _isStaff = StaffRoles.Any(user.IsInRole);
+        }
+
+        var cookie = HttpContext?.Request.Cookies[CartCookie.Name];
+        Guid? cartId = Guid.TryParse(cookie, out var parsed) ? parsed : null;
+        _cartCount = await CartSummary.CountItemsAsync(cartId);
+        _cartCountText = _cartCount > MaxBadgeCount ? $"{MaxBadgeCount}+" : _cartCount.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        _cartAriaLabel = _cartCount > 0 ? $"{CartLabel} ({_cartCountText})" : CartLabel;
+    }
 }

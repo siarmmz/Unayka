@@ -1,0 +1,233 @@
+@page "/loja/todos"
+@page "/loja/categoria/{CategorySlug}"
+@page "/loja/{SectionSlug}"
+@using System.Globalization
+@using Unayka.Web.Components.Store
+@inject ICatalogQuery Catalog
+
+@if (_found)
+{
+    <SeoComponent Title="@_seoTitle" Description="@_description"/>
+
+    <section class="relative isolate overflow-hidden bg-surface-alt">
+        @if (_heroImage is not null)
+        {
+            <img src="@_heroImage" alt="" class="absolute inset-0 -z-20 h-full w-full object-cover"/>
+            <div class="absolute inset-0 -z-10 bg-gradient-to-r from-surface via-surface/85 to-surface/30"></div>
+        }
+        <div class="container-page py-16 md:py-24">
+            <p class="font-script text-3xl text-accent">@Text(_eyebrow)</p>
+            <h1 class="max-w-2xl font-serif text-4xl leading-tight text-accent-strong md:text-6xl">@Text(_title)</h1>
+            <p class="mt-5 max-w-xl text-lg text-ink">@Text(_description)</p>
+        </div>
+    </section>
+
+    <section class="container-page py-12 lg:py-16">
+        <div class="grid gap-10 lg:grid-cols-[16rem_minmax(0,1fr)] lg:gap-14">
+            <aside class="space-y-8">
+                @foreach (var group in _filterGroups)
+                {
+                    <div>
+                        <p class="font-script text-2xl text-accent">@Text(group.Title)</p>
+                        <ul class="mt-3 flex flex-wrap gap-2">
+                            @foreach (var link in group.Links)
+                            {
+                                <li><a href="@link.Url" class="@link.CssClass">@Text(link.Label)</a></li>
+                            }
+                        </ul>
+                    </div>
+                }
+            </aside>
+
+            <div>
+                <form method="get" action="@_basePath" class="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto_auto]">
+                    @foreach (var hidden in _hiddenFields)
+                    {
+                        <input type="hidden" name="@hidden.Name" value="@hidden.Value"/>
+                    }
+                    <input type="search" name="@CatalogLinks.QueryKey" value="@_search.Query" placeholder="@SearchPlaceholder" aria-label="@SearchPlaceholder" class="field"/>
+                    <select name="@CatalogLinks.SortKey" aria-label="@SortLabel" class="field sm:w-56">
+                        @foreach (var option in _sortOptions)
+                        {
+                            <option value="@option.Value" selected="@option.Selected">@Text(option.Label)</option>
+                        }
+                    </select>
+                    <button type="submit" class="btn-primary"><i class="bi bi-search"></i>@Text(ApplyLabel)</button>
+                </form>
+
+                <p class="mt-6 text-sm text-muted">@Text(_summary)</p>
+
+                @if (_page.Items.Count == 0)
+                {
+                    <div class="mx-auto mt-10 max-w-md rounded-3xl border border-border bg-surface-alt px-8 py-14 text-center">
+                        <p class="font-script text-3xl text-accent">@Text(EmptyTitle)</p>
+                        <p class="mt-3 text-muted">@Text(EmptyMessage)</p>
+                        <a href="@AllProductsUrl" class="btn-primary mt-8">@Text(EmptyAction)</a>
+                    </div>
+                }
+
+                @if (_page.Items.Count > 0)
+                {
+                    <div class="mt-8 grid grid-cols-2 gap-x-4 gap-y-10 md:grid-cols-3 md:gap-x-6">
+                        @foreach (var item in _page.Items)
+                        {
+                            <StoreProductCard Model="item"/>
+                        }
+                    </div>
+                    @if (_pages.Count > 0)
+                    {
+                        <nav class="mt-14 flex flex-wrap items-center justify-center gap-2">
+                            @foreach (var link in _pages)
+                            {
+                                <a href="@link.Url" class="@link.CssClass">@Text(link.Label)</a>
+                            }
+                        </nav>
+                    }
+                }
+            </div>
+        </div>
+    </section>
+}
+
+@code {
+    private const string TitleSuffix = " | Unayka";
+    private const string AllTitle = "Todos os produtos";
+    private const string AllEyebrow = "Da nossa loja";
+    private const string AllDescription = "Chás, café, cosméticos naturais e livros digitais. Pague online e levante na loja.";
+    private const string SectionEyebrow = "Da nossa loja";
+    private const string SectionTitle = "Coleção";
+    private const string AllLabel = "Tudo";
+    private const string CategoryTitle = "Tipo";
+    private const string TagTitle = "Etiquetas";
+    private const string SearchPlaceholder = "Pesquisar produtos";
+    private const string SortLabel = "Ordenar por";
+    private const string ApplyLabel = "Aplicar";
+    private const string EmptyTitle = "Nada por aqui";
+    private const string EmptyMessage = "Não encontrámos produtos com estes filtros. Experimente outra pesquisa ou limpe os filtros.";
+    private const string EmptyAction = "Ver todos os produtos";
+    private const string PreviousLabel = "Anterior";
+    private const string NextLabel = "Seguinte";
+    private const int PageWindow = 2;
+    private const string ChipClass = "inline-flex min-h-11 items-center rounded-full border px-5 text-base transition";
+    private const string ActiveChipClass = ChipClass + " border-accent-strong bg-accent-strong text-surface";
+    private const string IdleChipClass = ChipClass + " border-border text-accent-strong hover:border-accent hover:bg-surface-alt";
+    private const string PageClass = "min-w-10 rounded-full px-4 py-2 text-center text-sm transition";
+    private const string IdlePageClass = PageClass + " border border-border text-accent-strong hover:bg-surface-alt";
+    private const string CurrentPageClass = PageClass + " bg-accent-strong text-surface";
+    private const string DisabledPageClass = PageClass + " pointer-events-none border border-border text-muted/40";
+    private static readonly string AllProductsUrl = ToUrl(StoreUrls.AllProducts);
+
+    [Parameter]
+    public string? SectionSlug { get; set; }
+
+    [Parameter]
+    public string? CategorySlug { get; set; }
+
+    private bool _found;
+    private string _seoTitle = string.Empty;
+    private string _title = string.Empty;
+    private string _eyebrow = string.Empty;
+    private string _description = string.Empty;
+    private string? _heroImage;
+    private string _basePath = string.Empty;
+    private string? _sectionSlug;
+    private ProductSearch _search = new();
+    private Unayka.Core.Catalog.ProductPage _page = new([], 1, 1, 0);
+    private string _summary = string.Empty;
+    private List<(string Title, List<(string Label, string Url, string CssClass)> Links)> _filterGroups = [];
+    private List<(string Value, string Label, bool Selected)> _sortOptions = [];
+    private IReadOnlyList<(string Name, string Value)> _hiddenFields = [];
+    private List<(string Label, string Url, string CssClass)> _pages = [];
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _found = await ResolveHeaderAsync();
+        if (!_found)
+        {
+            Navigation.NotFound();
+            return;
+        }
+
+        _search = CatalogLinks.Parse(Navigation.Uri, _sectionSlug, CategorySlug);
+        _page = await Catalog.SearchAsync(_search);
+        var sections = await Catalog.SectionsAsync();
+        var categories = await Catalog.CategoriesAsync(_sectionSlug);
+        var count = _page.TotalCount == 1 ? "1 produto" : $"{_page.TotalCount} produtos";
+        _summary = string.IsNullOrWhiteSpace(_search.Query) ? count : $"{count} para \"{_search.Query}\"";
+        _hiddenFields = CatalogLinks.PriceFields(_search);
+        _sortOptions = CatalogLinks.SortOptions.Select(option => (option.Value, option.Label, option.Sort == _search.Sort)).ToList();
+        var carried = _search with { Page = 1, TagSlugs = null };
+        var sectionLinks = sections
+            .Select(section => (section.Name, ToUrl(CatalogLinks.Build(StoreUrls.Section(section.Slug), carried)), Chip(section.Slug == _sectionSlug && CategorySlug is null)))
+            .Prepend((AllLabel, ToUrl(CatalogLinks.Build(StoreUrls.AllProducts, carried)), Chip(_sectionSlug is null)))
+            .ToList();
+        var categoryLinks = categories
+            .Select(category => (category.Name, ToUrl(CatalogLinks.Build(StoreUrls.Category(category.Slug), carried)), Chip(category.Slug == CategorySlug)))
+            .ToList();
+        _filterGroups = [(SectionTitle, sectionLinks), (CategoryTitle, categoryLinks)];
+        var tags = sections.FirstOrDefault(section => section.Slug == _sectionSlug)?.Tags ?? [];
+        if (tags.Count > 0)
+        {
+            _filterGroups.Add((TagTitle, tags.Select(tag => (tag.Name, ToUrl(CatalogLinks.Build(_basePath, CatalogLinks.ToggleTag(_search, tag.Slug))), Chip(_search.TagSlugs?.Contains(tag.Slug) == true))).ToList()));
+        }
+
+        _pages = BuildPages(CatalogLinks.Build(_basePath, _search));
+    }
+
+    private async Task<bool> ResolveHeaderAsync()
+    {
+        _heroImage = null;
+        if (CategorySlug is not null)
+        {
+            var category = await Catalog.FindCategoryAsync(CategorySlug);
+            if (category is null)
+            {
+                return false;
+            }
+
+            _sectionSlug = category.SectionSlug;
+            (_title, _description, _heroImage, _basePath) = (category.Name, category.Description, ToUrl(category.ImageUrl), StoreUrls.Category(category.Slug));
+            _eyebrow = (await Catalog.FindSectionAsync(category.SectionSlug))?.Name ?? string.Empty;
+        }
+        else if (SectionSlug is not null)
+        {
+            var section = await Catalog.FindSectionAsync(SectionSlug);
+            if (section is null)
+            {
+                return false;
+            }
+
+            _sectionSlug = section.Slug;
+            (_title, _eyebrow, _description, _heroImage, _basePath) = (section.Name, SectionEyebrow, section.Description, ToUrl(section.ImageUrl), StoreUrls.Section(section.Slug));
+        }
+        else
+        {
+            _sectionSlug = null;
+            (_title, _eyebrow, _description, _basePath) = (AllTitle, AllEyebrow, AllDescription, StoreUrls.AllProducts);
+        }
+
+        _seoTitle = _title + TitleSuffix;
+        return true;
+    }
+
+    private List<(string Label, string Url, string CssClass)> BuildPages(string baseUrl)
+    {
+        if (_page.PageCount <= 1)
+        {
+            return [];
+        }
+
+        var separator = baseUrl.Contains('?', StringComparison.Ordinal) ? '&' : '?';
+        string UrlFor(int number) => ToUrl($"{baseUrl}{separator}{CatalogLinks.PageKey}={Math.Clamp(number, 1, _page.PageCount)}");
+        var pages = new List<(string Label, string Url, string CssClass)> { (PreviousLabel, UrlFor(_page.Page - 1), _page.Page > 1 ? IdlePageClass : DisabledPageClass) };
+        for (var number = Math.Max(1, _page.Page - PageWindow); number <= Math.Min(_page.PageCount, _page.Page + PageWindow); number++)
+        {
+            pages.Add((number.ToString(CultureInfo.InvariantCulture), UrlFor(number), number == _page.Page ? CurrentPageClass : IdlePageClass));
+        }
+
+        pages.Add((NextLabel, UrlFor(_page.Page + 1), _page.Page < _page.PageCount ? IdlePageClass : DisabledPageClass));
+        return pages;
+    }
+
+    private static string Chip(bool active) => active ? ActiveChipClass : IdleChipClass;
+}

@@ -2,7 +2,6 @@ using System.Net;
 using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Unayka.Core.Locations;
-using Unayka.Web.Components.Locations;
 
 namespace Unayka.Web.Test;
 
@@ -170,7 +169,7 @@ public sealed class StorefrontTests(UnaykaWebFactory factory)
         Assert.Contains(">Carrinho<", html, StringComparison.Ordinal);
         Assert.Contains("Como comprar", html, StringComparison.Ordinal);
         Assert.Contains("Levantamento", html, StringComparison.Ordinal);
-        Assert.Contains("Pagamentos", html, StringComparison.Ordinal);
+        Assert.Contains("Sobre a Unayka", html, StringComparison.Ordinal);
         Assert.Contains("<unayka-collapse", html, StringComparison.Ordinal);
     }
 
@@ -374,17 +373,20 @@ public sealed class ContactAndDownloadTests(UnaykaWebFactory factory)
     [Fact]
     public void Contact_links_use_international_numbers_and_only_trusted_map_hosts()
     {
-        var phone = ContactLinks.For(new LocationContactSummary(ContactKind.Phone, "Chamadas", "+258 84 000 0101"));
-        var whatsApp = ContactLinks.For(new LocationContactSummary(ContactKind.WhatsApp, "WhatsApp", "84 000 0101"));
-        var email = ContactLinks.For(new LocationContactSummary(ContactKind.Email, "Email", " loja@unayka.co.mz "));
+        var phone = new LocationContactSummary(ContactKind.Phone, "Chamadas", "+258 84 000 0101");
+        var whatsApp = new LocationContactSummary(ContactKind.WhatsApp, "WhatsApp", "84 000 0101");
+        var email = new LocationContactSummary(ContactKind.Email, "Email", " loja@unayka.co.mz ");
 
-        Assert.Equal("tel:+258840000101", phone.Url);
-        Assert.Equal("https://wa.me/258840000101", whatsApp.Url);
-        Assert.Equal("mailto:loja@unayka.co.mz", email.Url);
-        Assert.NotNull(ContactLinks.SafeMapUrl("https://www.openstreetmap.org/export/embed.html?bbox=1"));
-        Assert.Null(ContactLinks.SafeMapUrl("https://evil.example/map"));
-        Assert.Null(ContactLinks.SafeMapUrl(null));
+        Assert.Equal("tel:+258840000101", phone.Href);
+        Assert.Equal("https://wa.me/258840000101", whatsApp.Href);
+        Assert.Equal("mailto:loja@unayka.co.mz", email.Href);
+        Assert.NotNull(Location("https://www.openstreetmap.org/export/embed.html?bbox=1").SafeMapUrl);
+        Assert.Null(Location("https://evil.example/map").SafeMapUrl);
+        Assert.Null(Location(string.Empty).SafeMapUrl);
     }
+
+    private static LocationSummary Location(string mapUrl) =>
+        new(1, "loja", "Loja", "Maputo", "Rua", "Sempre", null, null, mapUrl, []);
 
     private HttpClient CreateClient() =>
         factory.CreateClient(new WebApplicationFactoryClientOptions { AllowAutoRedirect = false });

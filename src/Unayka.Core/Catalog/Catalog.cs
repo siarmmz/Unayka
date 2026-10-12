@@ -279,6 +279,7 @@ public static class StoreUrls
     public const string SignIn = "/conta/entrar";
     public const string SignOut = "/conta/sair";
     public const string Admin = "/admin";
+    public const string AddedKey = "adicionado";
 
     public static string Product(string slug) => $"/produto/{slug}";
 

@@ -1,6 +1,5 @@
 @page "/conta"
 @using System.Security.Claims
-@using Unayka.Web.Components.Checkout
 @using Unayka.Web.Endpoints
 @attribute [Authorize]
 @inject IOrderQueries OrderQueries
@@ -9,7 +8,11 @@
 
 <section class="container-page py-12 lg:py-20">
     <div class="flex flex-wrap items-end justify-between gap-6">
-        <SectionHeading Title="@_greeting" Eyebrow="@Texts.Eyebrow" Subtitle="@_phone"/>
+        <div>
+            <p class="font-script text-2xl text-accent">@Text(Texts.Eyebrow)</p>
+            <h2 class="font-serif text-3xl leading-tight text-accent-strong md:text-4xl">@Text(_greeting)</h2>
+            <p class="mt-3 max-w-2xl text-muted">@Text(_phone)</p>
+        </div>
         <form method="post" action="@Texts.SignOutAction">
             <AntiforgeryToken/>
             <button type="submit" class="btn-outline">@Text(Texts.SignOutButton)</button>
@@ -21,7 +24,11 @@
 
         @if (_orders.Count == 0)
         {
-            <EmptyState Title="@Texts.EmptyTitle" Message="@Texts.EmptyMessage" ActionLabel="@Texts.EmptyAction" ActionUrl="@Texts.ShopUrl"/>
+            <div class="mx-auto max-w-md rounded-3xl border border-border bg-surface-alt px-8 py-14 text-center">
+                <p class="font-script text-3xl text-accent">@Text(Texts.EmptyTitle)</p>
+                <p class="mt-3 text-muted">@Text(Texts.EmptyMessage)</p>
+                <a href="@ToUrl(Texts.ShopUrl)" class="btn-primary mt-8">@Text(Texts.EmptyAction)</a>
+            </div>
         }
 
         @if (_orders.Count > 0)
@@ -36,11 +43,27 @@
                                 <p class="text-sm text-muted">@Text(order.Summary)</p>
                             </div>
                             <div class="flex items-center gap-6">
-                                <StatusBadge Order="order.Status"/>
+                                <span class="@OrderBadge(order.Status).CssClass">@Text(OrderBadge(order.Status).Label)</span>
                                 <span class="font-serif text-xl text-accent-strong">@Text(order.Total)</span>
                             </div>
                         </a>
-                        <OrderLinesList Lines="order.Lines" AllowDownloads="order.AllowDownloads"/>
+                        <ul class="divide-y divide-border rounded-2xl border border-border">
+                            @foreach (var line in order.Lines)
+                            {
+                                <li class="flex items-center gap-4 px-4 py-3 text-sm">
+                                    <img src="@ToUrl(line.ImageUrl)" alt="@line.ProductName" class="h-14 w-12 shrink-0 rounded-lg bg-surface-alt object-cover"/>
+                                    <div class="min-w-0 flex-1 space-y-1">
+                                        <p class="text-accent-strong">@Text(line.ProductName)</p>
+                                        <p class="text-muted">@Text(line.IsDigital ? DigitalLineLabel : PickupPrefix + line.LocationName)</p>
+                                    </div>
+                                    <span>@Text($"{line.Quantity} x {FormatMoney(line.UnitPriceMinor)}")</span>
+                                    @if (order.AllowDownloads && line.IsDigital)
+                                    {
+                                        <a href="@DownloadEndpoints.UrlFor(line.ItemId)" class="btn-outline min-h-10 px-4 py-1.5 text-sm"><i class="bi bi-download"></i>@Text(DownloadLabel)</a>
+                                    }
+                                </li>
+                            }
+                        </ul>
                     </li>
                 }
             </ul>
@@ -49,6 +72,10 @@
 </section>
 
 @code {
+    private const string DigitalLineLabel = "Produto digital";
+    private const string PickupPrefix = "Levantar em ";
+    private const string DownloadLabel = "Descarregar";
+
     private sealed record OrderRow(string Number, string Url, string Summary, OrderStatus Status, string Total, IReadOnlyList<OrderLineDetail> Lines, bool AllowDownloads);
 
     private static readonly (string SeoTitle, string SeoDescription, string Eyebrow, string GreetingTemplate, string SignOutAction, string SignOutButton, string OrdersTitle, string EmptyTitle, string EmptyMessage, string EmptyAction, string ShopUrl, string SummaryTemplate) Texts = (

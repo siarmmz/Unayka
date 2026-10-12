@@ -81,7 +81,7 @@ public sealed partial class RazorTextRuleTests
     [GeneratedRegex(@"<[^>]*>")]
     private static partial Regex TagRegex();
 
-    [GeneratedRegex(@"@[\w.]+(\([^)]*\))?")]
+    [GeneratedRegex(@"@[\w.]+(\((?:[^()]|\([^()]*\))*\))?(\.[\w.]+)?")]
     private static partial Regex ExpressionRegex();
 }
 

@@ -8,19 +8,37 @@
 <PageTitle>@Texts.PageTitle</PageTitle>
 
 <div class="mx-auto max-w-4xl space-y-8">
-    <AdminPageHeader Title="@_title" Eyebrow="@Texts.Eyebrow">
+    <header class="flex flex-wrap items-end justify-between gap-4">
+        <div>
+            <p class="font-script text-2xl text-accent">@Text(Texts.Eyebrow)</p>
+            <h1 class="font-serif text-4xl text-accent-strong sm:text-5xl">@Text(_title)</h1>
+        </div>
+        <div class="flex flex-wrap items-center gap-3">
         <a href="@ToUrl(Texts.ListUrl)" class="btn-outline px-5 py-2">@Text(Texts.BackLabel)</a>
-    </AdminPageHeader>
+        </div>
+    </header>
 
     @if (_notFound)
     {
-        <EmptyState Title="@Texts.NotFoundTitle" Message="@Texts.NotFoundMessage" ActionLabel="@Texts.BackLabel" ActionUrl="@Texts.ListUrl"/>
+        <div class="mx-auto max-w-md rounded-3xl border border-border bg-surface-alt px-8 py-14 text-center">
+            <p class="font-script text-3xl text-accent">@Text(Texts.NotFoundTitle)</p>
+            <p class="mt-3 text-muted">@Text(Texts.NotFoundMessage)</p>
+            <a href="@ToUrl(Texts.ListUrl)" class="btn-primary mt-8">@Text(Texts.BackLabel)</a>
+        </div>
     }
 
     @if (_form is not null)
     {
         <form class="space-y-8" @onsubmit="SaveAsync">
-            <ErrorList Messages="@_errors"/>
+            @if (_errors.Count > 0)
+            {
+                <div role="alert" class="space-y-1 rounded-xl bg-accent-soft px-4 py-3 text-sm text-danger">
+                    @foreach (var errorMessage in _errors)
+                    {
+                        <p>@Text(errorMessage)</p>
+                    }
+                </div>
+            }
             @if (_notice is not null)
             {
                 <p class="rounded-xl bg-success-soft px-4 py-3 text-sm text-accent-strong">@Text(_notice)</p>
@@ -96,7 +114,7 @@
                 <div>
                     <label for="product-kind" class="field-label">@Text(Texts.KindLabel)</label>
                     <select id="product-kind" class="field" @bind="_form.Kind">
-                        @foreach (var option in AdminOptions.ProductKinds)
+                        @foreach (var option in ProductKinds)
                         {
                             <option value="@option.Value">@Text(option.Label)</option>
                         }
@@ -105,7 +123,7 @@
                 <div>
                     <label for="product-status" class="field-label">@Text(Texts.StatusLabel)</label>
                     <select id="product-status" class="field" @bind="_form.Status">
-                        @foreach (var option in AdminOptions.CatalogStatuses)
+                        @foreach (var option in CatalogStatuses)
                         {
                             <option value="@option.Value">@Text(option.Label)</option>
                         }
@@ -176,7 +194,7 @@
                         <div class="sm:col-span-3">
                             <label class="field-label">@Text(Texts.MediaKindLabel)</label>
                             <select class="field" @bind="media.Kind">
-                                @foreach (var option in AdminOptions.MediaKinds)
+                                @foreach (var option in MediaKinds)
                                 {
                                     <option value="@option.Value">@Text(option.Label)</option>
                                 }

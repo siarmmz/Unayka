@@ -3,8 +3,7 @@
 @rendermode InteractiveServer
 @attribute [Authorize(Policy = UnaykaPolicies.Staff)]
 @using Unayka.Core.Counter
-@using Unayka.Web.Components.Counter
-@inherits CounterPageBase
+@inherits StaffPageBase
 @inject ICounterShifts Shifts
 @inject ICounterSales Sales
 @inject IPaymentService Payments
@@ -17,7 +16,12 @@
         <h1 class="font-serif text-4xl text-accent-strong">@Text(Texts.Title)</h1>
     </header>
 
-    <CounterNav/>
+    <nav class="mb-6 flex flex-wrap items-center gap-2">
+        @foreach (var link in CounterLinks)
+        {
+            <NavLink href="@ToUrl(link.Url)" Match="NavLinkMatch.All" class="rounded-full border border-border bg-surface px-5 py-2 text-sm text-muted transition hover:border-accent hover:text-accent-strong" ActiveClass="border-accent-strong bg-accent-strong text-surface hover:text-surface">@Text(link.Label)</NavLink>
+        }
+    </nav>
 
     @if (_loaded)
     {
@@ -40,7 +44,35 @@
 
         @if (_shiftOpen && _stage == PosStage.Receipt && _receipt is not null)
         {
-            <ReceiptPanel Receipt="_receipt" OnNewSale="StartNewSale"/>
+            <article class="mx-auto w-full max-w-md rounded-3xl border border-border bg-surface p-8 shadow-sm">
+                <header class="text-center">
+                    <p class="font-script text-4xl text-accent">@Text(ReceiptHeading)</p>
+                    <p class="mt-1 font-serif text-3xl text-accent-strong">@Text(_receipt.Number)</p>
+                    <p class="mt-1 text-xs uppercase tracking-widest text-muted">@Text(CounterTimes.FormatDateTime(_receipt.At))</p>
+                </header>
+                <ul class="mt-6 divide-y divide-border border-y border-border">
+                    @foreach (var line in _receipt.Lines)
+                    {
+                        <li class="flex items-baseline justify-between gap-4 py-2 text-sm">
+                            <span class="text-ink">@Text($"{line.Quantity} x {line.Name}")</span>
+                            <span class="text-muted">@Text(FormatMoney(line.TotalMinor))</span>
+                        </li>
+                    }
+                </ul>
+                <dl class="mt-4 space-y-1 text-sm">
+                    @foreach (var row in ReceiptSummary(_receipt))
+                    {
+                        <div class="flex justify-between">
+                            <dt class="text-muted">@Text(row.Label)</dt>
+                            <dd class="@row.CssClass">@Text(row.Value)</dd>
+                        </div>
+                    }
+                </dl>
+                <div class="mt-6 flex justify-center">
+                    <span class="@OrderBadge(_receipt.Status).CssClass">@Text(OrderBadge(_receipt.Status).Label)</span>
+                </div>
+                <button type="button" @onclick="StartNewSale" class="btn-primary mt-8 w-full">@Text(NewSaleLabel)</button>
+            </article>
         }
 
         @if (_shiftOpen && _stage != PosStage.Receipt)
@@ -56,14 +88,31 @@
                     <input type="search" @bind="_search" @bind:event="oninput" placeholder="@Texts.SearchPlaceholder" class="field mb-4"/>
 
                     <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">
-                        @foreach (var product in VisibleProducts)
+                        @foreach (var tile in Tiles)
                         {
-                            <CounterTile Product="product" OnPick="AddProduct"/>
+                            <button type="button" disabled="@tile.SoldOut" @onclick="tile.Pick" class="@tile.CssClass">
+                                <span class="block aspect-[4/3] w-full overflow-hidden bg-surface-alt">
+                                    @if (tile.ImageUrl is not null)
+                                    {
+                                        <img src="@tile.ImageUrl" alt="" loading="lazy" class="h-full w-full object-cover"/>
+                                    }
+                                </span>
+                                <span class="block px-3 py-3">
+                                    <span class="block min-h-10 font-serif text-lg leading-tight text-accent-strong">@Text(tile.Name)</span>
+                                    <span class="mt-1 flex items-center justify-between text-sm">
+                                        <span class="font-medium text-ink">@Text(tile.Price)</span>
+                                        <span class="text-xs text-muted">@Text(tile.Stock)</span>
+                                    </span>
+                                </span>
+                            </button>
                         }
                     </div>
                     @if (!VisibleProducts.Any())
                     {
-                        <EmptyState Title="@Texts.NoProductsTitle" Message="@Texts.NoProductsMessage"/>
+                        <div class="mx-auto max-w-md rounded-3xl border border-border bg-surface-alt px-8 py-14 text-center">
+                            <p class="font-script text-3xl text-accent">@Text(Texts.NoProductsTitle)</p>
+                            <p class="mt-3 text-muted">@Text(Texts.NoProductsMessage)</p>
+                        </div>
                     }
                 </section>
 
@@ -75,9 +124,21 @@
                         <p class="py-4 text-center font-script text-2xl text-muted">@Text(Texts.EmptyTicket)</p>
                     }
                     <ul>
-                        @for (var index = 0; index < _lines.Count; index++)
+                        @foreach (var row in TicketRows)
                         {
-                            <TicketRow Line="_lines[index]" Index="index" OnChange="ChangeQuantity" OnRemove="RemoveLine"/>
+                            <li class="flex items-center gap-3 border-b border-border py-3 last:border-b-0">
+                                <div class="min-w-0 flex-1">
+                                    <p class="truncate text-sm font-medium text-ink">@Text(row.Name)</p>
+                                    <p class="text-xs text-muted">@Text(row.UnitPrice)</p>
+                                </div>
+                                <div class="flex items-center gap-1">
+                                    <button type="button" @onclick="row.Decrease" class="h-9 w-9 rounded-full border border-border text-accent-strong transition hover:border-accent" aria-label="@DecreaseLabel"><i class="bi bi-dash"></i></button>
+                                    <span class="w-8 text-center text-sm">@Text(row.Quantity)</span>
+                                    <button type="button" @onclick="row.Increase" class="h-9 w-9 rounded-full border border-border text-accent-strong transition hover:border-accent" aria-label="@IncreaseLabel"><i class="bi bi-plus"></i></button>
+                                </div>
+                                <p class="w-24 text-right text-sm font-medium">@Text(row.Total)</p>
+                                <button type="button" @onclick="row.Remove" class="h-9 w-9 rounded-full text-muted transition hover:bg-accent-soft hover:text-danger" aria-label="@RemoveLabel"><i class="bi bi-x-lg"></i></button>
+                            </li>
                         }
                     </ul>
 
@@ -156,6 +217,17 @@
 
 @code {
     private const string AllCategoriesLabel = "Todos";
+    private const string ReceiptHeading = "Obrigada";
+    private const string NewSaleLabel = "Nova venda";
+    private const string SoldOutTileLabel = "Esgotado";
+    private const string DecreaseLabel = "Diminuir quantidade";
+    private const string IncreaseLabel = "Aumentar quantidade";
+    private const string RemoveLabel = "Remover linha";
+    private const string TileBase = "overflow-hidden rounded-2xl border border-border bg-surface text-left transition ";
+    private const string TileClass = TileBase + "hover:border-accent hover:shadow-md active:scale-95";
+    private const string TileSoldOutClass = TileBase + "cursor-not-allowed opacity-50";
+    private const string ReceiptTextClass = "text-ink";
+    private const string ReceiptTotalClass = "font-serif text-xl text-accent-strong";
     private const string TabBase = "rounded-full border px-5 py-2 text-sm transition ";
     private const string TabIdle = TabBase + "border-border bg-surface text-muted hover:border-accent";
     private const string TabActive = TabBase + "border-accent-strong bg-accent-strong text-surface";
@@ -354,6 +426,27 @@
     }
 
     private void RemoveLine(int index) => _lines.RemoveAt(index);
+
+    private IEnumerable<(string Name, string? ImageUrl, string Price, string Stock, bool SoldOut, string CssClass, Action Pick)> Tiles =>
+        VisibleProducts.Select(product =>
+        {
+            var soldOut = product.StockQuantity <= 0;
+            return (product.Name, product.ImageUrl.Length > 0 ? ToUrl(product.ImageUrl) : null, FormatMoney(product.PriceMinor),
+                soldOut ? SoldOutTileLabel : $"{product.StockQuantity} em stock", soldOut, soldOut ? TileSoldOutClass : TileClass, (Action)(() => AddProduct(product.Id)));
+        });
+
+    private IEnumerable<(string Name, string UnitPrice, string Quantity, string Total, Action Decrease, Action Increase, Action Remove)> TicketRows =>
+        _lines.Select((line, index) => (line.Name, FormatMoney(line.UnitPriceMinor), line.Quantity.ToString(System.Globalization.CultureInfo.InvariantCulture), FormatMoney(line.TotalMinor),
+            (Action)(() => ChangeQuantity((index, -1))), (Action)(() => ChangeQuantity((index, 1))), (Action)(() => RemoveLine(index))));
+
+    private static (string Label, string Value, string CssClass)[] ReceiptSummary(CounterReceipt receipt) =>
+    [
+        ("Cliente", receipt.CustomerName, ReceiptTextClass),
+        ("Pagamento", StatusLabels.For(receipt.Method), ReceiptTextClass),
+        ("Recebido", FormatMoney(receipt.ReceivedMinor), ReceiptTextClass),
+        ("Troco", FormatMoney(receipt.ChangeMinor), ReceiptTextClass),
+        ("Total", FormatMoney(receipt.TotalMinor), ReceiptTotalClass),
+    ];
 
     private void AddFreeAmount()
     {

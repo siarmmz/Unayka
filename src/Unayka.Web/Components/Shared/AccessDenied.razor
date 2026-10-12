@@ -1,7 +1,11 @@
 @if (_isSignedIn)
 {
     <section class="container-page py-24">
-        <EmptyState Title="@Data.Title" Message="@Data.Message" ActionLabel="@Data.HomeLabel" ActionUrl="@Data.HomeUrl"/>
+        <div class="mx-auto max-w-md rounded-3xl border border-border bg-surface-alt px-8 py-14 text-center">
+            <p class="font-script text-3xl text-accent">@Text(Data.Title)</p>
+            <p class="mt-3 text-muted">@Text(Data.Message)</p>
+            <a href="@ToUrl(Data.HomeUrl)" class="btn-primary mt-8">@Text(Data.HomeLabel)</a>
+        </div>
     </section>
 }
 

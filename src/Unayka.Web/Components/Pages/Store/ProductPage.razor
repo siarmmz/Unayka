@@ -1,8 +1,12 @@
 @page "/produto/{Slug}"
+@using System.Globalization
+@using System.Text.Json
+@using Unayka.Core.Configuration
 @using Unayka.Core.Locations
 @using Unayka.Web.Components.Store
 @inject ICatalogQuery Catalog
 @inject ILocationDirectory Locations
+@inject ISiteContent Site
 
 @if (_product is not null)
 {
@@ -12,7 +16,23 @@
         <section class="container-page py-8 md:py-14">
             <a href="@_categoryUrl" class="text-xs uppercase tracking-widest text-muted transition hover:text-accent">@Text(_product.CategoryName)</a>
             <div class="mt-6 grid gap-10 lg:grid-cols-2 lg:gap-16">
-                <ProductGallery Images="_product.Images"/>
+                <div class="relative grid grid-cols-4 gap-3">
+                    @foreach (var tile in _tiles)
+                    {
+                        <input type="radio" name="product-gallery" id="@tile.Id" checked="@tile.Checked" class="@tile.InputClass" aria-label="@tile.Alt"/>
+                    }
+                    @foreach (var tile in _tiles)
+                    {
+                        <img src="@tile.Url" alt="@tile.Alt" class="@tile.ImageClass"/>
+                    }
+                    @if (_tiles.Count > 1)
+                    {
+                        @foreach (var tile in _tiles)
+                        {
+                            <label for="@tile.Id" class="@tile.LabelClass"><img src="@tile.Url" alt="" loading="lazy" class="aspect-square w-full object-cover"/></label>
+                        }
+                    }
+                </div>
 
                 <div class="lg:sticky lg:top-28 lg:self-start">
                     <div class="flex flex-wrap gap-2">
@@ -22,51 +42,66 @@
                         }
                     </div>
                     <h1 class="mt-3 font-serif text-4xl leading-tight text-accent-strong md:text-5xl">@Text(_product.Name)</h1>
-                    <div class="mt-5">
-                        <PriceTag PriceMinor="_product.PriceMinor" CompareAtPriceMinor="_product.CompareAtPriceMinor" Large="true"/>
+                    <div class="mt-5 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                        <span class="font-serif text-4xl font-semibold text-accent-strong">@Text(_price)</span>
+                        @if (_comparePrice is not null)
+                        {
+                            <span class="text-sm text-muted line-through">@Text(_comparePrice)</span>
+                            <span class="rounded-full bg-accent-soft px-2 py-0.5 text-xs font-medium text-accent">@Text(_discount)</span>
+                        }
                     </div>
                     <p class="mt-6 text-lg leading-relaxed text-muted">@Text(_product.ShortDescription)</p>
                     <p class="@_stockClass">@Text(_stockLabel)</p>
                     <p class="mt-2 text-sm text-muted">@Text(_availability)</p>
 
-                    <form id="@OrderFormId" method="post" action="@Data.AddAction" class="mt-8 space-y-5">
+                    <form id="@OrderFormId" method="post" action="@AddAction" class="mt-8 space-y-5">
                         <AntiforgeryToken/>
                         <input type="hidden" name="ProductId" value="@_product.Id"/>
                         <input type="hidden" name="ReturnUrl" value="@_returnUrl"/>
                         <div class="max-w-[8rem]">
-                            <label for="quantity" class="field-label">@Text(Data.QuantityLabel)</label>
+                            <label for="quantity" class="field-label">@Text(QuantityLabel)</label>
                             <input id="quantity" type="number" name="Quantity" value="1" min="1" max="@_maxQuantity" inputmode="numeric" disabled="@_soldOut" class="field disabled:opacity-40"/>
                         </div>
                         <div class="flex flex-col gap-3 sm:flex-row">
-                            <button type="submit" disabled="@_soldOut" class="btn-primary gap-2 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-accent-strong sm:flex-1">
-                                <StoreIcon Name="@StoreIcons.Bag" Class="h-5 w-5 shrink-0"/>
+                            <button type="submit" disabled="@_soldOut" class="btn-primary gap-2 disabled:cursor-not-allowed disabled:opacity-40 sm:flex-1">
+                                <i class="bi bi-bag shrink-0 text-lg"></i>
                                 <span>@Text(_addLabel)</span>
                             </button>
-                            <button type="submit" formaction="@Data.BuyNowAction" disabled="@_soldOut" class="btn-outline disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-accent-strong sm:flex-1">@Text(Data.BuyNowLabel)</button>
+                            <button type="submit" formaction="@BuyNowAction" disabled="@_soldOut" class="btn-outline disabled:cursor-not-allowed disabled:opacity-40 sm:flex-1">@Text(BuyNowLabel)</button>
                         </div>
                     </form>
 
                     <div class="mt-6 flex justify-end">
-                        <ShareButton Path="@_shareUrl" Title="@_product.Name"/>
+                        <unayka-share data-url="@_absoluteUrl" data-title="@_product.Name" data-copied-label="@CopiedLabel" class="relative inline-block">
+                            <details>
+                                <summary class="flex min-h-11 cursor-pointer list-none items-center justify-center gap-2 rounded-full border border-border px-5 text-sm text-accent-strong transition hover:border-accent hover:text-accent [&::-webkit-details-marker]:hidden" aria-label="@ShareLabel"><i class="bi bi-share"></i>@Text(ShareLabel)</summary>
+                                <div class="absolute right-0 top-full z-30 mt-2 w-44 rounded-2xl border border-border bg-surface p-2 shadow-xl">
+                                    <a href="@_whatsAppUrl" target="_blank" rel="noopener noreferrer" class="@ShareItemClass"><i class="bi bi-whatsapp"></i>@Text(WhatsAppLabel)</a>
+                                    <a href="@_facebookUrl" target="_blank" rel="noopener noreferrer" class="@ShareItemClass"><i class="bi bi-facebook"></i>@Text(FacebookLabel)</a>
+                                    <button type="button" data-copy class="@ShareItemClass"><i class="bi bi-link-45deg"></i><span data-copy-label>@Text(CopyLabel)</span></button>
+                                </div>
+                            </details>
+                        </unayka-share>
                     </div>
 
                     <ul class="mt-6 space-y-3 border-t border-border pt-6 text-sm text-muted">
                         @foreach (var promise in _promises)
                         {
-                            <li>@Text(promise)</li>
+                            <li class="flex items-start gap-2"><i class="@promise.Icon text-accent"></i>@Text(promise.Text)</li>
                         }
                     </ul>
                 </div>
             </div>
         </section>
 
-        @if (_package is not null)
+        @if (_story is not null)
         {
             <section class="bg-surface-alt">
                 <div class="container-page grid items-center gap-10 py-16 md:grid-cols-2 md:gap-16 md:py-24">
-                    <img src="@_packageUrl" alt="@_package.Alt" loading="lazy" class="aspect-[4/5] w-full rounded-3xl object-cover"/>
+                    <img src="@_story.Value.Url" alt="@_story.Value.Alt" loading="lazy" class="aspect-[4/5] w-full rounded-3xl object-cover"/>
                     <div>
-                        <SectionHeading Eyebrow="@Data.StoryEyebrow" Title="@_product.Name"/>
+                        <p class="font-script text-2xl text-accent">@Text(StoryEyebrow)</p>
+                        <h2 class="font-serif text-3xl leading-tight text-accent-strong md:text-4xl">@Text(_product.Name)</h2>
                         <p class="mt-6 text-lg leading-relaxed text-muted">@Text(_product.Description)</p>
                     </div>
                 </div>
@@ -78,7 +113,8 @@
             <section class="container-page py-16 md:py-24">
                 <div class="@_detailsGridClass">
                     <div>
-                        <SectionHeading Eyebrow="@Data.DetailsEyebrow" Title="@Data.DetailsTitle"/>
+                        <p class="font-script text-2xl text-accent">@Text(DetailsEyebrow)</p>
+                        <h2 class="font-serif text-3xl leading-tight text-accent-strong md:text-4xl">@Text(DetailsTitle)</h2>
                         @foreach (var group in _product.FactGroups)
                         {
                             <h3 class="mt-8 font-serif text-2xl text-accent-strong">@Text(group.Name)</h3>
@@ -93,9 +129,9 @@
                             </dl>
                         }
                     </div>
-                    @if (_elements is not null)
+                    @if (_detailImage is not null)
                     {
-                        <img src="@_elementsUrl" alt="@_elements.Alt" loading="lazy" class="aspect-square w-full rounded-3xl object-cover"/>
+                        <img src="@_detailImage.Value.Url" alt="@_detailImage.Value.Alt" loading="lazy" class="aspect-square w-full rounded-3xl object-cover"/>
                     }
                 </div>
             </section>
@@ -105,7 +141,10 @@
         {
             <section class="border-t border-border">
                 <div class="container-page py-16 md:py-24">
-                    <SectionHeading Eyebrow="@Data.RelatedEyebrow" Title="@Data.RelatedTitle" Centered="true"/>
+                    <div class="text-center">
+                        <p class="font-script text-2xl text-accent">@Text(RelatedEyebrow)</p>
+                        <h2 class="font-serif text-3xl leading-tight text-accent-strong md:text-4xl">@Text(RelatedTitle)</h2>
+                    </div>
                     <div class="mt-12">
                         <ProductRail Items="_related"/>
                     </div>
@@ -113,13 +152,20 @@
             </section>
         }
 
+        @if (_credits.Count > 0)
+        {
+            <section class="container-page pb-12">
+                <p class="text-xs text-muted">@Text(CreditsPrefix + string.Join("; ", _credits))</p>
+            </section>
+        }
+
         <div class="fixed inset-x-0 bottom-0 z-40 flex items-center justify-between gap-4 border-t border-border bg-surface/95 px-4 py-3 backdrop-blur md:hidden">
             <div class="min-w-0">
                 <p class="truncate text-xs text-muted">@Text(_product.Name)</p>
-                <PriceTag PriceMinor="_product.PriceMinor"/>
+                <p class="font-serif text-xl font-semibold text-accent-strong">@Text(_price)</p>
             </div>
-            <button type="submit" form="@OrderFormId" disabled="@_soldOut" class="btn-primary shrink-0 gap-2 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-accent-strong">
-                <StoreIcon Name="@StoreIcons.Bag" Class="h-5 w-5 shrink-0"/>
+            <button type="submit" form="@OrderFormId" disabled="@_soldOut" class="btn-primary shrink-0 gap-2 disabled:cursor-not-allowed disabled:opacity-40">
+                <i class="bi bi-bag shrink-0 text-lg"></i>
                 <span>@Text(_addLabel)</span>
             </button>
         </div>
@@ -128,69 +174,84 @@
 
 @code {
     private const string OrderFormId = "order-form";
+    private const string AddAction = "/carrinho/adicionar";
+    private const string BuyNowAction = "/carrinho/comprar-agora";
+    private const string AddLabel = "Adicionar ao carrinho";
+    private const string SoldOutLabel = "Esgotado";
+    private const string BuyNowLabel = "Comprar agora";
+    private const string QuantityLabel = "Quantidade";
+    private const string InStockLabel = "Em stock";
+    private const string LowStockLabel = "Últimas unidades";
+    private const string StoryEyebrow = "Sobre este produto";
+    private const string DetailsEyebrow = "Por dentro";
+    private const string DetailsTitle = "O que contém";
+    private const string RelatedEyebrow = "Continue a explorar";
+    private const string RelatedTitle = "Também vai gostar";
+    private const string NewLabel = "Novo";
+    private const string FeaturedLabel = "Destaque";
+    private const string AvailableAt = "Disponível em ";
+    private const string DigitalNote = "Produto digital, descarregue após o pagamento.";
+    private const string PickupPromise = "Levantamento numa das nossas lojas.";
+    private const string DownloadPromise = "Sem entrega: descarregue o ficheiro na sua conta depois de pagar.";
+    private const string PricePromise = "Preço final em meticais, sem surpresas.";
+    private const string ShareLabel = "Partilhar";
+    private const string WhatsAppLabel = "WhatsApp";
+    private const string FacebookLabel = "Facebook";
+    private const string CopyLabel = "Copiar link";
+    private const string CopiedLabel = "Link copiado";
+    private const string CreditsPrefix = "Fotografias: ";
     private const string TitleSuffix = " | Unayka";
     private const string LocationSeparator = " / ";
     private const int MaxQuantity = 20;
     private const int RelatedCount = 8;
+    private const int PercentBase = 100;
+    private const decimal MinorUnitsPerUnit = 100m;
     private const string StockClassBase = "mt-4 text-sm font-medium ";
     private const string TwoColumnsClass = "grid items-center gap-10 lg:grid-cols-2 lg:gap-16";
     private const string OneColumnClass = "max-w-2xl";
     private const string BadgeBase = "inline-block rounded-full px-3 py-1 text-xs font-medium tracking-wide ";
     private const string NewBadgeClass = BadgeBase + "bg-accent text-surface";
     private const string PlainBadgeClass = BadgeBase + "bg-accent-soft text-accent-strong";
+    private const string ShareItemClass = "flex min-h-11 w-full items-center gap-3 rounded-xl px-3 text-left text-sm text-accent-strong transition hover:bg-surface-alt";
+    private const string LabelBase = "block cursor-pointer overflow-hidden rounded-xl border-2 border-transparent transition hover:opacity-80 ";
+    private const string ImageBase = "col-span-4 hidden aspect-square w-full rounded-3xl bg-surface-alt object-cover ";
 
-    private sealed record DetailBadge(string Label, string CssClass);
+    private static readonly (string Input, string Image, string Label)[] TileStyles =
+    [
+        ("peer/g0 sr-only", ImageBase + "peer-checked/g0:block", LabelBase + "peer-checked/g0:border-accent"),
+        ("peer/g1 sr-only", ImageBase + "peer-checked/g1:block", LabelBase + "peer-checked/g1:border-accent"),
+        ("peer/g2 sr-only", ImageBase + "peer-checked/g2:block", LabelBase + "peer-checked/g2:border-accent"),
+        ("peer/g3 sr-only", ImageBase + "peer-checked/g3:block", LabelBase + "peer-checked/g3:border-accent"),
+    ];
 
-    private static readonly (string AddAction, string BuyNowAction, string AddLabel, string SoldOutLabel, string BuyNowLabel, string QuantityLabel, string InStock, string LowStock, string OutOfStock, string StoryEyebrow, string DetailsEyebrow, string DetailsTitle, string RelatedEyebrow, string RelatedTitle, string NewLabel, string FeaturedLabel, string AvailableAt, string DigitalNote, string[] PhysicalPromises, string[] DigitalPromises) Data = (
-        "/carrinho/adicionar",
-        "/carrinho/comprar-agora",
-        "Adicionar ao carrinho",
-        "Esgotado",
-        "Comprar agora",
-        "Quantidade",
-        "Em stock",
-        "Últimas unidades",
-        "Esgotado",
-        "Sobre este produto",
-        "Por dentro",
-        "O que contém",
-        "Continue a explorar",
-        "Também vai gostar",
-        "Novo",
-        "Destaque",
-        "Disponível em ",
-        "Produto digital, descarregue após o pagamento.",
-        [
-            "Levantamento numa das nossas lojas.",
-            "Pagamento por M-Pesa, e-Mola, mKesh ou cartão.",
-            "Preço final em meticais, sem surpresas.",
-        ],
-        [
-            "Sem entrega: descarregue o ficheiro na sua conta depois de pagar.",
-            "Pagamento por M-Pesa, e-Mola, mKesh ou cartão.",
-            "Preço final em meticais, sem surpresas.",
-        ]);
+    private static readonly ProductMediaKind[] StoryKinds = [ProductMediaKind.Package, ProductMediaKind.Jar, ProductMediaKind.Applied];
+    private static readonly ProductMediaKind[] DetailKinds = [ProductMediaKind.Elements];
 
     [Parameter]
     public string Slug { get; set; } = string.Empty;
 
     private ProductDetail? _product;
     private IReadOnlyList<ProductCardModel> _related = [];
-    private IReadOnlyList<string> _promises = [];
-    private List<DetailBadge> _badges = [];
-    private ProductImage? _package;
-    private ProductImage? _elements;
-    private string _packageUrl = string.Empty;
-    private string _elementsUrl = string.Empty;
+    private List<(string Icon, string Text)> _promises = [];
+    private List<(string Label, string CssClass)> _badges = [];
+    private List<(string Id, string Url, string Alt, bool Checked, string InputClass, string ImageClass, string LabelClass)> _tiles = [];
+    private (string Url, string Alt)? _story;
+    private (string Url, string Alt)? _detailImage;
+    private List<string> _credits = [];
     private string _seoTitle = string.Empty;
     private string _structuredData = string.Empty;
     private string _categoryUrl = string.Empty;
     private string _returnUrl = string.Empty;
-    private string _shareUrl = string.Empty;
+    private string _absoluteUrl = string.Empty;
+    private string _whatsAppUrl = string.Empty;
+    private string _facebookUrl = string.Empty;
+    private string _price = string.Empty;
+    private string? _comparePrice;
+    private string _discount = string.Empty;
     private string _stockLabel = string.Empty;
     private string _stockClass = StockClassBase;
     private string _availability = string.Empty;
-    private string _addLabel = string.Empty;
+    private string _addLabel = AddLabel;
     private string _detailsGridClass = OneColumnClass;
     private bool _soldOut;
     private bool _showDetails;
@@ -205,53 +266,95 @@
             return;
         }
 
+        var product = _product;
         _related = await Catalog.RelatedAsync(Slug, RelatedCount);
-        _package = _product.Images.FirstOrDefault(image => image.Kind == ProductMediaKind.Package);
-        _elements = _product.Images.FirstOrDefault(image => image.Kind == ProductMediaKind.Elements);
-        _packageUrl = ToUrl(_package?.Url);
-        _elementsUrl = ToUrl(_elements?.Url);
-        _seoTitle = _product.Name + TitleSuffix;
-        _structuredData = StoreStructuredData.Product(_product, StoreStructuredData.Root(Navigation.BaseUri));
-        _categoryUrl = ToUrl(StoreUrls.Category(_product.CategorySlug));
-        _shareUrl = ToUrl(StoreUrls.Product(_product.Slug));
-        _returnUrl = CartNotice.ReturnUrl(Navigation, _product.Slug);
-        _showDetails = _product.FactGroups.Count > 0 || _elements is not null;
-        _detailsGridClass = _elements is null ? OneColumnClass : TwoColumnsClass;
-        _maxQuantity = Math.Clamp(_product.StockQuantity, 1, MaxQuantity);
-        _badges = BuildBadges(_product);
-        _promises = _product.Kind == ProductKind.Digital ? Data.DigitalPromises : Data.PhysicalPromises;
-        _availability = await BuildAvailabilityAsync(_product);
-        ApplyStock(StockLevels.For(_product.StockQuantity));
+        _tiles = product.Images.Take(TileStyles.Length)
+            .Select((image, index) => ($"gallery-{index}", ToUrl(image.Url), image.Alt, index == 0, TileStyles[index].Input, TileStyles[index].Image, TileStyles[index].Label))
+            .ToList();
+        _story = ImageOf(product, StoryKinds);
+        _detailImage = ImageOf(product, DetailKinds);
+        _credits = product.Images.Select(image => image.Credit).OfType<string>().Distinct().ToList();
+        _seoTitle = product.Name + TitleSuffix;
+        _categoryUrl = ToUrl(StoreUrls.Category(product.CategorySlug));
+        var path = ToUrl(StoreUrls.Product(product.Slug));
+        _absoluteUrl = Navigation.ToAbsoluteUri(path).ToString();
+        _whatsAppUrl = $"https://wa.me/?text={Uri.EscapeDataString(product.Name + " " + _absoluteUrl)}";
+        _facebookUrl = $"https://www.facebook.com/sharer/sharer.php?u={Uri.EscapeDataString(_absoluteUrl)}";
+        _returnUrl = "/" + Navigation.ToBaseRelativePath(Navigation.GetUriWithQueryParameter(StoreUrls.AddedKey, product.Slug));
+        _price = FormatMoney(product.PriceMinor);
+        var hasDiscount = product.CompareAtPriceMinor is { } compare && compare > product.PriceMinor;
+        _comparePrice = hasDiscount ? FormatMoney(product.CompareAtPriceMinor!.Value) : null;
+        _discount = hasDiscount ? $"-{(product.CompareAtPriceMinor!.Value - product.PriceMinor) * PercentBase / product.CompareAtPriceMinor.Value}%" : string.Empty;
+        _showDetails = product.FactGroups.Count > 0 || _detailImage is not null;
+        _detailsGridClass = _detailImage is null ? OneColumnClass : TwoColumnsClass;
+        _maxQuantity = Math.Clamp(product.StockQuantity, 1, MaxQuantity);
+        _badges = BuildBadges(product);
+        var paymentNote = (await Site.PageAsync(SitePages.Shared)).One(SitePlacements.PaymentNote).Title;
+        _promises =
+        [
+            product.Kind == ProductKind.Digital ? ("bi bi-download", DownloadPromise) : ("bi bi-shop", PickupPromise),
+            ("bi bi-phone", paymentNote),
+            ("bi bi-tag", PricePromise),
+        ];
+        _availability = await BuildAvailabilityAsync(product);
+        ApplyStock(StockLevels.For(product.StockQuantity));
+        _structuredData = ProductJson(product);
+    }
+
+    private static (string Url, string Alt)? ImageOf(ProductDetail product, ProductMediaKind[] kinds) =>
+        product.Images.FirstOrDefault(image => kinds.Contains(image.Kind)) is { } image ? (ToUrl(image.Url), image.Alt) : null;
+
+    private string ProductJson(ProductDetail product)
+    {
+        var root = (string.IsNullOrEmpty(AppEnvConfig.PublicBaseUrl) ? Navigation.BaseUri : AppEnvConfig.PublicBaseUrl).TrimEnd('/');
+        return JsonSerializer.Serialize(new Dictionary<string, object>
+        {
+            ["@context"] = "https://schema.org",
+            ["@type"] = "Product",
+            ["name"] = product.Name,
+            ["description"] = product.ShortDescription,
+            ["sku"] = product.Slug,
+            ["category"] = product.CategoryName,
+            ["image"] = product.Images.Select(image => image.Url).ToArray(),
+            ["offers"] = new Dictionary<string, object>
+            {
+                ["@type"] = "Offer",
+                ["url"] = root + StoreUrls.Product(product.Slug),
+                ["priceCurrency"] = "MZN",
+                ["price"] = (product.PriceMinor / MinorUnitsPerUnit).ToString("0.00", CultureInfo.InvariantCulture),
+                ["availability"] = product.StockQuantity > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
+            },
+        });
     }
 
     private async Task<string> BuildAvailabilityAsync(ProductDetail product)
     {
         if (product.Kind == ProductKind.Digital)
         {
-            return Data.DigitalNote;
+            return DigitalNote;
         }
 
         var stock = await Locations.StockForProductAsync(product.Id);
         var names = stock.Where(location => location.Quantity > 0).Select(location => location.LocationName).ToList();
-        return names.Count == 0 ? string.Empty : Data.AvailableAt + string.Join(LocationSeparator, names);
+        return names.Count == 0 ? string.Empty : AvailableAt + string.Join(LocationSeparator, names);
     }
 
-    private static List<DetailBadge> BuildBadges(ProductDetail product)
+    private static List<(string Label, string CssClass)> BuildBadges(ProductDetail product)
     {
-        var badges = new List<DetailBadge>();
+        var badges = new List<(string Label, string CssClass)>();
         if (product.IsNew)
         {
-            badges.Add(new DetailBadge(Data.NewLabel, NewBadgeClass));
+            badges.Add((NewLabel, NewBadgeClass));
         }
 
         if (product.IsFeatured)
         {
-            badges.Add(new DetailBadge(Data.FeaturedLabel, NewBadgeClass));
+            badges.Add((FeaturedLabel, NewBadgeClass));
         }
 
-        if (product.Badge is not null && !string.Equals(product.Badge, Data.NewLabel, StringComparison.OrdinalIgnoreCase))
+        if (product.Badge is not null && !string.Equals(product.Badge, NewLabel, StringComparison.OrdinalIgnoreCase))
         {
-            badges.Add(new DetailBadge(product.Badge, PlainBadgeClass));
+            badges.Add((product.Badge, PlainBadgeClass));
         }
 
         return badges;
@@ -260,12 +363,12 @@
     private void ApplyStock(StockLevel level)
     {
         _soldOut = level == StockLevel.OutOfStock;
-        _addLabel = _soldOut ? Data.SoldOutLabel : Data.AddLabel;
+        _addLabel = _soldOut ? SoldOutLabel : AddLabel;
         (_stockLabel, _stockClass) = level switch
         {
-            StockLevel.OutOfStock => (Data.OutOfStock, StockClassBase + "text-danger"),
-            StockLevel.LowStock => (Data.LowStock, StockClassBase + "text-warning"),
-            _ => (Data.InStock, StockClassBase + "text-success"),
+            StockLevel.OutOfStock => (SoldOutLabel, StockClassBase + "text-danger"),
+            StockLevel.LowStock => (LowStockLabel, StockClassBase + "text-warning"),
+            _ => (InStockLabel, StockClassBase + "text-success"),
         };
     }
 }

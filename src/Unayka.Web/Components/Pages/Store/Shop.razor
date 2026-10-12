@@ -28,7 +28,10 @@
 @if (_featured.Count > 0)
 {
     <section class="container-page py-12 md:py-16">
-        <SectionHeading Eyebrow="@Data.Featured.Eyebrow" Title="@Data.Featured.Title"/>
+        <div>
+            <p class="font-script text-2xl text-accent">@Text(Data.Featured.Eyebrow)</p>
+            <h2 class="font-serif text-3xl leading-tight text-accent-strong md:text-4xl">@Text(Data.Featured.Title)</h2>
+        </div>
         <div class="mt-8">
             <ProductRail Items="_featured"/>
         </div>
@@ -37,7 +40,10 @@
 
 <section class="bg-success-soft">
     <div class="container-page py-12 md:py-16">
-        <SectionHeading Eyebrow="@Data.Categories.Eyebrow" Title="@Data.CategoriesTitle"/>
+        <div>
+            <p class="font-script text-2xl text-accent">@Text(Data.Categories.Eyebrow)</p>
+            <h2 class="font-serif text-3xl leading-tight text-accent-strong md:text-4xl">@Text(Data.CategoriesTitle)</h2>
+        </div>
         <div class="mt-8 grid grid-cols-2 gap-4 md:grid-cols-4">
             @foreach (var category in _categories)
             {
@@ -55,7 +61,10 @@
 
 <section class="container-page py-12 md:py-16">
     <div class="flex items-end justify-between gap-6">
-        <SectionHeading Eyebrow="@Data.Latest.Eyebrow" Title="@Data.Latest.Title"/>
+        <div>
+            <p class="font-script text-2xl text-accent">@Text(Data.Latest.Eyebrow)</p>
+            <h2 class="font-serif text-3xl leading-tight text-accent-strong md:text-4xl">@Text(Data.Latest.Title)</h2>
+        </div>
         <a href="@_allProductsUrl" class="hidden shrink-0 text-base text-accent-strong underline-offset-4 hover:text-accent hover:underline md:inline">@Text(Data.AllProductsLabel)</a>
     </div>
     <div class="mt-8 grid grid-cols-2 gap-x-4 gap-y-10 md:grid-cols-3 lg:grid-cols-4 md:gap-x-6">
