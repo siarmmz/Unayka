@@ -8,29 +8,34 @@ Only work still to do. A finished item is removed (Git history keeps it). Opus a
 
 ## Next
 
-### R. Data only from the database, leaner Web, real products (awaiting go ahead)
+### R. Data only from the database, leaner Web, real products (approved, executing)
 
-- [ ] R1 (O) Move every hardcoded content out of code: addresses, contacts, home texts, social networks, product data. Seed classes in Core/Data/Seed (CatalogSeed, LocationSeed, DemoOrdersSeed, SiteImages, DigitalSeedFiles) are removed; the committed database.sqlite becomes the only source of demo data. MockPaymentGateway stays only until 5.3.
-- [ ] R2 (S) Social networks managed in the dashboard (name, URL, Bootstrap Icons class, order, active).
-- [ ] R3 (S) Icons only from Bootstrap Icons via CDN link (`bi bi-*`); remove every inline svg and StoreIcon. Card logos (visa, mastercard) stay as images.
-- [ ] R4 (O) Reduce the repository below 100 files: inline single use Web components into their pages (each page owns its @code and rendering), replace helper classes with records or tuples, merge small Core files per feature, drop per page base classes where possible.
-- [ ] R5 (S) Remove the home "Ingredientes naturais" block and any home section that speaks about content not registered in the database.
-- [ ] R6 (O) Recreate every product with real, professional images: teas and coffee (prepared cup, package, jar if applicable), cosmetics (product, ingredients, face or body area applied). No ambiguous items (bags and similar). Books: one cover image, angled so the spine thickness shows, front slightly rotated.
-- [ ] R7 (S) Dashboard navigation is nested per section: tags, categories and similar are created inside the product or category being edited, not on global screens.
+Notes from the user (2026-10-12):
+- Images are set by URL. Upload is shown as an option but marked temporarily unavailable.
+- No mock classes anywhere. Whatever is not configured fails like production (for example the payment gateway returns a gateway error when PaySuite keys are missing).
+- Payment configuration (provider, methods, labels, icons, keys still empty) lives in the database, even if incomplete. Secrets stay in environment variables.
+- Each payment method (M-Pesa, e-Mola, card) sits behind one interface (IPaymentMethod) so a method could use another provider; in practice all use PaySuite.
+- Implement PaySuite from the official documentation (merges 5.1 and 5.3).
+
+- [ ] R1 (S) Remaining hardcoded content: header and footer (brand, tagline, help links, payment logos, social links) and the product page must read site blocks, payment options and locations from the database. Seed classes, the staff password in code and demo orders are already gone.
+- [ ] R2 (S) Dashboard screen "Site": edit site blocks per page (hero slides, steps, story, values, contact strip, SEO, social networks with Bootstrap Icons class) and payment options (label, logo URL, icon, provider code, online, counter, active).
+- [ ] R3 (S) Icons only from Bootstrap Icons (`bi bi-*`, CDN already linked): replace the remaining inline svg in header, footer, carousels, cards and StoreIcon; delete StoreIcon and StoreIcons.
+- [ ] R4 (O) Get below 100 files (143 now): inline single use Web components into their pages (PageHero, SectionHeading, EmptyState, ErrorList, StatTile, StatusBadge, CatalogStatusBadge, ThumbnailImage, SalesChart, CounterTile, TicketRow, ReceiptPanel, PreparationColumn, CounterNav, AdminPageHeader, AdminTabs, ProductGallery, Pagination, PriceTag, ShareButton, SwipeHint, CartAddedNotice, SiteHeader, SiteFooter, ProductRowSection, CatalogView, OrderLinesList), merge AllProducts, CategoryPage and SectionShop into one catalog page, merge the base classes into one file, drop AdminOptions, CatalogLinks, CartNotice, PaymentChoices and StoreStructuredData, drop the visa and mastercard files.
+- [ ] R6 (O) Product images: 15 products with real photos by URL (Wikimedia Commons and Openverse, CC licenses, credit stored per image). Still missing: package photos for teas, applied photos for coconut oil, cosmetics beyond body care, book covers that match each title. The product page must show the credit line.
+- [ ] R7 (S) Dashboard nested per section: /admin/seccoes opens one section with its categories and tags inside (IAdminTaxonomy already filters by section); remove the global Categorias and Etiquetas screens; product form images by URL with the upload option shown as temporarily unavailable.
 - [ ] R8 (S) Fix buttons whose pressed or active color equals their text color.
 
 ### Payments (PaySuite)
 
-- [ ] 5.1 (H) Read the official PaySuite documentation and record here what was confirmed, including whether cards are supported and how (hosted page, fields, webhook). Until then wallets and cards go through the mock gateway.
-- [ ] 5.2 (O) Decide the design from that reading (webhook, polling, fees, payouts, test environment).
-- [ ] 5.3 (S) PaySuiteGateway behind IPaymentGateway, replacing the mock, with contract tests.
-- [ ] 5.4 (S) Raw payment events, states and idempotency.
-- [ ] 5.5 (S) Webhook with signature verification and polling BackgroundService; test that an invalid signature is rejected.
+Confirmed from https://paysuite.tech/docs (2026-10-12): base https://paysuite.tech/api/v1, Bearer token; POST /payments with amount (MZN, decimal string), reference (unique, max 50), description, method (mpesa, emola, credit_card; optional), return_url, webhook_url; response data.id and data.checkout_url (hosted page). GET /payments/{id} returns status (pending, paid) and transaction. Webhooks payment.success and payment.failed with data.id, X-Signature = HMAC SHA256 of the raw body with the webhook secret. Refunds POST /refunds. mKesh is listed but not accepted by the method field, so it is counter only.
+
+- [ ] 5.2 (O) Decide fees, payouts and the test environment (PaySuite sandbox keys).
+- [ ] 5.5 (S) Polling BackgroundService for pending payments and tests for the webhook endpoint (valid signature applies, invalid returns 401).
 - [ ] 5.6 (S) Charges screen with filters, timeline and actions (refunds once the policy is decided).
 
 ### Sign in and security
 
-- [ ] 4.1 (S) Real Google and Facebook OAuth keys from environment variables (mocked locally today).
+- [ ] 4.1 (S) Configure real Google and Facebook OAuth keys (without keys the button shows an unavailable message).
 - [ ] 4.4 (S) Login attempts with 90 day retention and temporary block.
 - [ ] 4.5 (S) Review rate limiting policies (login, webhook, checkout), CSP with a nonce instead of 'unsafe-inline', persistent data protection keys; test that rate limiting returns 429.
 

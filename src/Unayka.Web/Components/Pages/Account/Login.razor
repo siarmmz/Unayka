@@ -1,15 +1,15 @@
 @page "/conta/entrar"
-@using Unayka.Web.Components.Store
-@using Unayka.Web.Endpoints.Account
+@using Unayka.Web.Endpoints
+@inject ISiteContent Site
 
-<SeoComponent Title="@Texts.SeoTitle" Description="@Texts.SeoDescription"/>
+<SeoComponent Title="@_seo.Title" Description="@_seo.Body"/>
 
 <section class="grid min-h-[calc(100vh-8rem)] lg:grid-cols-2">
     <div class="relative hidden lg:block">
-        <img src="@LoginImageUrl" alt="" class="absolute inset-0 h-full w-full object-cover"/>
+        <img src="@_imageUrl" alt="" class="absolute inset-0 h-full w-full object-cover"/>
         <div class="absolute inset-0 bg-gradient-to-t from-surface/90 via-surface/20 to-transparent"></div>
         <div class="absolute inset-x-0 bottom-0 p-14">
-            <p class="max-w-md font-script text-5xl leading-tight text-accent-strong">@Text(Texts.Quote)</p>
+            <p class="max-w-md font-script text-5xl leading-tight text-accent-strong">@Text(_hero.Title)</p>
         </div>
     </div>
 
@@ -29,13 +29,9 @@
                 @foreach (var provider in _providers)
                 {
                     <a href="@provider.Url" class="@provider.CssClass">
-                        <StoreIcon Name="@provider.Icon" Class="h-5 w-5 shrink-0"/>
+                        <i class="bi @provider.Icon shrink-0 text-xl"></i>
                         <span>@Text(provider.Label)</span>
                     </a>
-                }
-                @if (_showMockNote)
-                {
-                    <p class="rounded-xl bg-success-soft px-4 py-3 text-sm text-accent-strong">@Text(Texts.MockNote)</p>
                 }
                 <p class="text-sm text-muted">@Text(Texts.Privacy)</p>
             </div>
@@ -66,8 +62,7 @@
 
 @code {
     private sealed record LoginTexts(
-        string SeoTitle, string SeoDescription, string Quote, string Eyebrow, string Title, string Intro,
-        string MockNote, string Privacy, string StaffTitle, string EmailLabel, string PasswordLabel, string StaffButton, string StaffAction);
+        string Eyebrow, string Title, string Intro, string Privacy, string StaffTitle, string EmailLabel, string PasswordLabel, string StaffButton, string StaffAction);
 
     private sealed record ProviderLink(string Label, string Url, string Icon, string CssClass);
 
@@ -78,13 +73,9 @@
     private const string FacebookButton = ButtonBase + "bg-brand-facebook text-brand-facebook-text hover:opacity-90";
 
     private static readonly LoginTexts Texts = new(
-        "Entrar | Unayka",
-        "Entre na sua conta Unayka com o Google ou o Facebook.",
-        "Natural, simples e perto de si.",
         "Bem-vinda, bem-vindo",
         "Entrar",
         "Use a sua conta Google ou Facebook. Não precisa de palavra-passe nova e, se for a primeira vez, criamos a conta por si.",
-        "Modo de teste: a entrada é simulada até as chaves reais estarem configuradas.",
         "Usamos apenas o seu nome e email para identificar a conta.",
         "Acesso da equipa",
         "Email",
@@ -94,8 +85,8 @@
 
     private static readonly Dictionary<string, ProviderStyle> ProviderStyles = new()
     {
-        [ExternalProviders.Google] = new("Continuar com Google", StoreIcons.Google, GoogleButton),
-        [ExternalProviders.Facebook] = new("Continuar com Facebook", StoreIcons.Facebook, FacebookButton),
+        [ExternalProviders.Google] = new("Continuar com Google", "bi-google", GoogleButton),
+        [ExternalProviders.Facebook] = new("Continuar com Facebook", "bi-facebook", FacebookButton),
     };
 
     private static readonly Dictionary<string, string> ErrorMessages = new()
@@ -103,6 +94,7 @@
         [nameof(AccountOutcome.InvalidIdentity)] = "Não foi possível entrar. Tente novamente.",
         [nameof(AccountOutcome.InvalidCredentials)] = "Email ou palavra-passe incorretos.",
         [nameof(AccountOutcome.LockedOut)] = "Demasiadas tentativas falhadas. Tente novamente dentro de alguns minutos.",
+        [AccountEndpoints.ExternalUnavailableError] = "Esta forma de entrar não está disponível de momento.",
     };
 
     private static readonly string[] StaffErrors = [nameof(AccountOutcome.InvalidCredentials), nameof(AccountOutcome.LockedOut)];
@@ -113,22 +105,29 @@
     [Parameter, SupplyParameterFromQuery(Name = AccountEndpoints.ReturnUrlKey)]
     public string? ReturnUrl { get; set; }
 
-    private static readonly string LoginImageUrl = ToUrl(SiteImages.LoginUrl);
+    private SiteBlockView _seo = new SitePage([]).One(SitePlacements.Seo);
+    private SiteBlockView _hero = new SitePage([]).One(SitePlacements.Hero);
+    private string _imageUrl = string.Empty;
     private List<ProviderLink> _providers = [];
-    private bool _showMockNote;
     private bool _staffOpen;
     private string _returnUrl = string.Empty;
     private string? _customerError;
     private string? _staffError;
 
+    protected override async Task OnInitializedAsync()
+    {
+        var page = await Site.PageAsync(SitePages.Login);
+        _seo = page.One(SitePlacements.Seo);
+        _hero = page.One(SitePlacements.Hero);
+        _imageUrl = ToUrl(_hero.ImageUrl);
+    }
+
     protected override void OnParametersSet()
     {
         _returnUrl = ReturnUrl ?? string.Empty;
-        var available = ExternalProviders.All.Where(ExternalProviders.IsAvailable).ToList();
-        _providers = available
+        _providers = ExternalProviders.All
             .Select(provider => new ProviderLink(ProviderStyles[provider].Label, ToUrl(AccountEndpoints.ExternalUrl(provider, ReturnUrl)), ProviderStyles[provider].Icon, ProviderStyles[provider].CssClass))
             .ToList();
-        _showMockNote = available.Any(ExternalProviders.IsMocked);
 
         var message = Error is not null && ErrorMessages.TryGetValue(Error, out var found) ? found : null;
         var isStaffError = Error is not null && StaffErrors.Contains(Error);

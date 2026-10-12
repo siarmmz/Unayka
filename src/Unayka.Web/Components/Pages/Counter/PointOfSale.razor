@@ -7,6 +7,7 @@
 @inherits CounterPageBase
 @inject ICounterShifts Shifts
 @inject ICounterSales Sales
+@inject IPaymentService Payments
 
 <PageTitle>@Texts.PageTitle</PageTitle>
 
@@ -131,9 +132,14 @@
                         <p class="rounded-xl bg-surface-alt px-4 py-3 text-sm text-muted">@Text(Texts.CardHint)</p>
                     }
 
-                    @if (_stage == PosStage.WalletWaiting)
+                    @if (IsWallet)
                     {
-                        <p role="status" class="animate-pulse rounded-xl bg-success-soft px-4 py-3 text-sm text-accent-strong">@Text(_walletStatus)</p>
+                        <p class="rounded-xl bg-surface-alt px-4 py-3 text-sm text-muted">@Text(Texts.WalletHint)</p>
+                    }
+
+                    @if (_methods.Count == 0)
+                    {
+                        <p role="alert" class="rounded-xl bg-accent-soft px-4 py-3 text-sm text-danger">@Text(Texts.NoMethods)</p>
                     }
 
                     @if (_error is not null)
@@ -141,7 +147,7 @@
                         <p role="alert" class="rounded-xl bg-accent-soft px-4 py-3 text-sm text-danger">@Text(_error)</p>
                     }
 
-                    <button type="button" @onclick="Pay" disabled="@(_stage == PosStage.WalletWaiting)" class="btn-primary w-full disabled:opacity-60">@Text(PayLabel)</button>
+                    <button type="button" @onclick="Pay" disabled="@(_methods.Count == 0)" class="btn-primary w-full disabled:opacity-60">@Text(PayLabel)</button>
                 </aside>
             </div>
         }
@@ -160,8 +166,6 @@
     private const string ChangeMissingClass = "font-medium text-danger";
     private const string ChangeFormat = "Troco {0}";
     private const string MissingFormat = "Falta {0}";
-    private const string WalletReference = "Pedido de pagamento enviado para {0}.";
-    private const string WalletWaitingFormat = "A aguardar confirmação no telemóvel {0}.";
     private const int FirstLineQuantity = 1;
     private const int AllCategoriesId = 0;
 
@@ -169,7 +173,7 @@
         string SearchPlaceholder, string NoProductsTitle, string NoProductsMessage, string TicketTitle, string EmptyTicket, string FreeAmountTitle,
         string FreeDescriptionPlaceholder, string FreeAmountPlaceholder, string FreeAmountButton, string CustomerNamePlaceholder, string CustomerPhonePlaceholder,
         string TotalLabel, string ReceivedLabel, string ExactLabel, string WalletPhoneLabel, string WalletPhonePlaceholder, string CardHint, string CashPay,
-        string CardPay, string WalletPay, string WalletApproved, string WalletDeclined, string InvalidAmount, string DefaultFreeDescription) Texts = (
+        string CardPay, string WalletPay, string WalletHint, string NoMethods, string InvalidAmount, string DefaultFreeDescription) Texts = (
         "Balcão | Unayka",
         "Balcão",
         "Venda ao balcão",
@@ -196,9 +200,9 @@
         "Confirme o valor no terminal de cartões e depois registe a venda.",
         "Cobrar em dinheiro",
         "Confirmar pagamento no terminal",
-        "Enviar pedido de pagamento",
-        "Pagamento aprovado.",
-        "O pagamento foi recusado. Tente outro número ou outro método.",
+        "Confirmar pagamento recebido na carteira",
+        "Confirme na carteira da loja que o pagamento chegou e depois registe a venda.",
+        "Os meios de pagamento do balcão não estão configurados.",
         "Indique um valor válido.",
         "Valor livre"
     );
@@ -213,7 +217,7 @@
         [CounterSaleError.OutOfStock] = "Um dos produtos já não tem stock suficiente.",
     };
 
-    private static readonly PaymentMethod[] Methods = [PaymentMethod.Cash, PaymentMethod.Card, .. WalletMethods.All];
+    private IReadOnlyList<PaymentOptionView> _methods = [];
 
     private sealed record ChoiceView(string Label, string CssClass, Action Select);
 
@@ -239,7 +243,6 @@
     private string _walletPhone = string.Empty;
     private PaymentMethod _method = PaymentMethod.Cash;
     private PosStage _stage = PosStage.Selling;
-    private string _walletStatus = string.Empty;
     private string? _error;
     private CounterReceipt? _receipt;
 
@@ -261,7 +264,7 @@
             .Select(tab => new ChoiceView(tab.Item1, _categoryId == tab.Item2 ? TabActive : TabIdle, () => _categoryId = tab.Item2));
 
     private IEnumerable<ChoiceView> MethodButtons =>
-        Methods.Select(method => new ChoiceView(StatusLabels.For(method), _method == method ? MethodActive : MethodIdle, () => SelectMethod(method)));
+        _methods.Select(option => new ChoiceView(option.Label, _method == option.Method ? MethodActive : MethodIdle, () => SelectMethod(option.Method)));
 
     private string PayLabel => _method switch
     {
@@ -289,6 +292,11 @@
     {
         _shiftOpen = await Shifts.GetOpenAsync() is not null;
         _catalog = await Sales.LoadCatalogAsync();
+        _methods = await Payments.CounterOptionsAsync();
+        if (_methods.Count > 0 && _methods.All(option => option.Method != _method))
+        {
+            _method = _methods[0].Method;
+        }
     }
 
     private async Task OpenShift()
@@ -379,7 +387,7 @@
             return;
         }
 
-        @if (IsWallet && !await ConfirmWalletAsync())
+        @if (IsWallet && !ConfirmWallet())
         {
             return;
         }
@@ -387,33 +395,14 @@
         await Register();
     }
 
-    private async Task<bool> ConfirmWalletAsync()
+    private bool ConfirmWallet()
     {
-        var phone = PhoneNumber.Normalize(_walletPhone);
-        @if (phone is null)
+        if (PhoneNumber.Normalize(_walletPhone) is not null)
         {
-            _error = SaleErrors[CounterSaleError.InvalidWalletPhone];
-            return false;
-        }
-
-        _stage = PosStage.WalletWaiting;
-        _walletStatus = string.Format(System.Globalization.CultureInfo.InvariantCulture, WalletReference, FormatPhone(phone));
-        StateHasChanged();
-        await Task.Delay(CounterWallet.ApprovalDelayMilliseconds / 2);
-        _walletStatus = string.Format(System.Globalization.CultureInfo.InvariantCulture, WalletWaitingFormat, FormatPhone(phone));
-        StateHasChanged();
-        await Task.Delay(CounterWallet.ApprovalDelayMilliseconds / 2);
-
-        @if (CounterWallet.Approves(phone))
-        {
-            _walletStatus = Texts.WalletApproved;
-            StateHasChanged();
             return true;
         }
 
-        _stage = PosStage.Selling;
-        _walletPhone = string.Empty;
-        _error = Texts.WalletDeclined;
+        _error = SaleErrors[CounterSaleError.InvalidWalletPhone];
         return false;
     }
 

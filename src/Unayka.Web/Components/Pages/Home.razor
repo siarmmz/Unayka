@@ -1,180 +1,185 @@
 @page "/"
+@using System.Text.Json
+@using Unayka.Core.Configuration
+@using Unayka.Core.Locations
 @using Unayka.Web.Components.Store
 @inject ICatalogQuery Catalog
+@inject ISiteContent Site
+@inject ILocationDirectory Locations
 
-<SeoComponent Title="@Data.Seo.Title" Description="@Data.Seo.Description" StructuredDataJson="@_structuredData"/>
+<SeoComponent Title="@_seo.Title" Description="@_seo.Body" StructuredDataJson="@_structuredData"/>
 
-<unayka-carousel class="group/swipe relative block cursor-grab touch-pan-y select-none active:cursor-grabbing h-[78vh] min-h-[32rem] overflow-hidden bg-surface-alt">
-    @foreach (var slide in _slides)
-    {
-        <div data-slide class="@SlideClass" data-active="@slide.ActiveMarker">
-            <img src="@slide.ImageUrl" alt="" class="absolute inset-0 -z-20 h-full w-full scale-105 object-cover transition-transform duration-[6000ms] ease-out group-data-[active]:scale-100"/>
-            <div class="absolute inset-0 -z-10 bg-gradient-to-r from-surface via-surface/80 to-surface/10"></div>
-            <div class="container-page flex h-full items-center">
-                <div class="max-w-xl translate-y-4 transition duration-700 group-data-[active]:translate-y-0">
-                    <p class="font-script text-3xl text-accent md:text-4xl">@Text(slide.Eyebrow)</p>
-                    <h1 class="mt-2 text-5xl leading-[1.05] md:text-6xl">@Text(slide.Title)</h1>
-                    <p class="mt-5 text-lg text-ink">@Text(slide.Text)</p>
-                    <a href="@slide.Url" class="btn-primary mt-8">@Text(slide.ActionLabel)</a>
-                </div>
-            </div>
-        </div>
-    }
-    <SwipeHint Position="bottom-24 right-6 md:right-10"/>
-    <button type="button" data-hero-previous aria-label="@Data.PreviousLabel" class="@HeroArrowClass left-4">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
-    </button>
-    <button type="button" data-hero-next aria-label="@Data.NextLabel" class="@HeroArrowClass right-4">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
-    </button>
-    <div class="absolute bottom-6 left-1/2 z-20 flex -translate-x-1/2 gap-1 rounded-full bg-surface/85 px-2 shadow-sm">
+@if (_slides.Count > 0)
+{
+    <unayka-carousel class="group/swipe relative block h-[78vh] min-h-[32rem] cursor-grab touch-pan-y select-none overflow-hidden bg-surface-alt active:cursor-grabbing">
         @foreach (var slide in _slides)
         {
-            <button type="button" data-bullet aria-label="@slide.Eyebrow" class="group/bullet flex h-11 cursor-pointer items-center px-1.5">
-                <span class="block h-2.5 w-2.5 rounded-full bg-accent-strong/35 transition-all duration-500 group-hover/bullet:bg-accent-strong/60 group-aria-[current=true]/bullet:w-8 group-aria-[current=true]/bullet:bg-accent-strong"></span>
-            </button>
+            <div data-slide class="@SlideClass" data-active="@slide.ActiveMarker">
+                <img src="@slide.ImageUrl" alt="" class="absolute inset-0 -z-20 h-full w-full scale-105 object-cover transition-transform duration-[6000ms] ease-out group-data-[active]:scale-100"/>
+                <div class="absolute inset-0 -z-10 bg-gradient-to-r from-surface via-surface/80 to-surface/10"></div>
+                <div class="container-page flex h-full items-center">
+                    <div class="max-w-xl translate-y-4 transition duration-700 group-data-[active]:translate-y-0">
+                        <p class="font-script text-3xl text-accent md:text-4xl">@Text(slide.Eyebrow)</p>
+                        <h1 class="mt-2 text-5xl leading-[1.05] md:text-6xl">@Text(slide.Title)</h1>
+                        <p class="mt-5 text-lg text-ink">@Text(slide.Body)</p>
+                        @if (slide.HasAction)
+                        {
+                            <a href="@slide.ActionUrl" class="btn-primary mt-8">@Text(slide.ActionLabel)</a>
+                        }
+                    </div>
+                </div>
+            </div>
         }
-    </div>
-</unayka-carousel>
+        <div aria-hidden="true" class="pointer-events-none absolute bottom-24 right-6 z-20 flex opacity-0 transition-opacity duration-500 animate-swipe-hint group-hover/swipe:animate-none group-hover/swipe:opacity-100 motion-reduce:hidden md:right-10">
+            <span class="flex h-14 w-14 items-center justify-center rounded-full bg-surface/90 text-2xl text-accent-strong shadow-lg"><i class="bi bi-arrow-left-right animate-swipe-nudge"></i></span>
+        </div>
+        <button type="button" data-hero-previous aria-label="@PreviousLabel" class="@HeroArrowClass left-4"><i class="bi bi-chevron-left"></i></button>
+        <button type="button" data-hero-next aria-label="@NextLabel" class="@HeroArrowClass right-4"><i class="bi bi-chevron-right"></i></button>
+        <div class="absolute bottom-6 left-1/2 z-20 flex -translate-x-1/2 gap-1 rounded-full bg-surface/85 px-2 shadow-sm">
+            @foreach (var slide in _slides)
+            {
+                <button type="button" data-bullet aria-label="@slide.Eyebrow" class="group/bullet flex h-11 cursor-pointer items-center px-1.5">
+                    <span class="block h-2.5 w-2.5 rounded-full bg-accent-strong/35 transition-all duration-500 group-hover/bullet:bg-accent-strong/60 group-aria-[current=true]/bullet:w-8 group-aria-[current=true]/bullet:bg-accent-strong"></span>
+                </button>
+            }
+        </div>
+    </unayka-carousel>
+}
 
 @foreach (var row in _rows)
 {
-    <ProductRowSection Eyebrow="@row.Eyebrow" Title="@row.Title" Subtitle="@row.Subtitle" Url="@row.Url" MoreLabel="@Data.MoreLabel" Items="row.Items" Tinted="row.Tinted"/>
+    <section class="@row.SectionClass">
+        <div class="container-page py-16 md:py-20">
+            <div class="flex items-end justify-between gap-6">
+                <div>
+                    <p class="font-script text-2xl text-accent">@Text(row.Eyebrow)</p>
+                    <h2 class="font-serif text-3xl leading-tight text-accent-strong md:text-4xl">@Text(row.Title)</h2>
+                    <p class="mt-3 max-w-2xl text-muted">@Text(row.Subtitle)</p>
+                </div>
+                <a href="@row.Url" class="hidden shrink-0 text-base text-accent-strong underline-offset-4 hover:text-accent hover:underline md:inline">@Text(MoreLabel)</a>
+            </div>
+            <div class="mt-10">
+                <ProductRail Items="row.Items"/>
+            </div>
+            <div class="mt-8 text-center md:hidden">
+                <a href="@row.Url" class="btn-outline">@Text(MoreLabel)</a>
+            </div>
+        </div>
+    </section>
 }
 
-<section id="como-comprar" class="container-page py-16 md:py-20">
-    <SectionHeading Eyebrow="@Data.Steps.Eyebrow" Title="@Data.Steps.Title" Centered="true"/>
-    <ol class="mt-12 grid gap-6 md:grid-cols-3">
-        @foreach (var step in _steps)
-        {
-            <li class="rounded-3xl bg-surface-alt p-8 text-center">
-                <p class="font-script text-4xl text-accent">@Text(step.Number)</p>
-                <h3 class="mt-2 text-2xl">@Text(step.Title)</h3>
-                <p class="mt-3 text-muted">@Text(step.Text)</p>
-            </li>
-        }
-    </ol>
-</section>
-
-<section class="bg-success-soft">
-    <div class="container-page grid items-center gap-10 py-16 md:grid-cols-2 md:gap-16 md:py-20">
-        <img src="@_storyUrl" alt="@Data.Story.ImageAlt" loading="lazy" class="aspect-[4/5] w-full rounded-3xl object-cover"/>
-        <div>
-            <SectionHeading Eyebrow="@Data.Story.Eyebrow" Title="@Data.Story.Title"/>
-            @foreach (var paragraph in Data.Story.Paragraphs)
+@if (_steps.Count > 0)
+{
+    <section id="como-comprar" class="container-page py-16 md:py-20">
+        <div class="text-center">
+            <p class="font-script text-2xl text-accent">@Text(_stepsHeading.Eyebrow)</p>
+            <h2 class="font-serif text-3xl leading-tight text-accent-strong md:text-4xl">@Text(_stepsHeading.Title)</h2>
+        </div>
+        <ol class="mt-12 grid gap-6 md:grid-cols-3">
+            @foreach (var step in _steps)
             {
-                <p class="mt-6 text-lg leading-relaxed text-ink">@Text(paragraph)</p>
+                <li class="rounded-3xl bg-surface-alt p-8 text-center">
+                    <i class="@step.Icon text-4xl text-accent"></i>
+                    <h3 class="mt-3 text-2xl">@Text(step.Title)</h3>
+                    <p class="mt-3 text-muted">@Text(step.Body)</p>
+                </li>
             }
-            <a href="@_aboutUrl" class="btn-outline mt-10">@Text(Data.Story.ActionLabel)</a>
-        </div>
-    </div>
-</section>
+        </ol>
+    </section>
+}
 
-<section class="container-page py-16 md:py-20">
-    <div class="flex flex-col items-center gap-6 rounded-3xl border border-border bg-surface p-8 text-center md:flex-row md:justify-between md:p-12 md:text-left">
-        <div>
-            <p class="font-script text-3xl text-accent">@Text(Data.Contact.Eyebrow)</p>
-            <h2 class="mt-1 text-3xl md:text-4xl">@Text(Data.Contact.Title)</h2>
-            <p class="mt-3 max-w-lg text-muted">@Text(Data.Contact.Text)</p>
+@if (_hasContact)
+{
+    <section class="container-page py-16 md:py-20">
+        <div class="flex flex-col items-center gap-6 rounded-3xl border border-border bg-surface p-8 text-center md:flex-row md:justify-between md:p-12 md:text-left">
+            <div>
+                <p class="font-script text-3xl text-accent">@Text(_contact.Eyebrow)</p>
+                <h2 class="mt-1 text-3xl md:text-4xl">@Text(_contact.Title)</h2>
+                <p class="mt-3 max-w-lg text-muted">@Text(_contact.Body)</p>
+            </div>
+            <a href="@_contactUrl" class="btn-primary shrink-0">@Text(_contact.ActionLabel)</a>
         </div>
-        <a href="@_contactUrl" class="btn-primary shrink-0">@Text(Data.Contact.ActionLabel)</a>
-    </div>
-</section>
+    </section>
+}
 
 @code {
     private const int RowItemCount = 8;
-    private const string AboutPath = "/about";
-    private const string ContactPath = "/contacto";
+    private const string MoreLabel = "Ver mais";
+    private const string PreviousLabel = "Imagem anterior";
+    private const string NextLabel = "Imagem seguinte";
+    private const string PlainSection = "";
+    private const string TintedSection = "bg-surface-alt";
+    private const string DefaultStepIcon = "bi bi-check2-circle";
     private const string SlideClass = "group absolute inset-0 isolate opacity-0 transition-opacity duration-1000 ease-in-out data-[previous]:opacity-100 data-[active]:z-10 data-[active]:opacity-100";
+    private const string HeroArrowClass = "absolute top-1/2 z-20 hidden h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full bg-surface/85 text-xl text-accent-strong opacity-0 shadow-md transition hover:scale-110 hover:bg-accent-strong hover:text-surface focus-visible:opacity-100 group-hover/swipe:opacity-100 md:flex";
 
-    private const string HeroArrowClass = "absolute top-1/2 z-20 hidden h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full bg-surface/85 text-accent-strong opacity-0 shadow-md transition hover:scale-110 hover:bg-accent-strong hover:text-surface focus-visible:opacity-100 group-hover/swipe:opacity-100 md:flex";
-
-    private sealed record Slide(string? ActiveMarker, string Eyebrow, string Title, string Text, string ActionLabel, string Url, string ImageUrl);
-
-    private sealed record Row(string Eyebrow, string Title, string Subtitle, string Url, bool Tinted, IReadOnlyList<ProductCardModel> Items);
-
-    private sealed record Step(string Number, string Title, string Text);
-
-    private static readonly
-        (
-        (string Eyebrow, string Title, string Text, string ActionLabel)[] Slides,
-        string MoreLabel,
-        string PreviousLabel,
-        string NextLabel,
-        (string Eyebrow, string Title, string Subtitle) Featured,
-        string SectionEyebrow,
-        (string Eyebrow, string Title, (string Title, string Text)[] Items) Steps,
-        (string Eyebrow, string Title, string[] Paragraphs, string ActionLabel, string ImageAlt) Story,
-        (string Eyebrow, string Title, string Text, string ActionLabel) Contact,
-        (string Title, string Description) Seo,
-        string StoreDescription,
-        string[] OpeningHours) Data = (
-        [
-            ("Chás naturais", "Chás de plantas, para todos os dias", "Folhas e flores secas ao sol, com o sabor de sempre. O café também está cá.", "Ver chás"),
-            ("Cosméticos naturais", "Cuidar da pele com o que a terra dá", "Pomadas, cremes e óleos de manteigas e plantas naturais.", "Ver cosméticos"),
-            ("Compra fácil", "Encomende do telemóvel em poucos passos", "Pague com M-Pesa, e-Mola, mKesh ou cartão e levante na loja ou receba em casa.", "Ir à loja"),
-        ],
-        "Ver mais",
-        "Imagem anterior",
-        "Imagem seguinte",
-        ("Os favoritos da casa", "Destaques", "Os produtos que os nossos clientes mais procuram."),
-        "Da nossa loja",
-        (
-            "Simples",
-            "Como funciona",
-            [
-                ("Escolha", "Junte ao carrinho os produtos de que gosta, com um toque."),
-                ("Pague", "Pague com M-Pesa, e-Mola, mKesh ou cartão Visa e Mastercard."),
-                ("Receba", "Levante na loja quando estiver pronto ou receba em casa, em Maputo."),
-            ]),
-        (
-            "Ingredientes naturais",
-            "Plantas, folhas e manteigas, sem segredos",
-            [
-                "Os nossos chás são feitos de folhas, flores e raízes secas ao sol, sem aromas artificiais.",
-                "Os cosméticos usam manteigas e óleos naturais, como a moringa e o karité. Em cada produto mostramos a composição completa.",
-            ],
-            "Conhecer a Unayka",
-            "Folhas de chá e plantas naturais"),
-        ("Fale connosco", "Tem alguma dúvida?", "Ajudamos a escolher o chá ou o cosmético certo para si.", "Contactar"),
-        ("Unayka | Chás e cosméticos naturais", "Loja online de chás e cosméticos naturais em Maputo. Encomende, pague com M-Pesa, e-Mola, mKesh ou cartão e levante na loja ou receba em casa."),
-        "Loja online de chás e cosméticos naturais em Maputo.",
-        ["Mo-Fr 07:30-19:00", "Sa 08:00-17:00", "Su 09:00-14:00"]);
-
-    private static readonly string[] SlideImages = [SiteImages.TeaBannerUrl, SiteImages.CosmeticsBannerUrl, SiteImages.HeroUrl];
-
-    private static readonly string?[] SlideSectionSlugs = [SectionSlugs.Teas, SectionSlugs.Cosmetics, null];
-
-    private static readonly string[] SlideUrls = [StoreUrls.Section(SectionSlugs.Teas), StoreUrls.Section(SectionSlugs.Cosmetics), StoreUrls.Shop];
-
-    private List<Slide> _slides = [];
-    private List<Row> _rows = [];
-    private List<Step> _steps = [];
-    private string _structuredData = string.Empty;
-    private string _storyUrl = string.Empty;
-    private string _aboutUrl = string.Empty;
+    private List<(string? ActiveMarker, string Eyebrow, string Title, string Body, string ImageUrl, string ActionLabel, string ActionUrl, bool HasAction)> _slides = [];
+    private List<(string SectionClass, string Eyebrow, string Title, string Subtitle, string Url, IReadOnlyList<ProductCardModel> Items)> _rows = [];
+    private List<(string Icon, string Title, string Body)> _steps = [];
+    private SiteBlockView _seo = new SitePage([]).One(SitePlacements.Seo);
+    private SiteBlockView _stepsHeading = new SitePage([]).One(SitePlacements.Steps);
+    private SiteBlockView _contact = new SitePage([]).One(SitePlacements.Contact);
+    private bool _hasContact;
     private string _contactUrl = string.Empty;
+    private string _structuredData = string.Empty;
 
     protected override async Task OnInitializedAsync()
     {
-        var sections = await Catalog.SectionsAsync();
-        var activeSlugs = sections.Select(section => section.Slug).ToHashSet();
-        _slides = Data.Slides
-            .Select((slide, index) => (Slide: slide, Index: index))
-            .Where(entry => SlideSectionSlugs[entry.Index] is not { } slug || activeSlugs.Contains(slug))
-            .Select((entry, position) => new Slide(position == 0 ? string.Empty : null, entry.Slide.Eyebrow, entry.Slide.Title, entry.Slide.Text, entry.Slide.ActionLabel, ToUrl(SlideUrls[entry.Index]), ToUrl(SlideImages[entry.Index])))
+        var page = await Site.PageAsync(SitePages.Home);
+        var shared = await Site.PageAsync(SitePages.Shared);
+        _seo = page.One(SitePlacements.Seo);
+        _slides = page.Many(SitePlacements.Hero)
+            .Select((slide, index) => (index == 0 ? string.Empty : null, slide.Eyebrow, slide.Title, slide.Body, ToUrl(slide.ImageUrl), slide.ActionLabel, ToUrl(slide.ActionUrl), slide.ActionLabel.Length > 0))
             .ToList();
-        var sectionRows = new List<Row>();
-        foreach (var section in sections)
+
+        var featured = page.One(SitePlacements.Featured);
+        var rows = new List<(string Eyebrow, string Title, string Subtitle, string Url, IReadOnlyList<ProductCardModel> Items)>
         {
-            sectionRows.Add(new Row(Data.SectionEyebrow, section.Name, section.Description, StoreUrls.Section(section.Slug), sectionRows.Count % 2 == 0, await Catalog.BySectionAsync(section.Slug, RowItemCount)));
+            (featured.Eyebrow, featured.Title, featured.Body, ToUrl(StoreUrls.Shop), await Catalog.FeaturedAsync(RowItemCount)),
+        };
+        var sectionEyebrow = page.One(SitePlacements.SectionRow).Eyebrow;
+        foreach (var section in await Catalog.SectionsAsync())
+        {
+            rows.Add((sectionEyebrow, section.Name, section.Description, ToUrl(StoreUrls.Section(section.Slug)), await Catalog.BySectionAsync(section.Slug, RowItemCount)));
         }
 
-        _rows = [new Row(Data.Featured.Eyebrow, Data.Featured.Title, Data.Featured.Subtitle, StoreUrls.Shop, false, await Catalog.FeaturedAsync(RowItemCount)), .. sectionRows.Where(row => row.Items.Count > 0)];
-        _steps = Data.Steps.Items.Select((step, index) => new Step((index + 1).ToString(System.Globalization.CultureInfo.InvariantCulture), step.Title, step.Text)).ToList();
-        _storyUrl = ToUrl(SiteImages.StoryUrl);
-        _aboutUrl = ToUrl(AboutPath);
-        _contactUrl = ToUrl(ContactPath);
-        _structuredData = StoreStructuredData.Store(StoreStructuredData.Root(Navigation.BaseUri), SiteImages.HeroUrl, Data.StoreDescription, Data.OpeningHours);
+        _rows = rows.Where(row => row.Items.Count > 0)
+            .Select((row, index) => (index % 2 == 0 ? PlainSection : TintedSection, row.Eyebrow, row.Title, row.Subtitle, row.Url, row.Items))
+            .ToList();
+        _stepsHeading = page.One(SitePlacements.Steps);
+        _steps = page.Many(SitePlacements.Step).Select(step => (step.Icon.Length > 0 ? $"bi {step.Icon}" : DefaultStepIcon, step.Title, step.Body)).ToList();
+        _contact = page.One(SitePlacements.Contact);
+        _hasContact = _contact.Title.Length > 0;
+        _contactUrl = ToUrl(_contact.ActionUrl);
+        _structuredData = await StoreJsonAsync(shared.One(SitePlacements.Brand));
+    }
+
+    private async Task<string> StoreJsonAsync(SiteBlockView brand)
+    {
+        var root = (string.IsNullOrEmpty(AppEnvConfig.PublicBaseUrl) ? Navigation.BaseUri : AppEnvConfig.PublicBaseUrl).TrimEnd('/');
+        var location = (await Locations.ActiveAsync()).FirstOrDefault();
+        var data = new Dictionary<string, object>
+        {
+            ["@context"] = "https://schema.org",
+            ["@type"] = "Store",
+            ["name"] = brand.Title,
+            ["description"] = _seo.Body,
+            ["url"] = root + "/",
+            ["image"] = brand.ImageUrl,
+            ["currenciesAccepted"] = "MZN",
+        };
+        if (location is not null)
+        {
+            data["openingHours"] = location.OpeningHours;
+            data["address"] = new Dictionary<string, object>
+            {
+                ["@type"] = "PostalAddress",
+                ["streetAddress"] = location.Address,
+                ["addressLocality"] = location.City,
+                ["addressCountry"] = "MZ",
+            };
+        }
+
+        return JsonSerializer.Serialize(data);
     }
 }

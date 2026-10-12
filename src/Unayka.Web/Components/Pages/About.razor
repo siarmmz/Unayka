@@ -1,56 +1,75 @@
 @page "/about"
+@inject ISiteContent Site
 
-<SeoComponent Title="@Data.Seo.Title" Description="@Data.Seo.Description"/>
+<SeoComponent Title="@_seo.Title" Description="@_seo.Body"/>
 
-<PageHero Title="@Data.Title" Eyebrow="@Data.Eyebrow" Subtitle="@Data.Subtitle" ImageUrl="@Data.HeroImage"/>
-
-<section class="container-page grid items-center gap-12 py-20 lg:grid-cols-2">
-    <img src="@StoryImage" alt="@Data.StoryAlt" loading="lazy" class="aspect-[4/5] w-full rounded-3xl object-cover"/>
-    <div class="space-y-6">
-        <SectionHeading Eyebrow="@Data.StoryEyebrow" Title="@Data.StoryTitle"/>
-        @foreach (var paragraph in Data.Paragraphs)
-        {
-            <p class="text-lg leading-relaxed text-muted">@Text(paragraph)</p>
-        }
+<section class="relative isolate overflow-hidden bg-surface-alt">
+    <img src="@_heroImage" alt="" class="absolute inset-0 -z-20 h-full w-full object-cover"/>
+    <div class="absolute inset-0 -z-10 bg-gradient-to-r from-surface via-surface/85 to-surface/30"></div>
+    <div class="container-page py-20 md:py-28">
+        <p class="font-script text-3xl text-accent">@Text(_hero.Eyebrow)</p>
+        <h1 class="max-w-2xl font-serif text-4xl leading-tight text-accent-strong md:text-6xl">@Text(_hero.Title)</h1>
+        <p class="mt-5 max-w-xl text-lg text-ink">@Text(_hero.Body)</p>
     </div>
 </section>
 
-<section class="bg-surface-alt py-20">
-    <div class="container-page">
-        <SectionHeading Title="@Data.ValuesTitle" Centered="true"/>
-        <div class="mt-12 grid gap-6 md:grid-cols-3">
-            @foreach (var value in Data.Values)
+@if (_story.Title.Length > 0)
+{
+    <section class="container-page grid items-center gap-12 py-20 lg:grid-cols-2">
+        <img src="@_storyImage" alt="@_story.Title" loading="lazy" class="aspect-[4/5] w-full rounded-3xl object-cover"/>
+        <div class="space-y-6">
+            <p class="font-script text-2xl text-accent">@Text(_story.Eyebrow)</p>
+            <h2 class="font-serif text-3xl leading-tight text-accent-strong md:text-4xl">@Text(_story.Title)</h2>
+            @foreach (var paragraph in _paragraphs)
             {
-                <div class="rounded-3xl bg-surface p-8">
-                    <h3 class="font-serif text-2xl">@Text(value.Title)</h3>
-                    <p class="mt-3 text-muted">@Text(value.Description)</p>
-                </div>
+                <p class="text-lg leading-relaxed text-muted">@Text(paragraph)</p>
             }
         </div>
-    </div>
-</section>
+    </section>
+}
+
+@if (_values.Count > 0)
+{
+    <section class="bg-surface-alt py-20">
+        <div class="container-page">
+            <h2 class="text-center font-serif text-3xl leading-tight text-accent-strong md:text-4xl">@Text(_valuesHeading.Title)</h2>
+            <div class="mt-12 grid gap-6 md:grid-cols-3">
+                @foreach (var value in _values)
+                {
+                    <div class="rounded-3xl bg-surface p-8">
+                        <i class="@value.Icon text-3xl text-accent"></i>
+                        <h3 class="mt-3 font-serif text-2xl">@Text(value.Title)</h3>
+                        <p class="mt-3 text-muted">@Text(value.Body)</p>
+                    </div>
+                }
+            </div>
+        </div>
+    </section>
+}
 
 @code {
-    private static readonly string StoryImage = ToUrl(SiteImages.StoryUrl);
+    private const string DefaultValueIcon = "bi bi-flower1";
+    private static readonly string[] ParagraphSeparators = ["\r\n\r\n", "\n\n"];
 
-    private static readonly (string Title, string Eyebrow, string Subtitle, string HeroImage, string StoryEyebrow, string StoryTitle, string StoryAlt, string[] Paragraphs, string ValuesTitle, (string Title, string Description)[] Values, (string Title, string Description) Seo) Data = (
-        "Sobre a Unayka",
-        "A nossa história",
-        "Chás e cosméticos naturais, escolhidos com cuidado e entregues até si.",
-        SiteImages.AboutUrl,
-        "Da planta até si",
-        "Natural, simples e perto de si",
-        "Folhas de chá e plantas naturais",
-        [
-            "A Unayka é uma loja de chás e cosméticos naturais. Escolhemos plantas, folhas, manteigas e óleos com origem clara e pouca transformação.",
-            "Compre online em poucos passos, pague com a sua carteira móvel e levante na loja ou receba em casa, em Maputo.",
-        ],
-        "O que nos guia",
-        [
-            ("Ingredientes claros", "Mostramos a tabela nutricional dos chás e a composição dos cosméticos, sem letras pequenas."),
-            ("Natural", "Plantas e matérias naturais, sem ingredientes escondidos."),
-            ("Perto de si", "Peça online, levante na loja ou receba em casa em Maputo."),
-        ],
-        ("Sobre | Unayka", "Conheça a Unayka, loja online de chás e cosméticos naturais em Maputo.")
-    );
+    private SiteBlockView _seo = new SitePage([]).One(SitePlacements.Seo);
+    private SiteBlockView _hero = new SitePage([]).One(SitePlacements.Hero);
+    private SiteBlockView _story = new SitePage([]).One(SitePlacements.Story);
+    private SiteBlockView _valuesHeading = new SitePage([]).One(SitePlacements.Values);
+    private string _heroImage = string.Empty;
+    private string _storyImage = string.Empty;
+    private string[] _paragraphs = [];
+    private List<(string Icon, string Title, string Body)> _values = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        var page = await Site.PageAsync(SitePages.About);
+        _seo = page.One(SitePlacements.Seo);
+        _hero = page.One(SitePlacements.Hero);
+        _heroImage = ToUrl(_hero.ImageUrl);
+        _story = page.One(SitePlacements.Story);
+        _storyImage = ToUrl(_story.ImageUrl);
+        _paragraphs = _story.Body.Split(ParagraphSeparators, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        _valuesHeading = page.One(SitePlacements.Values);
+        _values = page.Many(SitePlacements.Value).Select(value => (value.Icon.Length > 0 ? $"bi {value.Icon}" : DefaultValueIcon, value.Title, value.Body)).ToList();
+    }
 }

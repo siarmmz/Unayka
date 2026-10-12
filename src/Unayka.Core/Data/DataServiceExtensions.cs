@@ -4,7 +4,6 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Npgsql;
 using Unayka.Core.Audit;
 using Unayka.Core.Configuration;
-using Unayka.Core.Data.Seed;
 
 namespace Unayka.Core.Data;
 
@@ -24,7 +23,6 @@ public static class DataServiceExtensions
         await using var scope = services.CreateAsyncScope();
         var database = scope.ServiceProvider.GetRequiredService<UnaykaDbContext>();
         await MigrateAsync(database);
-        await DatabaseSeeder.SeedAsync(database, SeedOptions.FromEnvironment(), scope.ServiceProvider.GetRequiredService<TimeProvider>());
     }
 
     private static async Task MigrateAsync(UnaykaDbContext database)

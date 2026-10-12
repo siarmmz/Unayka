@@ -1,44 +1,97 @@
 @page "/pedido/{Number}"
+@using System.Globalization
 @using Microsoft.AspNetCore.DataProtection
 @using Unayka.Web.Components.Checkout
-@using Unayka.Web.Endpoints.Cart
-@using Unayka.Web.Endpoints.Checkout
+@using Unayka.Web.Endpoints
 @inject IOrderQueries Orders
 @inject IDataProtectionProvider Protection
 
-<SeoComponent Title="@_seoTitle" Description="@Texts.SeoDescription"/>
+<SeoComponent Title="@_seoTitle" Description="@SeoDescription"/>
 
 <section class="container-page py-12 lg:py-20">
     @if (_order is null)
     {
-        <EmptyState Title="@Texts.NotFoundTitle" Message="@Texts.NotFoundMessage" ActionLabel="@Texts.NotFoundAction" ActionUrl="@Texts.ShopUrl"/>
+        <div class="mx-auto max-w-md rounded-3xl border border-border bg-surface-alt px-8 py-14 text-center">
+            <p class="font-script text-3xl text-accent">@Text(NotFoundTitle)</p>
+            <p class="mt-3 text-muted">@Text(NotFoundMessage)</p>
+            <a href="@ShopUrl" class="btn-primary mt-8">@Text(NotFoundAction)</a>
+        </div>
     }
 
     @if (_order is not null)
     {
-        <SectionHeading Title="@_heading" Eyebrow="@Texts.Eyebrow" Subtitle="@_subtitle"/>
+        <div>
+            <p class="font-script text-2xl text-accent">@Text(Eyebrow)</p>
+            <h1 class="font-serif text-3xl leading-tight text-accent-strong md:text-4xl">@Text(_heading)</h1>
+            <p class="mt-3 max-w-2xl text-muted">@Text(_subtitle)</p>
+        </div>
         <div class="mt-12 grid gap-12 lg:grid-cols-5">
             <div class="lg:col-span-3">
                 <OrderStatusLive Number="@Number" ViewerUserId="@_viewerUserId" @rendermode="InteractiveServer"/>
             </div>
-            <div class="lg:col-span-2">
-                <OrderSummaryCard Order="_order" ViewerUserId="@_viewerUserId"/>
+            <div class="h-fit space-y-6 rounded-3xl border border-border bg-surface-alt/60 p-8 lg:col-span-2">
+                <h2 class="font-serif text-2xl text-accent-strong">@Text(SummaryTitle)</h2>
+                @foreach (var group in _groups)
+                {
+                    <section class="space-y-2">
+                        <h3 class="font-serif text-xl text-accent-strong">@Text(group.Title)</h3>
+                        <p class="text-sm text-muted">@Text(group.Detail)</p>
+                        <ul class="divide-y divide-border border-y border-border">
+                            @foreach (var row in group.Rows)
+                            {
+                                <li class="flex items-center gap-4 py-3 text-sm">
+                                    <img src="@row.ImageUrl" alt="@row.Name" class="h-14 w-12 shrink-0 rounded-lg bg-surface-alt object-cover"/>
+                                    <div class="min-w-0 flex-1 space-y-1">
+                                        <a href="@row.ProductUrl" class="block text-accent-strong hover:text-accent">@Text(row.Name)</a>
+                                        <p class="text-muted">@Text(row.Quantity)</p>
+                                    </div>
+                                    <div class="flex shrink-0 flex-col items-end gap-2">
+                                        <span>@Text(row.Total)</span>
+                                        @if (row.DownloadUrl is not null)
+                                        {
+                                            <a href="@row.DownloadUrl" class="btn-outline min-h-10 px-4 py-1.5 text-sm"><i class="bi bi-download"></i>@Text(DownloadButton)</a>
+                                        }
+                                    </div>
+                                </li>
+                            }
+                        </ul>
+                    </section>
+                }
+                <dl class="space-y-3 text-sm">
+                    @foreach (var total in _totals)
+                    {
+                        <div class="@total.CssClass"><dt>@Text(total.Label)</dt><dd>@Text(total.Value)</dd></div>
+                    }
+                </dl>
+                @if (_notes is not null)
+                {
+                    <p class="border-t border-border pt-5 text-sm text-muted">@Text(_notes)</p>
+                }
             </div>
         </div>
     }
 </section>
 
 @code {
-    private static readonly (string SeoDescription, string NotFoundTitle, string NotFoundMessage, string NotFoundAction, string ShopUrl, string Eyebrow, string HeadingTemplate, string SubtitleTemplate, string SeoTitleTemplate) Texts = (
-        "Acompanhe o estado do seu pedido e do pagamento.",
-        "Pedido não encontrado",
-        "Não encontrámos este pedido neste dispositivo. Se comprou com uma conta, inicie sessão.",
-        "Ver a loja",
-        StoreUrls.Shop,
-        "O seu pedido",
-        "Pedido {0}",
-        "Feito a {0}",
-        "Pedido {0} | Unayka");
+    private const string SeoDescription = "Acompanhe o estado do seu pedido e do pagamento.";
+    private const string NotFoundTitle = "Pedido não encontrado";
+    private const string NotFoundMessage = "Não encontrámos este pedido neste dispositivo. Se comprou com uma conta, inicie sessão.";
+    private const string NotFoundAction = "Ver a loja";
+    private const string Eyebrow = "O seu pedido";
+    private const string SummaryTitle = "Resumo do pedido";
+    private const string PickupTitlePrefix = "Levantar em ";
+    private const string PickupFallbackTitle = "Levantamento na loja";
+    private const string DigitalTitle = "Produtos digitais";
+    private const string DigitalDetail = "Sem levantamento. Descarregue na sua conta.";
+    private const string DownloadButton = "Descarregar";
+    private const string SubtotalLabel = "Subtotal";
+    private const string DiscountPrefix = "Desconto ";
+    private const string TotalLabel = "Total";
+    private const string NotesPrefix = "Notas: ";
+    private const string PlainRowClass = "flex justify-between text-muted";
+    private const string TotalRowClass = "flex justify-between border-t border-border pt-4 font-serif text-xl text-accent-strong";
+    private static readonly string ShopUrl = ToUrl(StoreUrls.Shop);
+    private static readonly string[] StaffRoles = [nameof(UserRole.Cashier), nameof(UserRole.Manager), nameof(UserRole.Administrator)];
 
     [CascadingParameter]
     private HttpContext? HttpContext { get; set; }
@@ -51,14 +104,16 @@
     private string _seoTitle = string.Empty;
     private string _heading = string.Empty;
     private string _subtitle = string.Empty;
+    private string? _notes;
+    private List<(string Title, string Detail, List<(string Name, string ProductUrl, string ImageUrl, string Quantity, string Total, string? DownloadUrl)> Rows)> _groups = [];
+    private List<(string Label, string Value, string CssClass)> _totals = [];
 
     protected override async Task OnInitializedAsync()
     {
         var order = await Orders.GetByNumberAsync(Number);
-        _seoTitle = string.Format(System.Globalization.CultureInfo.InvariantCulture, Texts.SeoTitleTemplate, Number);
+        _seoTitle = $"Pedido {Number} | Unayka";
         if (order is null || HttpContext is null || !CanView(order, HttpContext))
         {
-            _order = null;
             if (HttpContext is not null)
             {
                 HttpContext.Response.StatusCode = StatusCodes.Status404NotFound;
@@ -69,13 +124,42 @@
 
         _order = order;
         _viewerUserId = CartCookies.ReadUserId(HttpContext.User);
-        _heading = string.Format(System.Globalization.CultureInfo.InvariantCulture, Texts.HeadingTemplate, order.Number);
-        _subtitle = string.Format(System.Globalization.CultureInfo.InvariantCulture, Texts.SubtitleTemplate, FormatDate(order.CreatedAt));
+        _heading = $"Pedido {order.Number}";
+        _subtitle = $"Feito a {FormatDate(order.CreatedAt)}";
+        var allowDownloads = _viewerUserId is not null && order.UserId == _viewerUserId && OrderPayments.IsPaid(order.Status);
+        _groups = order.Lines
+            .Where(line => !line.IsDigital)
+            .GroupBy(line => line.LocationName)
+            .OrderBy(group => group.Key, StringComparer.Ordinal)
+            .Select(group => (group.Key is null ? PickupFallbackTitle : PickupTitlePrefix + group.Key, group.First().LocationAddress ?? string.Empty, group.Select(line => ToRow(line, allowDownloads)).ToList()))
+            .ToList();
+        var digital = order.Lines.Where(line => line.IsDigital).Select(line => ToRow(line, allowDownloads)).ToList();
+        if (digital.Count > 0)
+        {
+            _groups.Add((DigitalTitle, DigitalDetail, digital));
+        }
+
+        _totals = [(SubtotalLabel, FormatMoney(order.SubtotalMinor), PlainRowClass)];
+        if (order.DiscountMinor > 0)
+        {
+            _totals.Add((DiscountPrefix + order.CouponCode, "-" + FormatMoney(order.DiscountMinor), PlainRowClass));
+        }
+
+        _totals.Add((TotalLabel, FormatMoney(order.TotalMinor), TotalRowClass));
+        _notes = string.IsNullOrWhiteSpace(order.Notes) ? null : NotesPrefix + order.Notes;
     }
+
+    private static (string Name, string ProductUrl, string ImageUrl, string Quantity, string Total, string? DownloadUrl) ToRow(OrderLineDetail line, bool allowDownloads) =>
+        (line.ProductName,
+            line.ProductSlug is null ? ShopUrl : ToUrl(StoreUrls.Product(line.ProductSlug)),
+            line.ImageUrl,
+            string.Create(CultureInfo.InvariantCulture, $"{line.Quantity} x {FormatMoney(line.UnitPriceMinor)}"),
+            FormatMoney(line.LineTotalMinor),
+            allowDownloads && line.IsDigital ? DownloadEndpoints.UrlFor(line.ItemId) : null);
 
     private bool CanView(OrderDetail order, HttpContext context)
     {
-        var isStaff = new[] { nameof(UserRole.Cashier), nameof(UserRole.Manager), nameof(UserRole.Administrator) }.Any(context.User.IsInRole);
+        var isStaff = StaffRoles.Any(context.User.IsInRole);
         var placed = PlacedOrdersCookie.Read(context.Request, Protection);
         return OrderAccess.CanView(order, CartCookies.ReadUserId(context.User), isStaff, placed);
     }

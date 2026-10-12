@@ -1,10 +1,13 @@
-// EF Core translates only the parameterless ToLower, which SQL databases run without culture.
-#pragma warning disable CA1304, CA1311
 using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using Unayka.Core.Configuration;
 using Unayka.Core.Data;
 
 namespace Unayka.Core.Catalog;
+
+// EF Core translates only the parameterless ToLower, which SQL databases run without culture.
+#pragma warning disable CA1304, CA1311
 
 public sealed class CatalogQuery(UnaykaDbContext db) : ICatalogQuery
 {
@@ -233,7 +236,7 @@ public sealed class CatalogQuery(UnaykaDbContext db) : ICatalogQuery
     {
         var images = product.Media
             .OrderBy(media => media.SortOrder)
-            .Select(media => new ProductImage(media.Kind, media.Url, media.Alt))
+            .Select(media => new ProductImage(media.Kind, media.Url, media.Alt, media.Credit))
             .ToList();
         var groups = product.Facts
             .OrderBy(fact => fact.SortOrder)
@@ -260,5 +263,53 @@ public sealed class CatalogQuery(UnaykaDbContext db) : ICatalogQuery
             images,
             groups,
             product.Tags.OrderBy(tag => tag.SortOrder).Select(tag => new TagSummary(tag.Slug, tag.Name)).ToList());
+    }
+}
+
+public sealed class LocalDigitalFileStore : IDigitalFileStore
+{
+    private const string DigitalFolder = "digital";
+
+    public async Task SaveAsync(string storageKey, Stream content, CancellationToken cancellationToken = default)
+    {
+        var path = PathFor(storageKey);
+        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+        await using var target = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.None);
+        await content.CopyToAsync(target, cancellationToken);
+    }
+
+    public Stream? Open(string storageKey)
+    {
+        if (string.IsNullOrEmpty(storageKey) || Path.GetFileName(storageKey) != storageKey)
+        {
+            return null;
+        }
+
+        var path = PathFor(storageKey);
+        return File.Exists(path) ? new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read) : null;
+    }
+
+    public Task DeleteAsync(string storageKey, CancellationToken cancellationToken = default)
+    {
+        var path = PathFor(storageKey);
+        if (File.Exists(path))
+        {
+            File.Delete(path);
+        }
+
+        return Task.CompletedTask;
+    }
+
+    private static string PathFor(string storageKey) =>
+        Path.Combine(AppEnvConfig.LocalUploadsPath, DigitalFolder, Path.GetFileName(storageKey));
+}
+
+public static class CatalogServiceExtensions
+{
+    public static IServiceCollection AddUnaykaCatalog(this IServiceCollection services)
+    {
+        services.AddScoped<ICatalogQuery, CatalogQuery>();
+        services.AddSingleton<IDigitalFileStore, LocalDigitalFileStore>();
+        return services;
     }
 }

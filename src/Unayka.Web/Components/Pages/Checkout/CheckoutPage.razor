@@ -2,22 +2,26 @@
 @using System.Globalization
 @using System.Security.Claims
 @using Unayka.Core.Locations
-@using Unayka.Web.Components.Checkout
-@using Unayka.Web.Endpoints.Account
-@using Unayka.Web.Endpoints.Cart
-@using Unayka.Web.Endpoints.Checkout
+@using Unayka.Web.Endpoints
 @inject ICartService Carts
 @inject ILocationDirectory Locations
+@inject IPaymentService Payments
 
 <SeoComponent Title="@Texts.SeoTitle" Description="@Texts.SeoDescription"/>
 
 <section class="container-page py-12 lg:py-20">
-    <SectionHeading Title="@Texts.Title" Eyebrow="@Texts.Eyebrow" Subtitle="@Texts.Subtitle"/>
+    <div>
+        <p class="font-script text-2xl text-accent">@Text(Texts.Eyebrow)</p>
+        <h1 class="font-serif text-3xl leading-tight text-accent-strong md:text-4xl">@Text(Texts.Title)</h1>
+        <p class="mt-3 max-w-2xl text-muted">@Text(Texts.Subtitle)</p>
+    </div>
 
     @if (_isEmpty)
     {
-        <div class="mt-12">
-            <EmptyState Title="@Texts.EmptyTitle" Message="@Texts.EmptyMessage" ActionLabel="@Texts.EmptyAction" ActionUrl="@Texts.ShopUrl"/>
+        <div class="mx-auto mt-12 max-w-md rounded-3xl border border-border bg-surface-alt px-8 py-14 text-center">
+            <p class="font-script text-3xl text-accent">@Text(Texts.EmptyTitle)</p>
+            <p class="mt-3 text-muted">@Text(Texts.EmptyMessage)</p>
+            <a href="@Texts.ShopUrl" class="btn-primary mt-8">@Text(Texts.EmptyAction)</a>
         </div>
     }
 
@@ -96,30 +100,28 @@
 
                 <fieldset class="space-y-5 rounded-3xl border border-border p-6 sm:p-8">
                     <legend class="px-2 font-serif text-2xl text-accent-strong">@Text(Texts.PaymentTitle)</legend>
+                    @if (_methodOptions.Count == 0)
+                    {
+                        <p role="alert" class="rounded-xl bg-accent-soft px-4 py-3 text-sm text-danger">@Text(Texts.NoMethods)</p>
+                    }
                     <div class="grid gap-4 sm:grid-cols-2">
                         @foreach (var option in _methodOptions)
                         {
                             <label class="flex min-h-16 cursor-pointer items-center gap-4 rounded-2xl border border-border bg-surface p-4 transition hover:border-accent has-[:checked]:border-accent-strong has-[:checked]:bg-surface-alt">
                                 <input type="radio" name="method" id="@option.Id" value="@option.Value" checked="@option.IsSelected" class="h-5 w-5 accent-accent-strong"/>
-                                <span class="flex shrink-0 gap-1.5">
-                                    @foreach (var icon in option.Icons)
-                                    {
-                                        <img src="@icon.Url" alt="@icon.Alt" width="40" height="40" class="h-10 w-10 rounded-lg border border-border bg-surface object-contain p-0.5"/>
-                                    }
-                                </span>
+                                @if (option.LogoUrl is not null)
+                                {
+                                    <img src="@option.LogoUrl" alt="@option.Title" width="40" height="40" class="h-10 w-10 shrink-0 rounded-lg border border-border bg-surface object-contain p-0.5"/>
+                                }
+                                @if (option.LogoUrl is null)
+                                {
+                                    <i class="bi @option.Icon flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-border bg-surface text-xl text-accent-strong"></i>
+                                }
                                 <span class="font-medium text-accent-strong">@Text(option.Title)</span>
                             </label>
                         }
                     </div>
-                    <div class="group-has-[#method-card:checked]:hidden">
-                        <label for="walletPhone" class="field-label">@Text(Texts.WalletLabel)</label>
-                        <div class="flex items-stretch gap-2">
-                            <span class="flex items-center rounded-xl border border-border bg-surface-alt px-4 text-sm text-muted">@Text(Texts.CountryCode)</span>
-                            <input id="walletPhone" name="walletPhone" type="tel" inputmode="numeric" pattern="@Texts.PhonePattern" placeholder="@Texts.PhonePlaceholder" value="@_wallet" class="field"/>
-                        </div>
-                        <p class="mt-2 text-xs text-muted">@Text(Texts.WalletHint)</p>
-                    </div>
-                    <p class="hidden rounded-xl bg-success-soft px-4 py-3 text-sm text-accent-strong group-has-[#method-card:checked]:block">@Text(Texts.CardHint)</p>
+                    <p class="rounded-xl bg-success-soft px-4 py-3 text-sm text-accent-strong">@Text(Texts.PaymentHint)</p>
                 </fieldset>
             </div>
 
@@ -172,12 +174,12 @@
         string EmptyTitle, string EmptyMessage, string EmptyAction, string ShopUrl, string CartUrl, string ConfirmAction,
         string ContactTitle, string NameLabel, string PhoneLabel, string CountryCode, string PhonePlaceholder, string PhonePattern, string EmailLabel,
         string PickupTitle, string PickupIntro, string DigitalTitle, string DigitalIntro, string NotesLabel, string NotesPlaceholder,
-        string PaymentTitle, string WalletLabel, string WalletHint, string CardHint,
+        string PaymentTitle, string PaymentHint, string NoMethods,
         string SummaryTitle, string SubtotalLabel, string DiscountTemplate, string TotalLabel,
         string PlaceOrderButton, string PaymentNote, string BackToCart, string QuantityTemplate, string StockTemplate,
         string SignInNeeded, string SignInLabel, string DigitalLine, string PickupLineTemplate, string ItemTemplate);
 
-    private sealed record ChoiceOption(string Id, string Value, string Title, bool IsSelected, IReadOnlyList<PaymentIcon> Icons);
+    private sealed record ChoiceOption(string Id, string Value, string Title, bool IsSelected, string? LogoUrl, string Icon);
 
     private sealed record SummaryLine(string Name, string Quantity, string Total, string ImageUrl, string Where);
 
@@ -185,7 +187,7 @@
 
     private static readonly CheckoutTexts Texts = new(
         "Finalizar compra | Unayka",
-        "Indique os seus dados, confirme a loja de levantamento e pague com M-Pesa, e-Mola, mKesh ou cartão.",
+        "Indique os seus dados, confirme a loja de levantamento e pague com a sua carteira móvel ou cartão.",
         "Quase lá",
         "Finalizar compra",
         "Uma única página, sem registos obrigatórios.",
@@ -209,9 +211,8 @@
         "Notas para o pedido (opcional)",
         "Alguma preferência ou indicação para o levantamento",
         "Pagamento",
-        "Número da carteira móvel",
-        "Vai receber um pedido de confirmação no telemóvel. Aceite com o seu PIN para concluir.",
-        "Depois de confirmar o pedido, introduza os dados do cartão Visa ou Mastercard na página segura de pagamento.",
+        "Depois de confirmar, segue para a página segura de pagamento para concluir com o meio escolhido.",
+        "Os pagamentos online não estão disponíveis de momento.",
         "Resumo do pedido",
         "Subtotal",
         "Desconto ({0})",
@@ -233,8 +234,7 @@
         [nameof(PlaceOrderOutcome.InvalidName)] = "Indique o seu nome.",
         [nameof(PlaceOrderOutcome.InvalidPhone)] = "Indique um número de telemóvel válido, com nove dígitos.",
         [nameof(PlaceOrderOutcome.InvalidEmail)] = "O email não parece válido.",
-        [nameof(PlaceOrderOutcome.InvalidWalletPhone)] = "Indique o número da carteira móvel, com nove dígitos.",
-        [nameof(PlaceOrderOutcome.InvalidPaymentMethod)] = "Escolha M-Pesa, e-Mola, mKesh ou cartão.",
+        [nameof(PlaceOrderOutcome.InvalidPaymentMethod)] = "Escolha um meio de pagamento disponível.",
         [nameof(PlaceOrderOutcome.CouponNoLongerValid)] = "O cupão já não é válido. Reveja o carrinho.",
         [nameof(PlaceOrderOutcome.SignInRequired)] = "Inicie sessão para comprar produtos digitais.",
     };
@@ -263,9 +263,6 @@
     [Parameter, SupplyParameterFromQuery(Name = CheckoutEndpoints.MethodKey)]
     public string? MethodValue { get; set; }
 
-    [Parameter, SupplyParameterFromQuery(Name = CheckoutEndpoints.WalletKey)]
-    public string? WalletValue { get; set; }
-
     private bool _isEmpty = true;
     private bool _needsSignIn;
     private string? _error;
@@ -273,7 +270,6 @@
     private string _phone = string.Empty;
     private string _email = string.Empty;
     private string _notes = string.Empty;
-    private string _wallet = string.Empty;
     private string _signInUrl = string.Empty;
     private List<ChoiceOption> _methodOptions = [];
     private List<SummaryLine> _lines = [];
@@ -296,7 +292,7 @@
 
         var locations = await Locations.ActiveAsync();
         PrepareContact(view);
-        PrepareOptions();
+        await PrepareOptionsAsync();
         PreparePickups(view, locations);
         PrepareSummary(view);
         _error = ResolveError(view);
@@ -309,16 +305,16 @@
         _phone = PhoneValue ?? user?.FindFirstValue(ClaimTypes.MobilePhone) ?? string.Empty;
         _email = EmailValue ?? user?.FindFirstValue(ClaimTypes.Email) ?? string.Empty;
         _notes = NotesValue ?? string.Empty;
-        _wallet = WalletValue ?? _phone;
         _needsSignIn = view.HasDigital && CartCookies.ReadUserId(user ?? new ClaimsPrincipal()) is null;
         _signInUrl = ToUrl($"{StoreUrls.SignIn}?{AccountEndpoints.ReturnUrlKey}={Uri.EscapeDataString(StoreUrls.Checkout)}");
     }
 
-    private void PrepareOptions()
+    private async Task PrepareOptionsAsync()
     {
-        var selected = OnlineMethods.All.FirstOrDefault(method => method.ToString() == MethodValue, OnlineMethods.All[0]);
-        _methodOptions = OnlineMethods.All
-            .Select(method => new ChoiceOption($"method-{method.ToString().ToLowerInvariant()}", method.ToString(), PaymentChoices.Label(method), method == selected, PaymentChoices.Icons(method)))
+        var options = await Payments.OnlineOptionsAsync();
+        var selected = options.FirstOrDefault(option => option.Method.ToString() == MethodValue) ?? options.FirstOrDefault();
+        _methodOptions = options
+            .Select(option => new ChoiceOption($"method-{option.Method.ToString().ToLowerInvariant()}", option.Method.ToString(), option.Label, option == selected, string.IsNullOrEmpty(option.LogoUrl) ? null : ToUrl(option.LogoUrl), option.Icon))
             .ToList();
     }
 

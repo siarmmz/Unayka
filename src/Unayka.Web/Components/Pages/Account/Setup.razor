@@ -1,0 +1,60 @@
+@page "/configurar"
+@using Unayka.Web.Endpoints
+
+<PageTitle>@PageTitle</PageTitle>
+
+<section class="flex min-h-[calc(100vh-8rem)] items-center justify-center px-4 py-14">
+    <form method="post" action="@AccountEndpoints.SetupPath" class="w-full max-w-md space-y-6 rounded-3xl border border-border bg-surface p-8 shadow-sm sm:p-10">
+        <AntiforgeryToken/>
+        <header>
+            <i class="bi bi-shield-lock text-4xl text-accent"></i>
+            <h1 class="mt-3 font-serif text-4xl text-accent-strong">@Text(Title)</h1>
+            <p class="mt-3 text-muted">@Text(Intro)</p>
+        </header>
+        @if (_error is not null)
+        {
+            <p role="alert" class="rounded-xl bg-accent-soft px-4 py-3 text-sm text-danger">@Text(_error)</p>
+        }
+        @foreach (var field in Fields)
+        {
+            <div>
+                <label for="@field.Name" class="field-label">@Text(field.Label)</label>
+                <input id="@field.Name" name="@field.Name" type="@field.Type" autocomplete="@field.Autocomplete" required class="field"/>
+            </div>
+        }
+        <button type="submit" class="btn-primary w-full">@Text(SubmitLabel)</button>
+    </form>
+</section>
+
+@code {
+    private const string PageTitle = "Configuração inicial | Unayka";
+    private const string Title = "Configuração inicial";
+    private const string Intro = "Ainda não existe nenhuma conta. Crie a conta de administração para começar a usar a loja.";
+    private const string SubmitLabel = "Criar conta e começar";
+
+    private static readonly (string Name, string Label, string Type, string Autocomplete)[] Fields =
+    [
+        ("email", "Email", "email", "username"),
+        ("emailConfirmation", "Confirmar email", "email", "off"),
+        ("password", "Palavra-passe (mínimo 10 caracteres)", "password", "new-password"),
+        ("passwordConfirmation", "Confirmar palavra-passe", "password", "new-password"),
+    ];
+
+    private static readonly Dictionary<string, string> Errors = new()
+    {
+        [nameof(SetupOutcome.InvalidEmail)] = "Indique um email válido.",
+        [nameof(SetupOutcome.EmailMismatch)] = "Os dois emails não são iguais.",
+        [nameof(SetupOutcome.PasswordTooShort)] = "A palavra-passe precisa de pelo menos 10 caracteres.",
+        [nameof(SetupOutcome.PasswordMismatch)] = "As duas palavras-passe não são iguais.",
+    };
+
+    [Parameter, SupplyParameterFromQuery(Name = "erro")]
+    public string? ErrorCode { get; set; }
+
+    private string? _error;
+
+    protected override void OnParametersSet()
+    {
+        _error = ErrorCode is not null && Errors.TryGetValue(ErrorCode, out var message) ? message : null;
+    }
+}

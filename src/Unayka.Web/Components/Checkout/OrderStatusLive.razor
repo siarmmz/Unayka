@@ -1,11 +1,11 @@
 @implements IAsyncDisposable
-@using Unayka.Web.Endpoints.Downloads
+@using Unayka.Web.Endpoints
 @inject IServiceScopeFactory ScopeFactory
 
 <div class="space-y-8 rounded-3xl border border-border p-8 sm:p-10">
     <div class="flex items-center justify-between gap-4">
         <p class="font-script text-3xl text-accent">@Text(_title)</p>
-        <StatusBadge Order="_orderStatus"/>
+        <span class="@_badgeClass">@Text(_badgeLabel)</span>
     </div>
     <p class="text-muted">@Text(_message)</p>
 
@@ -15,6 +15,10 @@
             <span class="h-3 w-3 animate-pulse rounded-full bg-accent"></span>
             <span>@Text(Texts.WaitingLabel)</span>
         </div>
+        @if (_checkoutUrl is not null)
+        {
+            <a href="@_checkoutUrl" class="btn-primary">@Text(Texts.PayNowButton)</a>
+        }
     }
 
     @if (_phase == Phase.Paid)
@@ -45,19 +49,12 @@
             <div>
                 <label for="retry-method" class="field-label">@Text(Texts.MethodLabel)</label>
                 <select id="retry-method" class="field" @bind="_retryMethod">
-                    @foreach (var option in MethodOptions)
+                    @foreach (var option in _methodOptions)
                     {
                         <option value="@option.Value">@Text(option.Label)</option>
                     }
                 </select>
             </div>
-            @if (RetryNeedsPhone)
-            {
-                <div>
-                    <label for="retry-phone" class="field-label">@Text(Texts.WalletLabel)</label>
-                    <input id="retry-phone" type="tel" inputmode="numeric" placeholder="@Texts.PhonePlaceholder" class="field" @bind="_retryPhone"/>
-                </div>
-            }
             @if (_retryError is not null)
             {
                 <p role="alert" class="text-sm text-danger">@Text(_retryError)</p>
@@ -79,16 +76,16 @@
     private sealed record LiveTexts(
         string PendingTitle, string PendingMessageTemplate, string WaitingLabel, string PaidTitle, string PaidMessage,
         string PickupNote, string DigitalNote, string DownloadButton, string ContinueShopping, string ShopUrl,
-        string FailedTitle, string FailedMessage, string FailureTemplate, string RetryTitle, string MethodLabel, string WalletLabel,
-        string PhonePlaceholder, string RetryButton, string InvalidPhone, string RetryUnavailable,
+        string FailedTitle, string FailedMessage, string FailureTemplate, string RetryTitle, string MethodLabel,
+        string RetryButton, string RetryUnavailable, string PayNowButton,
         string CancelledTitle, string CancelledMessage);
 
     private sealed record MethodOption(string Value, string Label);
 
     private static readonly LiveTexts Texts = new(
-        "Confirme o pagamento",
-        "Confirme o pagamento no seu telemóvel. Enviámos um pedido de {0} para {1}.",
-        "A aguardar a sua confirmação",
+        "Conclua o pagamento",
+        "Conclua o pagamento de {0} na página segura de pagamento. Esta página atualiza sozinha.",
+        "A aguardar a confirmação do pagamento",
         "Pagamento confirmado",
         "Obrigado pela sua compra. Já recebemos o pagamento e vamos preparar o seu pedido.",
         "Pode levantar o pedido na loja assim que o avisarmos por mensagem.",
@@ -101,15 +98,22 @@
         "Motivo: {0}.",
         "Tentar novamente",
         "Método",
-        "Número da carteira móvel",
-        "84 123 4567",
         "Pagar novamente",
-        "Indique um número de telemóvel válido, com nove dígitos.",
         "Este pedido já não aceita novas tentativas de pagamento.",
+        "Ir para o pagamento",
         "Pedido cancelado",
         "Este pedido foi cancelado. Se precisar de ajuda, fale connosco.");
 
-    private static readonly MethodOption[] MethodOptions = OnlineMethods.All.Select(method => new MethodOption(method.ToString(), PaymentChoices.Label(method))).ToArray();
+    private const string BadgeBase = "inline-flex items-center rounded-full px-3 py-1 text-xs font-medium ";
+
+    private static readonly Dictionary<StatusTone, string> ToneClasses = new()
+    {
+        [StatusTone.Neutral] = BadgeBase + "bg-surface-alt text-muted",
+        [StatusTone.Info] = BadgeBase + "bg-success-soft text-success",
+        [StatusTone.Success] = BadgeBase + "bg-success-soft text-success",
+        [StatusTone.Warning] = BadgeBase + "bg-warning-soft text-warning",
+        [StatusTone.Danger] = BadgeBase + "bg-accent-soft text-danger",
+    };
 
     private static readonly TimeSpan PollInterval = TimeSpan.FromSeconds(2);
 
@@ -125,19 +129,26 @@
 
     private readonly CancellationTokenSource _stop = new();
     private Phase _phase = Phase.Pending;
-    private OrderStatus _orderStatus = OrderStatus.AwaitingPayment;
+    private List<MethodOption> _methodOptions = [];
+    private string _badgeLabel = string.Empty;
+    private string _badgeClass = string.Empty;
+    private string? _checkoutUrl;
     private string _title = string.Empty;
     private string _message = string.Empty;
     private string _fulfillmentNote = string.Empty;
     private string _failureText = string.Empty;
     private string _retryMethod = nameof(PaymentMethod.MPesa);
-    private string _retryPhone = string.Empty;
     private string? _retryError;
-
-    private bool RetryNeedsPhone => _retryMethod != nameof(PaymentMethod.Card);
 
     protected override async Task OnInitializedAsync()
     {
+        await using (var scope = ScopeFactory.CreateAsyncScope())
+        {
+            var options = await scope.ServiceProvider.GetRequiredService<IPaymentService>().OnlineOptionsAsync();
+            _methodOptions = options.Select(option => new MethodOption(option.Method.ToString(), option.Label)).ToList();
+            _retryMethod = _methodOptions.FirstOrDefault()?.Value ?? _retryMethod;
+        }
+
         await LoadAsync();
     }
 
@@ -179,13 +190,19 @@
         await using var scope = ScopeFactory.CreateAsyncScope();
         var payments = scope.ServiceProvider.GetRequiredService<IPaymentService>();
         var method = Enum.Parse<PaymentMethod>(_retryMethod);
-        var outcome = await payments.RetryAsync(Number, method, _retryPhone);
-        _retryError = outcome switch
+        var result = await payments.RetryAsync(Number, method);
+        _retryError = result.Outcome switch
         {
-            PaymentRetryOutcome.InvalidPhone => Texts.InvalidPhone,
             PaymentRetryOutcome.NotRetryable => Texts.RetryUnavailable,
+            PaymentRetryOutcome.Failed => result.FailureReason,
             _ => null,
         };
+        if (result.CheckoutUrl is { } checkoutUrl && ToUrl(checkoutUrl) == checkoutUrl)
+        {
+            Navigation.NavigateTo(checkoutUrl, forceLoad: true);
+            return;
+        }
+
         await LoadAsync();
     }
 
@@ -203,14 +220,17 @@
     private void Apply(OrderDetail order)
     {
         var culture = System.Globalization.CultureInfo.InvariantCulture;
-        _orderStatus = order.Status;
+        var (label, tone) = StatusLabels.For(order.Status);
+        _badgeLabel = label;
+        _badgeClass = ToneClasses[tone];
+        _checkoutUrl = order.Payment?.Status == PaymentStatus.Pending && order.Payment.CheckoutUrl is { } url && ToUrl(url) == url ? url : null;
         _phase = ResolvePhase(order);
         (_title, _message) = _phase switch
         {
             Phase.Paid => (Texts.PaidTitle, Texts.PaidMessage),
             Phase.Failed => (Texts.FailedTitle, Texts.FailedMessage),
             Phase.Cancelled => (Texts.CancelledTitle, Texts.CancelledMessage),
-            _ => (Texts.PendingTitle, string.Format(culture, Texts.PendingMessageTemplate, FormatMoney(order.TotalMinor), FormatPhone(order.Payment?.Phone))),
+            _ => (Texts.PendingTitle, string.Format(culture, Texts.PendingMessageTemplate, FormatMoney(order.TotalMinor))),
         };
         var hasPickup = order.Lines.Any(line => !line.IsDigital);
         _fulfillmentNote = hasPickup ? Texts.PickupNote : Texts.DigitalNote;
@@ -218,11 +238,7 @@
             .Where(line => OrderPayments.CanDownload(order, line, ViewerUserId))
             .Select(line => new DownloadLink(line.ProductName, DownloadEndpoints.UrlFor(line.ItemId)))
             .ToList();
-        _failureText = string.Format(culture, Texts.FailureTemplate, order.Payment?.FailureReason);
-        if (string.IsNullOrEmpty(_retryPhone))
-        {
-            _retryPhone = order.Payment?.Phone ?? string.Empty;
-        }
+        _failureText = string.Format(culture, Texts.FailureTemplate, order.Payment?.FailureReason?.TrimEnd('.'));
     }
 
     private static Phase ResolvePhase(OrderDetail order)

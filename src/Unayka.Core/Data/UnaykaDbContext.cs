@@ -1,4 +1,6 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Design;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Unayka.Core.Accounts;
 using Unayka.Core.Audit;
 using Unayka.Core.Carts;
@@ -8,6 +10,7 @@ using Unayka.Core.Coupons;
 using Unayka.Core.Locations;
 using Unayka.Core.Orders;
 using Unayka.Core.Payments;
+using Unayka.Core.Site;
 
 namespace Unayka.Core.Data;
 
@@ -33,6 +36,8 @@ public sealed class UnaykaDbContext(DbContextOptions<UnaykaDbContext> options) :
     public DbSet<OrderItem> OrderItems => Set<OrderItem>();
     public DbSet<Payment> Payments => Set<Payment>();
     public DbSet<PaymentEvent> PaymentEvents => Set<PaymentEvent>();
+    public DbSet<PaymentOption> PaymentOptions => Set<PaymentOption>();
+    public DbSet<SiteBlock> SiteBlocks => Set<SiteBlock>();
     public DbSet<CashShift> CashShifts => Set<CashShift>();
     public DbSet<AuditEntry> AuditEntries => Set<AuditEntry>();
 
@@ -138,6 +143,8 @@ public sealed class UnaykaDbContext(DbContextOptions<UnaykaDbContext> options) :
             entity.HasMany(payment => payment.Events).WithOne().HasForeignKey(paymentEvent => paymentEvent.PaymentId);
         });
 
+        modelBuilder.Entity<PaymentOption>().HasIndex(option => option.Method).IsUnique();
+        modelBuilder.Entity<SiteBlock>().HasIndex(block => new { block.Page, block.Placement, block.SortOrder });
         modelBuilder.Entity<AuditEntry>().HasIndex(entry => entry.At);
     }
 
@@ -150,4 +157,16 @@ public sealed class UnaykaDbContext(DbContextOptions<UnaykaDbContext> options) :
             throw new InvalidOperationException("Audit entries are insert only and cannot be modified or deleted.");
         }
     }
+}
+
+public sealed class UtcTicksConverter() : ValueConverter<DateTimeOffset, long>(
+    value => value.UtcTicks,
+    ticks => new DateTimeOffset(ticks, TimeSpan.Zero));
+
+public sealed class DesignTimeDbContextFactory : IDesignTimeDbContextFactory<UnaykaDbContext>
+{
+    private const string DesignTimeSqlite = "Data Source=design-time.sqlite";
+
+    public UnaykaDbContext CreateDbContext(string[] args) =>
+        new(new DbContextOptionsBuilder<UnaykaDbContext>().UseSqlite(DesignTimeSqlite).Options);
 }

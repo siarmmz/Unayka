@@ -57,7 +57,6 @@ public static class AppEnvConfig
     public static string FacebookAppId => GetText("AUTH_FACEBOOK_APP_ID");
     public static string FacebookAppSecret => GetText("AUTH_FACEBOOK_APP_SECRET");
     public static string AdminBootstrapEmail => GetText("AUTH_ADMIN_BOOTSTRAP_EMAIL");
-    public static string AuthSeedStaffPassword => GetText("AUTH_SEED_STAFF_PASSWORD");
 
     public static int RateLimitLoginPerMinute => GetNumber("RATE_LIMIT_LOGIN_PER_MINUTE", DefaultLoginPerMinute);
     public static int RateLimitCheckoutPerMinute => GetNumber("RATE_LIMIT_CHECKOUT_PER_MINUTE", DefaultCheckoutPerMinute);

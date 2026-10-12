@@ -7,13 +7,9 @@ using Unayka.Core.Counter;
 using Unayka.Core.Data;
 using Unayka.Core.Locations;
 using Unayka.Core.Orders;
+using Unayka.Core.Site;
 using Unayka.Web.Components;
 using Unayka.Web.Endpoints;
-using Unayka.Web.Endpoints.Account;
-using Unayka.Web.Endpoints.Checkout;
-using Unayka.Web.Endpoints.Downloads;
-using Unayka.Web.Endpoints.Locations;
-using Unayka.Web.Endpoints.Security;
 
 DotNetEnv.Env.NoClobber().Load();
 
@@ -34,6 +30,7 @@ builder.Services.AddUnaykaCatalog();
 builder.Services.AddUnaykaCounter();
 builder.Services.AddUnaykaLocations();
 builder.Services.AddUnaykaOrders();
+builder.Services.AddUnaykaSite();
 builder.Services.AddUnaykaAdministration();
 
 var app = builder.Build();
@@ -47,6 +44,7 @@ if (!app.Environment.IsDevelopment())
 
 app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
 app.UseUnaykaSecurity(app.Environment.IsDevelopment());
+app.UseUnaykaSetupGate();
 app.UseAntiforgery();
 
 app.MapStaticAssets();
