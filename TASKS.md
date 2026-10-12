@@ -32,14 +32,16 @@ Wave 2 (four worktrees in parallel, Sonnet, split by feature folder):
 - [x] M5 Seed: tea category with three teas, moringa ointment, photos of Black women replace off brief photos.
 - [x] M6 Tests green, browser check on port 5000.
 
-### Sprint N: tea first, home vs store, lighter and simpler (requested 2026-10-12, awaiting approval)
+### Sprint N: tea first, home vs store, lighter and simpler (requested 2026-10-12, done)
 
-- [ ] N1 (O) Catalog focus: teas are the main product, cosmetics second, coffee optional. Add CategoryKind Tea; store rows become Destaques, Chás, Cosméticos naturais (coffee only inside "Ver mais").
-- [ ] N2 (S) Home distinct from /loja: hero carousel (CSS only, 3 slides), the three product rows, how it works (order, pay by wallet, pick up or delivery), natural ingredients story, contact strip.
-- [ ] N3 (S) Lighter palette: raise espresso and clay tones a step, keep high text contrast; fewer dark blocks.
-- [ ] N4 (S) Simpler UX for first time online shoppers: larger tap targets, one clear action per card ("Adicionar"), plain labels, fewer filters by default.
-- [ ] N5 (H) Copy review to Mozambican Portuguese (close to pt-PT): telemóvel, pequeno-almoço, contacto, autocarro style; remove pt-BR forms across all UI texts.
-- [ ] N6 (O) Sign in: Google sign in plus phone code. WhatsApp login is paid (Meta charges per authentication message), so it stays out; a free alternative is a one time link by email.
+- [x] N1 (O) Catalog focus: the shop sells teas (many kinds, coffee is one of them) and natural cosmetics. CategoryKind Coffee becomes Tea; coffee categories become tea subcategories; rows become Destaques, Chás (coffee included), Cosméticos naturais; /loja/cafes becomes /loja/chas.
+- [x] N2 (S) Home distinct from /loja: hero carousel (CSS only, 3 slides), the three product rows, how it works (order, pay by wallet, pick up or delivery), natural ingredients story, contact strip.
+- [x] N3 (S) Lighter palette: raise espresso and clay tones a step, keep high text contrast; fewer dark blocks.
+- [x] N4 (S) Simpler UX for first time online shoppers: larger tap targets, one clear action per card ("Adicionar"), plain labels, fewer filters by default.
+- [x] N5 (H) Copy review to Mozambican Portuguese (close to pt-PT): telemóvel, pequeno-almoço, contacto, autocarro style; remove pt-BR forms across all UI texts.
+- [x] N6 (O) Customer sign in: Google and Facebook only (both free, no cost per login). Phone code sign in is removed: SMS and WhatsApp OTP are charged per message (WhatsApp authentication templates are billed by Meta per message), so cost grows with users and can pass the 5 USD per month ceiling. No Telegram. The phone number stays only as a contact and wallet field at checkout. Staff keep email and password. Real Google and Facebook keys come from environment variables; mocked locally until configured.
+
+- [x] N7 Positioning: the shop is a modern online store of natural teas and cosmetics, not a salon; every salon reference removed from UI, CLAUDE.md (version 4) and README.
 
 Decision (2026-10-12): all images and content are provisional mocks (placeholder stock photos, nutrition table shown as an image placeholder) to be replaced by the final products later.
 
@@ -122,7 +124,6 @@ Decision (2026-10-12): all images and content are provisional mocks (placeholder
 
 - Loyalty card: later phase, after Phase 7
 - Gift vouchers: later phase, after Phase 7
-- Salon service bookings: later phase, after Phase 7
 - Table orders via QR: later phase, after Phase 7
 - Offline counter mode: later phase, after Phase 7
 - WhatsApp notifications: later phase, after Phase 7

@@ -1,27 +1,27 @@
-<footer class="mt-24 bg-espresso text-sand">
+<footer class="mt-24 border-t border-sand bg-cream text-stone">
     <div class="container-page grid gap-12 py-16 md:grid-cols-2 lg:grid-cols-6">
         <div class="lg:col-span-2">
-            <p class="font-script text-5xl text-paper">@Text(Data.BrandName)</p>
-            <p class="mt-4 max-w-xs text-sm leading-relaxed text-sand/80">@Text(Data.Tagline)</p>
-            <p class="mt-6 text-sm text-rose">@Text(Data.WalletNote)</p>
+            <p class="font-script text-5xl text-espresso">@Text(Data.BrandName)</p>
+            <p class="mt-4 max-w-xs text-sm leading-relaxed text-stone">@Text(Data.Tagline)</p>
+            <p class="mt-6 text-sm text-clay">@Text(Data.WalletNote)</p>
         </div>
 
         @foreach (var column in Data.Columns)
         {
             <div>
-                <p class="mb-4 text-xs font-medium uppercase tracking-widest text-rose">@Text(column.Title)</p>
+                <p class="mb-4 text-xs font-medium uppercase tracking-widest text-clay">@Text(column.Title)</p>
                 <ul class="space-y-3 text-sm">
                     @foreach (var link in column.Links)
                     {
-                        <li><a href="@ToUrl(link.Url)" class="text-sand/80 transition hover:text-paper">@Text(link.Label)</a></li>
+                        <li><a href="@ToUrl(link.Url)" class="text-stone transition hover:text-clay">@Text(link.Label)</a></li>
                     }
                 </ul>
             </div>
         }
 
         <div>
-            <p class="mb-4 text-xs font-medium uppercase tracking-widest text-rose">@Text(Data.ContactTitle)</p>
-            <ul class="space-y-3 text-sm text-sand/80">
+            <p class="mb-4 text-xs font-medium uppercase tracking-widest text-clay">@Text(Data.ContactTitle)</p>
+            <ul class="space-y-3 text-sm text-stone">
                 @foreach (var line in Data.ContactLines)
                 {
                     <li>@Text(line)</li>
@@ -30,15 +30,15 @@
         </div>
     </div>
 
-    <div class="border-t border-white/10">
-        <div class="container-page py-6 text-xs text-sand/60">@Text(_copyright)</div>
+    <div class="border-t border-sand">
+        <div class="container-page py-6 text-sm text-stone">@Text(_copyright)</div>
     </div>
 </footer>
 
 @code {
     private static readonly (string BrandName, string Tagline, string WalletNote, string ContactTitle, string[] ContactLines, (string Title, (string Label, string Url)[] Links)[] Columns) Data = (
         "Unayka",
-        "Cafés e cosméticos num ambiente de salão moderno, no balcão e online.",
+        "Chás e cosméticos naturais. Compre online, levante na loja ou receba em casa.",
         "Pagamento por carteira móvel: M-Pesa, e-Mola e mKesh.",
         "Contacto",
         [
@@ -49,7 +49,7 @@
             "Domingo, 9h às 14h",
         ],
         [
-            ("Loja", [("Todos os produtos", StoreUrls.AllProducts), ("Cafés", StoreUrls.Coffee), ("Cosméticos naturais e chás", StoreUrls.Cosmetics)]),
+            ("Loja", [("Todos os produtos", StoreUrls.AllProducts), ("Chás", StoreUrls.Teas), ("Cosméticos naturais", StoreUrls.Cosmetics)]),
             ("Unayka", [("Sobre nós", "/about"), ("Localização", "/location")]),
             ("Ajuda", [("Contacto", "/contact"), ("A minha conta", StoreUrls.Account), ("Carrinho", StoreUrls.Cart)]),
         ]

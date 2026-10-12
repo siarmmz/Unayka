@@ -1,4 +1,5 @@
 @page "/loja"
+@using Unayka.Web.Components.Store
 @inject ICatalogQuery Catalog
 
 <SeoComponent Title="@Data.Seo.Title" Description="@Data.Seo.Description"/>
@@ -33,42 +34,24 @@
 
 @foreach (var row in _rows)
 {
-    <section class="@row.SectionClass">
-        <div class="container-page py-16 md:py-24">
-            <div class="flex items-end justify-between gap-6">
-                <SectionHeading Eyebrow="@row.Eyebrow" Title="@row.Title" Subtitle="@row.Subtitle"/>
-                <a href="@row.Url" class="hidden shrink-0 text-sm text-espresso underline-offset-4 hover:text-clay hover:underline md:inline">@Text(Data.MoreLabel)</a>
-            </div>
-            <div class="mt-10 grid grid-cols-2 gap-x-4 gap-y-10 md:grid-cols-4 md:gap-x-6">
-                @foreach (var item in row.Items)
-                {
-                    <ProductCard Model="item"/>
-                }
-            </div>
-            <div class="mt-12 text-center">
-                <a href="@row.Url" class="btn-outline">@Text(Data.MoreLabel)</a>
-            </div>
-        </div>
-    </section>
+    <ProductRowSection Eyebrow="@row.Eyebrow" Title="@row.Title" Subtitle="@row.Subtitle" Url="@row.Url" MoreLabel="@Data.MoreLabel" Items="row.Items" Tinted="row.Tinted"/>
 }
 
 @code {
     private const int FeaturedCount = 10;
     private const int RowItemCount = 8;
-    private const string PlainSection = "";
-    private const string TintedSection = "bg-cream";
 
-    private sealed record ShowroomRow(string Eyebrow, string Title, string Subtitle, string Url, string SectionClass, IReadOnlyList<ProductCardModel> Items);
+    private sealed record ShowroomRow(string Eyebrow, string Title, string Subtitle, string Url, bool Tinted, IReadOnlyList<ProductCardModel> Items);
 
-    private static readonly (string Title, string Eyebrow, string Subtitle, string MoreLabel, (string Eyebrow, string Title) Featured, (string Eyebrow, string Title, string Subtitle) Coffee, (string Eyebrow, string Title, string Subtitle) Cosmetics, (string Title, string Description) Seo) Data = (
+    private static readonly (string Title, string Eyebrow, string Subtitle, string MoreLabel, (string Eyebrow, string Title) Featured, (string Eyebrow, string Title, string Subtitle) Teas, (string Eyebrow, string Title, string Subtitle) Cosmetics, (string Title, string Description) Seo) Data = (
         "A loja",
         "Escolhido com calma",
-        "Cafés da casa, cosméticos feitos de matérias naturais e chás de plantas. Levante na loja ou receba em Maputo.",
+        "Chás de plantas, cafés da casa e cosméticos naturais. Levante na loja ou receba em Maputo.",
         "Ver mais",
-        ("Em destaque", "Os favoritos da casa"),
-        ("Do grão à chávena", "Cafés", "Espressos, bebidas geladas e grãos para preparar em casa."),
-        ("Feito de natureza", "Cosméticos naturais e chás", "Pomadas, cremes, óleos e chás de plantas, para cuidar de dentro para fora."),
-        ("Loja | Unayka", "Cafés, cosméticos naturais e chás selecionados pela Unayka. Pague com M-Pesa, e-Mola ou mKesh e levante na loja ou receba em Maputo."));
+        ("Os favoritos da casa", "Destaques"),
+        ("Da planta à chávena", "Chás", "Chás de plantas, infusões e os nossos cafés, quentes, gelados ou para casa."),
+        ("Feito de natureza", "Cosméticos naturais", "Pomadas, cremes e óleos de manteigas e plantas naturais."),
+        ("Loja | Unayka", "Chás, cafés e cosméticos naturais selecionados pela Unayka. Pague com M-Pesa, e-Mola ou mKesh e levante na loja ou receba em Maputo."));
 
     private List<ProductCardModel> _featured = [];
     private List<ProductCardModel> _marquee = [];
@@ -82,14 +65,14 @@
         _allProductsUrl = ToUrl(StoreUrls.AllProducts);
         _rows =
         [
-            await BuildRowAsync(Data.Coffee, CategoryKind.Coffee, StoreUrls.Coffee, PlainSection),
-            await BuildRowAsync(Data.Cosmetics, CategoryKind.Cosmetic, StoreUrls.Cosmetics, TintedSection),
+            await BuildRowAsync(Data.Teas, CategoryKind.Tea, StoreUrls.Teas, false),
+            await BuildRowAsync(Data.Cosmetics, CategoryKind.Cosmetic, StoreUrls.Cosmetics, true),
         ];
     }
 
-    private async Task<ShowroomRow> BuildRowAsync((string Eyebrow, string Title, string Subtitle) text, CategoryKind kind, string url, string sectionClass)
+    private async Task<ShowroomRow> BuildRowAsync((string Eyebrow, string Title, string Subtitle) text, CategoryKind kind, string url, bool tinted)
     {
         var page = await Catalog.SearchAsync(new ProductSearch(Kind: kind, Sort: ProductSort.BestSellers));
-        return new ShowroomRow(text.Eyebrow, text.Title, text.Subtitle, ToUrl(url), sectionClass, page.Items.Take(RowItemCount).ToList());
+        return new ShowroomRow(text.Eyebrow, text.Title, text.Subtitle, url, tinted, page.Items.Take(RowItemCount).ToList());
     }
 }

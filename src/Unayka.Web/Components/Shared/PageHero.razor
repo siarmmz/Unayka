@@ -1,14 +1,15 @@
-<section class="relative isolate overflow-hidden bg-espresso">
-    <img src="@_imageUrl" alt="" class="absolute inset-0 -z-10 h-full w-full object-cover opacity-45"/>
+<section class="relative isolate overflow-hidden bg-cream">
+    <img src="@_imageUrl" alt="" class="absolute inset-0 -z-20 h-full w-full object-cover"/>
+    <div class="absolute inset-0 -z-10 bg-gradient-to-r from-paper via-paper/85 to-paper/30"></div>
     <div class="container-page py-20 md:py-28">
         @if (Eyebrow is not null)
         {
-            <p class="font-script text-3xl text-rose">@Text(Eyebrow)</p>
+            <p class="font-script text-3xl text-clay">@Text(Eyebrow)</p>
         }
-        <h1 class="max-w-2xl font-serif text-4xl leading-tight text-paper md:text-6xl">@Text(Title)</h1>
+        <h1 class="max-w-2xl font-serif text-4xl leading-tight text-espresso md:text-6xl">@Text(Title)</h1>
         @if (Subtitle is not null)
         {
-            <p class="mt-5 max-w-xl text-lg text-sand">@Text(Subtitle)</p>
+            <p class="mt-5 max-w-xl text-lg text-ink">@Text(Subtitle)</p>
         }
     </div>
 </section>

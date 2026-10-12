@@ -1,0 +1,52 @@
+<section class="@_sectionClass">
+    <div class="container-page py-16 md:py-20">
+        <div class="flex items-end justify-between gap-6">
+            <SectionHeading Eyebrow="@Eyebrow" Title="@Title" Subtitle="@Subtitle"/>
+            <a href="@_url" class="hidden shrink-0 text-base text-espresso underline-offset-4 hover:text-clay hover:underline md:inline">@Text(MoreLabel)</a>
+        </div>
+        <div class="mt-10 grid grid-cols-2 gap-x-4 gap-y-10 md:grid-cols-4 md:gap-x-6">
+            @foreach (var item in Items)
+            {
+                <ProductCard Model="item"/>
+            }
+        </div>
+        <div class="mt-12 text-center">
+            <a href="@_url" class="btn-outline">@Text(MoreLabel)</a>
+        </div>
+    </div>
+</section>
+
+@code {
+    private const string PlainSection = "";
+    private const string TintedSection = "bg-cream";
+
+    [Parameter, EditorRequired]
+    public string Title { get; set; } = string.Empty;
+
+    [Parameter]
+    public string? Eyebrow { get; set; }
+
+    [Parameter]
+    public string? Subtitle { get; set; }
+
+    [Parameter, EditorRequired]
+    public string Url { get; set; } = string.Empty;
+
+    [Parameter, EditorRequired]
+    public string MoreLabel { get; set; } = string.Empty;
+
+    [Parameter, EditorRequired]
+    public IReadOnlyList<ProductCardModel> Items { get; set; } = [];
+
+    [Parameter]
+    public bool Tinted { get; set; }
+
+    private string _url = string.Empty;
+    private string _sectionClass = PlainSection;
+
+    protected override void OnParametersSet()
+    {
+        _url = ToUrl(Url);
+        _sectionClass = Tinted ? TintedSection : PlainSection;
+    }
+}

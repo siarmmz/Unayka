@@ -1,16 +1,16 @@
-@page "/loja/cafes"
+@page "/loja/chas"
 @using Unayka.Web.Components.Store
 
 <SeoComponent Title="@Data.Seo.Title" Description="@Data.Seo.Description"/>
 
-<PageHero Title="@Data.Title" Eyebrow="@Data.Eyebrow" Subtitle="@Data.Subtitle" ImageUrl="@SiteImages.CoffeeBannerUrl"/>
+<PageHero Title="@Data.Title" Eyebrow="@Data.Eyebrow" Subtitle="@Data.Subtitle" ImageUrl="@SiteImages.TeaBannerUrl"/>
 
-<CatalogView BasePath="@StoreUrls.Coffee" Kind="CategoryKind.Coffee"/>
+<CatalogView BasePath="@StoreUrls.Teas" Kind="CategoryKind.Tea"/>
 
 @code {
     private static readonly (string Title, string Eyebrow, string Subtitle, (string Title, string Description) Seo) Data = (
-        "Cafés",
-        "Do grão à chávena",
-        "Espressos, bebidas de leite, cafés gelados e grãos para preparar em casa.",
-        ("Cafés | Unayka", "Cafés quentes e gelados, grãos e moídos selecionados pela Unayka. Peça online e levante na loja."));
+        "Chás",
+        "Da planta à chávena",
+        "Chás de plantas, infusões e também os nossos cafés, quentes, gelados ou para preparar em casa.",
+        ("Chás | Unayka", "Chás naturais, infusões e cafés selecionados pela Unayka. Encomende online e levante na loja."));
 }

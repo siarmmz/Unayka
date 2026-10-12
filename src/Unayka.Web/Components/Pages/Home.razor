@@ -4,227 +4,166 @@
 
 <SeoComponent Title="@Data.Seo.Title" Description="@Data.Seo.Description" StructuredDataJson="@_structuredData"/>
 
-<section class="relative isolate flex min-h-[80vh] items-end overflow-hidden bg-espresso">
-    <img src="@_heroUrl" alt="" class="absolute inset-0 -z-20 h-full w-full object-cover"/>
-    <div class="absolute inset-0 -z-10 bg-gradient-to-t from-espresso/85 via-espresso/40 to-espresso/10"></div>
-    <div class="container-page pb-16 pt-40 md:pb-24">
-        <p class="font-script text-3xl text-rose md:text-4xl">@Text(Data.Hero.Eyebrow)</p>
-        <h1 class="mt-2 max-w-3xl font-serif text-5xl leading-[1.05] text-paper md:text-7xl">@Text(Data.Hero.Title)</h1>
-        <p class="mt-6 max-w-xl text-lg text-sand">@Text(Data.Hero.Subtitle)</p>
-        <div class="mt-10 flex flex-wrap gap-4">
-            <a href="@_coffeeUrl" class="@HeroPrimaryClass">@Text(Data.Hero.CoffeeLabel)</a>
-            <a href="@_cosmeticsUrl" class="@HeroSecondaryClass">@Text(Data.Hero.CosmeticsLabel)</a>
-        </div>
-    </div>
-</section>
-
-<section class="container-page py-20 md:py-28">
-    <SectionHeading Eyebrow="@Data.Categories.Eyebrow" Title="@Data.Categories.Title" Centered="true"/>
-    <div class="mt-12 grid grid-cols-2 gap-4 md:grid-cols-3 md:gap-6">
-        @foreach (var tile in _categoryTiles)
+<section class="bg-cream">
+    <div class="flex snap-x snap-mandatory overflow-x-auto scroll-smooth [scrollbar-width:none]">
+        @foreach (var slide in _slides)
         {
-            <a href="@tile.Url" class="group relative block aspect-[4/5] overflow-hidden rounded-3xl bg-cream">
-                <img src="@tile.ImageUrl" alt="" loading="lazy" class="h-full w-full object-cover transition duration-700 group-hover:scale-105"/>
-                <div class="absolute inset-0 bg-gradient-to-t from-espresso/75 via-espresso/10 to-transparent"></div>
-                <div class="absolute inset-x-0 bottom-0 p-5">
-                    <p class="font-serif text-2xl text-paper md:text-3xl">@Text(tile.Name)</p>
-                    <p class="mt-1 text-xs uppercase tracking-widest text-sand">@Text(tile.CountLabel)</p>
+            <div id="@slide.Id" class="relative isolate flex min-h-[70vh] w-full shrink-0 snap-start items-end overflow-hidden">
+                <img src="@slide.ImageUrl" alt="" class="absolute inset-0 -z-20 h-full w-full object-cover"/>
+                <div class="absolute inset-0 -z-10 bg-gradient-to-t from-paper via-paper/70 to-paper/0"></div>
+                <div class="container-page pb-16 pt-40 md:pb-20">
+                    <p class="font-script text-3xl text-clay md:text-4xl">@Text(slide.Eyebrow)</p>
+                    <h1 class="mt-2 max-w-2xl text-5xl leading-[1.05] md:text-6xl">@Text(slide.Title)</h1>
+                    <p class="mt-5 max-w-xl text-lg text-ink">@Text(slide.Text)</p>
+                    <a href="@slide.Url" class="btn-primary mt-8">@Text(slide.ActionLabel)</a>
                 </div>
+            </div>
+        }
+    </div>
+    <nav aria-label="@Data.SlidesLabel" class="flex justify-center gap-3 py-4">
+        @foreach (var slide in _slides)
+        {
+            <a href="@slide.Anchor" aria-label="@slide.Eyebrow" class="flex h-11 w-11 items-center justify-center">
+                <span class="h-3 w-3 rounded-full bg-clay/40 hover:bg-clay"></span>
             </a>
         }
-    </div>
+    </nav>
 </section>
 
-@if (_featured.Count > 0)
+@foreach (var row in _rows)
 {
-    <section class="bg-cream">
-        <div class="container-page py-20 md:py-28">
-            <SectionHeading Eyebrow="@Data.Featured.Eyebrow" Title="@Data.Featured.Title" Subtitle="@Data.Featured.Subtitle"/>
-            <div class="mt-12 grid grid-cols-2 gap-x-4 gap-y-10 md:grid-cols-4 md:gap-x-6">
-                @foreach (var item in _featured)
-                {
-                    <ProductCard Model="item"/>
-                }
-            </div>
-            <div class="mt-14 text-center">
-                <a href="@_shopUrl" class="btn-outline">@Text(Data.Featured.ActionLabel)</a>
-            </div>
-        </div>
-    </section>
+    <ProductRowSection Eyebrow="@row.Eyebrow" Title="@row.Title" Subtitle="@row.Subtitle" Url="@row.Url" MoreLabel="@Data.MoreLabel" Items="row.Items" Tinted="row.Tinted"/>
 }
 
-<section class="container-page grid items-center gap-10 py-20 md:grid-cols-2 md:gap-20 md:py-28">
-    <img src="@_storyUrl" alt="@Data.Story.ImageAlt" loading="lazy" class="aspect-[4/5] w-full rounded-3xl object-cover"/>
-    <div>
-        <SectionHeading Eyebrow="@Data.Story.Eyebrow" Title="@Data.Story.Title"/>
-        @foreach (var paragraph in Data.Story.Paragraphs)
+<section class="container-page py-16 md:py-20">
+    <SectionHeading Eyebrow="@Data.Steps.Eyebrow" Title="@Data.Steps.Title" Centered="true"/>
+    <ol class="mt-12 grid gap-6 md:grid-cols-3">
+        @foreach (var step in _steps)
         {
-            <p class="mt-6 text-lg leading-relaxed text-stone">@Text(paragraph)</p>
+            <li class="rounded-3xl bg-cream p-8 text-center">
+                <p class="font-script text-4xl text-clay">@Text(step.Number)</p>
+                <h3 class="mt-2 text-2xl">@Text(step.Title)</h3>
+                <p class="mt-3 text-stone">@Text(step.Text)</p>
+            </li>
         }
-        <a href="@_aboutUrl" class="btn-outline mt-10">@Text(Data.Story.ActionLabel)</a>
-    </div>
+    </ol>
 </section>
 
-@if (_bestSellers.Count > 0)
-{
-    <section class="container-page pb-20 md:pb-28">
-        <SectionHeading Eyebrow="@Data.BestSellers.Eyebrow" Title="@Data.BestSellers.Title" Centered="true"/>
-        <div class="mt-12 grid grid-cols-2 gap-x-4 gap-y-10 md:grid-cols-4 md:gap-x-6">
-            @foreach (var item in _bestSellers)
-            {
-                <ProductCard Model="item"/>
-            }
-        </div>
-    </section>
-}
-
-<section class="container-page grid gap-6 pb-20 md:grid-cols-2 md:pb-28">
-    @foreach (var banner in _banners)
-    {
-        <a href="@banner.Url" class="group relative isolate block min-h-[22rem] overflow-hidden rounded-3xl bg-espresso">
-            <img src="@banner.ImageUrl" alt="" loading="lazy" class="absolute inset-0 -z-10 h-full w-full object-cover transition duration-700 group-hover:scale-105"/>
-            <div class="absolute inset-0 -z-10 bg-gradient-to-t from-espresso/80 via-espresso/30 to-transparent"></div>
-            <div class="flex h-full min-h-[22rem] flex-col justify-end p-8 md:p-10">
-                <p class="font-script text-3xl text-rose">@Text(banner.Eyebrow)</p>
-                <p class="mt-1 font-serif text-4xl text-paper">@Text(banner.Title)</p>
-                <p class="mt-3 max-w-sm text-sand">@Text(banner.Text)</p>
-                <span class="mt-6 inline-block w-fit border-b border-paper pb-1 text-sm tracking-wide text-paper">@Text(banner.ActionLabel)</span>
-            </div>
-        </a>
-    }
-</section>
-
-<section class="border-y border-sand bg-paper">
-    <div class="container-page grid gap-10 py-16 md:grid-cols-3 md:gap-12">
-        @foreach (var prop in Data.ValueProps)
-        {
-            <div class="text-center">
-                <p class="font-script text-3xl text-clay">@Text(prop.Eyebrow)</p>
-                <h3 class="mt-1 font-serif text-2xl text-espresso">@Text(prop.Title)</h3>
-                <p class="mt-3 text-stone">@Text(prop.Text)</p>
-            </div>
-        }
-    </div>
-</section>
-
-<section class="relative isolate overflow-hidden bg-espresso">
-    <img src="@_salonUrl" alt="" loading="lazy" class="absolute inset-0 -z-10 h-full w-full object-cover opacity-35"/>
-    <div class="container-page grid gap-10 py-20 md:grid-cols-2 md:py-28">
+<section class="bg-sage-soft">
+    <div class="container-page grid items-center gap-10 py-16 md:grid-cols-2 md:gap-16 md:py-20">
+        <img src="@_storyUrl" alt="@Data.Story.ImageAlt" loading="lazy" class="aspect-[4/5] w-full rounded-3xl object-cover"/>
         <div>
-            <p class="font-script text-3xl text-rose">@Text(Data.Visit.Eyebrow)</p>
-            <h2 class="mt-1 font-serif text-4xl text-paper md:text-5xl">@Text(Data.Visit.Title)</h2>
-            <p class="mt-5 max-w-md text-sand">@Text(Data.Visit.Text)</p>
-            <a href="@_locationUrl" class="@HeroPrimaryClass mt-8">@Text(Data.Visit.ActionLabel)</a>
-        </div>
-        <dl class="divide-y divide-paper/20 self-center border-y border-paper/20">
-            @foreach (var hour in Data.Visit.Hours)
+            <SectionHeading Eyebrow="@Data.Story.Eyebrow" Title="@Data.Story.Title"/>
+            @foreach (var paragraph in Data.Story.Paragraphs)
             {
-                <div class="flex justify-between gap-6 py-4">
-                    <dt class="text-sand">@Text(hour.Days)</dt>
-                    <dd class="text-paper">@Text(hour.Time)</dd>
-                </div>
+                <p class="mt-6 text-lg leading-relaxed text-ink">@Text(paragraph)</p>
             }
-        </dl>
+            <a href="@_aboutUrl" class="btn-outline mt-10">@Text(Data.Story.ActionLabel)</a>
+        </div>
+    </div>
+</section>
+
+<section class="container-page py-16 md:py-20">
+    <div class="flex flex-col items-center gap-6 rounded-3xl border border-sand bg-paper p-8 text-center md:flex-row md:justify-between md:p-12 md:text-left">
+        <div>
+            <p class="font-script text-3xl text-clay">@Text(Data.Contact.Eyebrow)</p>
+            <h2 class="mt-1 text-3xl md:text-4xl">@Text(Data.Contact.Title)</h2>
+            <p class="mt-3 max-w-lg text-stone">@Text(Data.Contact.Text)</p>
+        </div>
+        <a href="@_contactUrl" class="btn-primary shrink-0">@Text(Data.Contact.ActionLabel)</a>
     </div>
 </section>
 
 @code {
-    private const string HeroPrimaryClass = "inline-flex w-fit items-center justify-center rounded-full bg-paper px-7 py-3 text-sm font-medium tracking-wide text-espresso transition hover:bg-sand focus:outline-none focus-visible:ring-2 focus-visible:ring-paper focus-visible:ring-offset-2 focus-visible:ring-offset-espresso";
-    private const string HeroSecondaryClass = "inline-flex items-center justify-center rounded-full border border-paper px-7 py-3 text-sm font-medium tracking-wide text-paper transition hover:bg-paper hover:text-espresso focus:outline-none focus-visible:ring-2 focus-visible:ring-paper focus-visible:ring-offset-2 focus-visible:ring-offset-espresso";
-    private const int FeaturedCount = 8;
-    private const int BestSellerCount = 4;
+    private const int RowItemCount = 4;
     private const string AboutPath = "/about";
-    private const string LocationPath = "/location";
+    private const string ContactPath = "/contact";
+    private const string SlideIdPrefix = "destaque-";
 
-    private sealed record CategoryTile(string Name, string Url, string ImageUrl, string CountLabel);
+    private sealed record Slide(string Id, string Anchor, string Eyebrow, string Title, string Text, string ActionLabel, string Url, string ImageUrl);
 
-    private sealed record Banner(string Eyebrow, string Title, string Text, string ActionLabel, string Url, string ImageUrl);
+    private sealed record Row(string Eyebrow, string Title, string Subtitle, string Url, bool Tinted, IReadOnlyList<ProductCardModel> Items);
+
+    private sealed record Step(string Number, string Title, string Text);
 
     private static readonly
         (
-        (string Eyebrow, string Title, string Subtitle, string CoffeeLabel, string CosmeticsLabel) Hero,
-        (string Eyebrow, string Title) Categories,
-        (string Eyebrow, string Title, string Subtitle, string ActionLabel) Featured,
+        (string Eyebrow, string Title, string Text, string ActionLabel)[] Slides,
+        string SlidesLabel,
+        string MoreLabel,
+        (string Eyebrow, string Title, string Subtitle) Featured,
+        (string Eyebrow, string Title, string Subtitle) Teas,
+        (string Eyebrow, string Title, string Subtitle) Cosmetics,
+        (string Eyebrow, string Title, (string Title, string Text)[] Items) Steps,
         (string Eyebrow, string Title, string[] Paragraphs, string ActionLabel, string ImageAlt) Story,
-        (string Eyebrow, string Title) BestSellers,
-        (string Eyebrow, string Title, string Text, string ActionLabel) CoffeeBanner,
-        (string Eyebrow, string Title, string Text, string ActionLabel) CosmeticsBanner,
-        (string Eyebrow, string Title, string Text)[] ValueProps,
-        (string Eyebrow, string Title, string Text, string ActionLabel, (string Days, string Time)[] Hours) Visit,
+        (string Eyebrow, string Title, string Text, string ActionLabel) Contact,
         (string Title, string Description) Seo,
         string StoreDescription,
         string[] OpeningHours) Data = (
-        ("Café, cuidado e calma", "O ritual do café e da beleza, em Maputo", "Cafés preparados na hora e cosméticos escolhidos com cuidado, num espaço de salão moderno.", "Ver cafés", "Ver cosméticos"),
-        ("Para cada momento", "Explore por categoria"),
-        ("A nossa seleção", "Destaques", "Os favoritos da casa, escolhidos para si.", "Ver toda a loja"),
+        [
+            ("Chás naturais", "Chás de plantas, para todos os dias", "Folhas e flores secas ao sol, com o sabor de sempre. O café também está cá.", "Ver chás"),
+            ("Cosméticos naturais", "Cuidar da pele com o que a terra dá", "Pomadas, cremes e óleos de manteigas e plantas naturais.", "Ver cosméticos"),
+            ("Compra fácil", "Encomende do telemóvel em poucos passos", "Pague com M-Pesa, e-Mola ou mKesh e levante na loja ou receba em casa.", "Ir à loja"),
+        ],
+        "Destaques da página inicial",
+        "Ver mais",
+        ("Os favoritos da casa", "Destaques", "Os produtos que os nossos clientes mais procuram."),
+        ("Da planta à chávena", "Chás", "Chás de plantas, infusões e os nossos cafés."),
+        ("Feito de natureza", "Cosméticos naturais", "Pomadas, cremes e óleos para a pele e o cabelo."),
         (
-            "A nossa história",
-            "Um salão onde o café e a pele se encontram",
+            "Simples",
+            "Como funciona",
             [
-                "A Unayka nasceu da vontade de juntar dois pequenos prazeres: uma boa chávena de café e um momento de cuidado pessoal.",
-                "Cada grão e cada fórmula são escolhidos com calma. Venha ao balcão ou peça online, e leve para casa a mesma atenção que damos a quem se senta connosco.",
+                ("Escolha", "Junte ao carrinho os produtos de que gosta, com um toque."),
+                ("Pague", "Pague com M-Pesa, e-Mola ou mKesh, diretamente no telemóvel."),
+                ("Receba", "Levante na loja quando estiver pronto ou receba em casa, em Maputo."),
+            ]),
+        (
+            "Ingredientes naturais",
+            "Plantas, folhas e manteigas, sem segredos",
+            [
+                "Os nossos chás são feitos de folhas, flores e raízes secas ao sol, sem aromas artificiais.",
+                "Os cosméticos usam manteigas e óleos naturais, como a moringa e o karité. Em cada produto mostramos a composição completa.",
             ],
             "Conhecer a Unayka",
-            "Interior da Unayka com café e luz natural"),
-        ("O que mais saiu", "Mais vendidos"),
-        ("Cafés", "Do grão à chávena", "Espressos, bebidas de leite, cafés gelados e grãos para preparar em casa.", "Descobrir os cafés"),
-        ("Cosméticos", "Cuidado, sem pressa", "Pele, cabelo e corpo, com uma seleção simples e eficaz.", "Descobrir os cosméticos"),
-        [
-            ("Na loja", "Levantamento na loja", "Peça online e levante no balcão quando estiver pronto, sem filas."),
-            ("Sem complicações", "Pagamento M-Pesa, e-Mola e mKesh", "Pague com a sua carteira móvel, diretamente no telemóvel."),
-            ("Até si", "Entrega em Maputo", "Receba os seus produtos em casa, na cidade de Maputo."),
-        ],
-        (
-            "Visite-nos",
-            "Há sempre um lugar à sua espera",
-            "Passe pelo balcão para provar um café, conhecer os produtos e levar a sua encomenda.",
-            "Ver como chegar",
-            [
-                ("Segunda a sexta", "7h30 às 19h"),
-                ("Sábado", "8h às 17h"),
-                ("Domingo", "9h às 14h"),
-            ]),
-        ("Unayka | Cafés e cosméticos", "Loja de cafés e cosméticos com ambiente de salão moderno em Maputo. Peça online, pague com M-Pesa, e-Mola ou mKesh e levante na loja."),
-        "Cafés e cosméticos num ambiente de salão moderno, no balcão e online.",
+            "Folhas de chá e plantas naturais"),
+        ("Fale connosco", "Tem alguma dúvida?", "Ajudamos a escolher o chá ou o cosmético certo para si.", "Contactar"),
+        ("Unayka | Chás e cosméticos naturais", "Loja online de chás e cosméticos naturais em Maputo. Encomende, pague com M-Pesa, e-Mola ou mKesh e levante na loja ou receba em casa."),
+        "Loja online de chás e cosméticos naturais em Maputo.",
         ["Mo-Fr 07:30-19:00", "Sa 08:00-17:00", "Su 09:00-14:00"]);
 
-    private IReadOnlyList<ProductCardModel> _featured = [];
-    private IReadOnlyList<ProductCardModel> _bestSellers = [];
-    private List<CategoryTile> _categoryTiles = [];
-    private List<Banner> _banners = [];
+    private static readonly string[] SlideImages = [SiteImages.TeaBannerUrl, SiteImages.CosmeticsBannerUrl, SiteImages.HeroUrl];
+
+    private List<Slide> _slides = [];
+    private List<Row> _rows = [];
+    private List<Step> _steps = [];
     private string _structuredData = string.Empty;
-    private string _heroUrl = string.Empty;
     private string _storyUrl = string.Empty;
-    private string _salonUrl = string.Empty;
-    private string _coffeeUrl = string.Empty;
-    private string _cosmeticsUrl = string.Empty;
-    private string _shopUrl = string.Empty;
     private string _aboutUrl = string.Empty;
-    private string _locationUrl = string.Empty;
+    private string _contactUrl = string.Empty;
 
     protected override async Task OnInitializedAsync()
     {
-        _featured = await Catalog.FeaturedAsync(FeaturedCount);
-        _bestSellers = await Catalog.BestSellersAsync(BestSellerCount);
-        var categories = await Catalog.CategoriesAsync();
-        _categoryTiles = categories
-            .Select(category => new CategoryTile(category.Name, ToUrl(StoreUrls.Category(category.Slug)), ToUrl(category.ImageUrl), CountLabel(category.ProductCount)))
+        string[] slideUrls = [StoreUrls.Teas, StoreUrls.Cosmetics, StoreUrls.Shop];
+        _slides = Data.Slides
+            .Select((slide, index) => new Slide(SlideIdPrefix + (index + 1), "#" + SlideIdPrefix + (index + 1), slide.Eyebrow, slide.Title, slide.Text, slide.ActionLabel, ToUrl(slideUrls[index]), ToUrl(SlideImages[index])))
             .ToList();
-        _heroUrl = ToUrl(SiteImages.HeroUrl);
-        _storyUrl = ToUrl(SiteImages.StoryUrl);
-        _salonUrl = ToUrl(SiteImages.SalonUrl);
-        _coffeeUrl = ToUrl(StoreUrls.Coffee);
-        _cosmeticsUrl = ToUrl(StoreUrls.Cosmetics);
-        _shopUrl = ToUrl(StoreUrls.Shop);
-        _aboutUrl = ToUrl(AboutPath);
-        _locationUrl = ToUrl(LocationPath);
-        _banners =
+        _rows =
         [
-            new Banner(Data.CoffeeBanner.Eyebrow, Data.CoffeeBanner.Title, Data.CoffeeBanner.Text, Data.CoffeeBanner.ActionLabel, _coffeeUrl, ToUrl(SiteImages.CoffeeBannerUrl)),
-            new Banner(Data.CosmeticsBanner.Eyebrow, Data.CosmeticsBanner.Title, Data.CosmeticsBanner.Text, Data.CosmeticsBanner.ActionLabel, _cosmeticsUrl, ToUrl(SiteImages.CosmeticsBannerUrl)),
+            new Row(Data.Featured.Eyebrow, Data.Featured.Title, Data.Featured.Subtitle, StoreUrls.Shop, false, await Catalog.FeaturedAsync(RowItemCount)),
+            new Row(Data.Teas.Eyebrow, Data.Teas.Title, Data.Teas.Subtitle, StoreUrls.Teas, true, await TopAsync(CategoryKind.Tea)),
+            new Row(Data.Cosmetics.Eyebrow, Data.Cosmetics.Title, Data.Cosmetics.Subtitle, StoreUrls.Cosmetics, false, await TopAsync(CategoryKind.Cosmetic)),
         ];
+        _steps = Data.Steps.Items.Select((step, index) => new Step((index + 1).ToString(System.Globalization.CultureInfo.InvariantCulture), step.Title, step.Text)).ToList();
+        _storyUrl = ToUrl(SiteImages.StoryUrl);
+        _aboutUrl = ToUrl(AboutPath);
+        _contactUrl = ToUrl(ContactPath);
         _structuredData = StoreStructuredData.Store(StoreStructuredData.Root(Navigation.BaseUri), SiteImages.HeroUrl, Data.StoreDescription, Data.OpeningHours);
     }
 
-    private static string CountLabel(int count) => count == 1 ? "1 produto" : $"{count} produtos";
+    private async Task<IReadOnlyList<ProductCardModel>> TopAsync(CategoryKind kind)
+    {
+        var page = await Catalog.SearchAsync(new ProductSearch(Kind: kind, Sort: ProductSort.BestSellers));
+        return page.Items.Take(RowItemCount).ToList();
+    }
 }

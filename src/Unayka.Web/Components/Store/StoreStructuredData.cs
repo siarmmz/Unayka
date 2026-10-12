@@ -14,7 +14,7 @@ public static class StoreStructuredData
     private const string BrandName = "Unayka";
     private const decimal MinorUnitsPerUnit = 100m;
 
-    private static readonly string[] StoreTypes = ["Store", "CafeOrCoffeeShop"];
+    private static readonly string[] StoreTypes = ["Store", "HealthAndBeautyBusiness"];
 
     public static string Root(string navigationBaseUri)
     {

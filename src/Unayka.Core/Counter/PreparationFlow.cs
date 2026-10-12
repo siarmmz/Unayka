@@ -12,5 +12,5 @@ public static class PreparationFlow
         _ => null,
     };
 
-    public static OrderStatus InitialStatus(bool hasCoffee) => hasCoffee ? OrderStatus.Preparing : OrderStatus.Delivered;
+    public static OrderStatus InitialStatus(bool needsPreparation) => needsPreparation ? OrderStatus.Preparing : OrderStatus.Delivered;
 }

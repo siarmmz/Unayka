@@ -67,13 +67,13 @@ public static class CatalogSeed
 
     public static readonly IReadOnlyList<SeedCategory> Categories =
     [
-        new(HotCoffee, "Cafés quentes", "Espressos e bebidas de leite preparados na hora.", CategoryKind.Coffee, "1509042239860-f550ce710b93"),
-        new(IcedCoffee, "Cafés gelados", "Bebidas frescas para os dias de calor.", CategoryKind.Coffee, "1507133750040-4a8f57021571"),
-        new(Beans, "Grãos e moídos", "Café para preparar em casa, em grão, moído ou em cápsulas.", CategoryKind.Coffee, "1559056199-641a0ac8b55e"),
+        new(Teas, "Chás naturais", "Chás de plantas, secas ao sol e embaladas à mão.", CategoryKind.Tea, "1627435601361-ec25f5b1d0e5"),
+        new(HotCoffee, "Cafés quentes", "Espressos e bebidas de leite preparados na hora.", CategoryKind.Tea, "1509042239860-f550ce710b93"),
+        new(IcedCoffee, "Cafés gelados", "Bebidas frescas para os dias de calor.", CategoryKind.Tea, "1507133750040-4a8f57021571"),
+        new(Beans, "Grãos e moídos", "Café para preparar em casa, em grão, moído ou em cápsulas.", CategoryKind.Tea, "1559056199-641a0ac8b55e"),
         new(Skin, "Pomadas e cremes", "Pomadas e cremes feitos de manteigas e óleos naturais.", CategoryKind.Cosmetic, "1556228720-195a672e8a03"),
         new(Hair, "Cabelo", "Lavagem, nutrição e reparação para todos os tipos de cabelo.", CategoryKind.Cosmetic, "1611432579402-7037e3e2c1e4"),
         new(Body, "Corpo e banho", "Texturas ricas e aromas suaves para o momento do banho.", CategoryKind.Cosmetic, "1544161515-4ab6ce6db874"),
-        new(Teas, "Chás naturais", "Chás de plantas, secas ao sol e embaladas à mão.", CategoryKind.Cosmetic, "1627435601361-ec25f5b1d0e5"),
     ];
 
     public static readonly IReadOnlyList<SeedProduct> Products =

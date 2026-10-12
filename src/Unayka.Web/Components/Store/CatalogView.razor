@@ -59,7 +59,7 @@
 </section>
 
 @code {
-    private const string ChipClass = "inline-flex rounded-full border px-4 py-1.5 text-sm transition";
+    private const string ChipClass = "inline-flex min-h-11 items-center rounded-full border px-5 text-base transition";
     private const string ActiveChipClass = ChipClass + " border-espresso bg-espresso text-paper";
     private const string IdleChipClass = ChipClass + " border-sand text-espresso hover:border-clay hover:bg-cream";
 
@@ -69,14 +69,12 @@
 
     private sealed record SortChoice(string Value, string Label, bool Selected);
 
-    private static readonly (string KindTitle, string AllLabel, string CoffeeLabel, string CosmeticLabel, string CategoryTitle, string PriceTitle, string AnyPriceLabel, string SearchPlaceholder, string SortLabel, string ApplyLabel, string EmptyTitle, string EmptyMessage, string EmptyAction) Data = (
+    private static readonly (string KindTitle, string AllLabel, string TeaLabel, string CosmeticLabel, string CategoryTitle, string SearchPlaceholder, string SortLabel, string ApplyLabel, string EmptyTitle, string EmptyMessage, string EmptyAction) Data = (
         "Coleção",
         "Tudo",
-        "Cafés",
+        "Chás e cafés",
         "Cosméticos",
-        "Categorias",
-        "Preço",
-        "Qualquer preço",
+        "Tipo",
         "Pesquisar produtos",
         "Ordenar por",
         "Aplicar",
@@ -116,7 +114,6 @@
         [
             new FilterGroup(Data.KindTitle, BuildKindLinks()),
             new FilterGroup(Data.CategoryTitle, BuildCategoryLinks(categories)),
-            new FilterGroup(Data.PriceTitle, BuildPriceLinks()),
         ];
     }
 
@@ -133,7 +130,7 @@
         return
         [
             new FilterLink(Data.AllLabel, ToUrl(CatalogLinks.Build(StoreUrls.AllProducts, carried)), ChipFor(noKindSelected)),
-            new FilterLink(Data.CoffeeLabel, ToUrl(CatalogLinks.Build(StoreUrls.Coffee, carried)), ChipFor(Kind == CategoryKind.Coffee && CategorySlug is null)),
+            new FilterLink(Data.TeaLabel, ToUrl(CatalogLinks.Build(StoreUrls.Teas, carried)), ChipFor(Kind == CategoryKind.Tea && CategorySlug is null)),
             new FilterLink(Data.CosmeticLabel, ToUrl(CatalogLinks.Build(StoreUrls.Cosmetics, carried)), ChipFor(Kind == CategoryKind.Cosmetic && CategorySlug is null)),
         ];
     }
@@ -141,23 +138,11 @@
     private List<FilterLink> BuildCategoryLinks(IReadOnlyList<CategorySummary> categories) =>
         categories
             .Select(category => new FilterLink(
-                $"{category.Name} ({category.ProductCount})",
+                category.Name,
                 ToUrl(CatalogLinks.Build(StoreUrls.Category(category.Slug), _search with { Page = 1 })),
                 ChipFor(category.Slug == CategorySlug)))
             .ToList();
 
-    private List<FilterLink> BuildPriceLinks()
-    {
-        var links = new List<FilterLink>
-        {
-            new(Data.AnyPriceLabel, ToUrl(CatalogLinks.Build(BasePath, CatalogLinks.WithRange(_search, null))), ChipFor(_search.MinPriceMinor is null && _search.MaxPriceMinor is null)),
-        };
-        links.AddRange(CatalogLinks.PriceRanges.Select(range => new FilterLink(
-            range.Label,
-            ToUrl(CatalogLinks.Build(BasePath, CatalogLinks.WithRange(_search, range))),
-            ChipFor(CatalogLinks.IsActive(range, _search)))));
-        return links;
-    }
 
     private static string ChipFor(bool active) => active ? ActiveChipClass : IdleChipClass;
 }

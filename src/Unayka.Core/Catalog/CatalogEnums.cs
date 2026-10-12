@@ -2,7 +2,7 @@ namespace Unayka.Core.Catalog;
 
 public enum CategoryKind
 {
-    Coffee,
+    Tea,
     Cosmetic,
 }
 

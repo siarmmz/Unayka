@@ -4,7 +4,7 @@ public static class StoreUrls
 {
     public const string Shop = "/loja";
     public const string AllProducts = "/loja/todos";
-    public const string Coffee = "/loja/cafes";
+    public const string Teas = "/loja/chas";
     public const string Cosmetics = "/loja/cosmeticos";
     public const string Cart = "/carrinho";
     public const string Checkout = "/checkout";

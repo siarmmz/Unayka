@@ -1,8 +1,8 @@
 # CLAUDE.md
 
-Project rules version: 3
+Project rules version: 4
 
-Unayka (U, N, A, Y, K, A) is a coffee and cosmetics shop with a modern salon atmosphere, online and at the counter, in the same system. Market: Mozambique, currency MZN, UI in Mozambican Portuguese, payments by mobile wallet via PaySuite. Any spelling such as Unaika, Unaica or Unayca must be read and written as Unayka.
+Unayka (U, N, A, Y, K, A) is a modern online shop of natural products: teas (coffee is one of them) and natural cosmetics, online and at the counter, in the same system. It is not a salon; never describe it as one. Market: Mozambique, currency MZN, UI in Mozambican Portuguese, payments by mobile wallet via PaySuite. Any spelling such as Unaika, Unaica or Unayca must be read and written as Unayka.
 
 The full product description, stack, configuration, phases and open decisions are in README.md. Check MAP.md before searching the disk.
 
@@ -40,11 +40,11 @@ Only Tailwind utilities in markup and src/Unayka.Web/wwwroot/styles/globals.css.
 
 ## Look and feel
 
-Minimalist, modern salon spirit, lots of white space, soft neutral palette, handwritten font on highlights, mobile first. No emojis, no em dashes, no decorative hyphens, no typographic bullets, no version badges in the UI and nothing that suggests AI generated content. No mention of AI or Claude in code, texts, commits or trailers.
+Minimalist, modern online store, lots of white space, soft neutral palette, handwritten font on highlights, mobile first. No emojis, no em dashes, no decorative hyphens, no typographic bullets, no version badges in the UI and nothing that suggests AI generated content. No mention of AI or Claude in code, texts, commits or trailers.
 
 ## Security
 
-Rate limiting with separate policies (login, code, webhook, checkout), antiforgery, Secure, HttpOnly and SameSite cookies, HSTS, security headers and a Blazor compatible CSP, persistent data protection keys, input validation, roles (Customer, Cashier, Manager, Administrator), logs without sensitive data. Immutable, insert only audit log. Cart totals are always recalculated on the server.
+Rate limiting with separate policies (login, webhook, checkout), antiforgery, Secure, HttpOnly and SameSite cookies, HSTS, security headers and a Blazor compatible CSP, persistent data protection keys, input validation, roles (Customer, Cashier, Manager, Administrator), logs without sensitive data. Immutable, insert only audit log. Cart totals are always recalculated on the server.
 
 ## Working with Claude Code
 

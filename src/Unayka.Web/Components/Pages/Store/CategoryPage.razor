@@ -13,7 +13,7 @@
 
 @code {
     private const string TitleSuffix = " | Unayka";
-    private const string CoffeeEyebrow = "Cafés";
+    private const string TeaEyebrow = "Chás";
     private const string CosmeticEyebrow = "Cosméticos";
 
     [Parameter]
@@ -34,7 +34,7 @@
         }
 
         _seoTitle = _category.Name + TitleSuffix;
-        _eyebrow = _category.Kind == CategoryKind.Coffee ? CoffeeEyebrow : CosmeticEyebrow;
+        _eyebrow = _category.Kind == CategoryKind.Tea ? TeaEyebrow : CosmeticEyebrow;
         _basePath = StoreUrls.Category(_category.Slug);
     }
 }

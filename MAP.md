@@ -2,7 +2,7 @@
 
 One line per file as "path: what it does". Check before searching the disk.
 
-CLAUDE.md: project rules and Claude Code workflow (version 3)
+CLAUDE.md: project rules and Claude Code workflow (version 4)
 README.md: product description, stack, configuration, development, phases and open decisions
 TASKS.md: tasks by phase (In progress, Next, On hold, Done)
 MAP.md: this file map
@@ -29,7 +29,6 @@ src/Unayka.Web/Components/Base/UnaykaComponentBase.cs: base class for components
 src/Unayka.Web/Components/Base/UnaykaLayoutBase.cs: base class for layouts exposing the same helpers
 src/Unayka.Web/Components/Shared/SeoComponent.razor: head title, description, canonical, Open Graph and structured data
 src/Unayka.Web/Components/Layout/MainLayout.razor: store layout (announcement bar, SiteHeader, main, SiteFooter)
-src/Unayka.Web/Components/Pages/Home.razor: home page with introduction and service list
 src/Unayka.Web/Components/Pages/Store/AllProducts.razor: /loja/todos full catalog with filters and search
 src/Unayka.Web/Components/Pages/About.razor: about page
 src/Unayka.Web/Components/Pages/Location.razor: location page (placeholder until address is defined)
@@ -37,7 +36,7 @@ src/Unayka.Web/Components/Pages/Contact.razor: contact page (placeholder until c
 src/Unayka.Web/Components/Pages/NotFound.razor: not found page
 src/Unayka.Web/Components/Pages/Error.razor: generic error page
 src/Unayka.Web/wwwroot/styles/globals.css: Tailwind entry with theme colors, fonts and base layer
-src/Unayka.Core/Catalog/Category.cs: category entity (kind Coffee or Cosmetic)
+src/Unayka.Core/Catalog/Category.cs: category entity (kind Tea, coffee included, or Cosmetic)
 src/Unayka.Core/Catalog/Product.cs: product entity with prices in minor units, stock and sales count
 src/Unayka.Core/Catalog/ProductMedia.cs: product image entity (Prepared, Package, Elements, Gallery)
 src/Unayka.Core/Catalog/ProductFact.cs: product information row (nutrition table, composition)
@@ -46,16 +45,13 @@ src/Unayka.Core/Catalog/ProductCardModel.cs: card record and the EF projection F
 src/Unayka.Core/Catalog/StoreUrls.cs: shared route constants and URL builders for store pages
 src/Unayka.Core/Accounts/User.cs: user entity (customer or staff)
 src/Unayka.Core/Accounts/UserRole.cs: Customer, Cashier, Manager, Administrator
-src/Unayka.Core/Accounts/OtpCode.cs: hashed login code entity
 src/Unayka.Core/Accounts/LoginAttempt.cs: sign in attempt entity (identifier and IP hash)
 src/Unayka.Core/Accounts/UnaykaPolicies.cs: authorization policy names (Staff, Management, Administration)
 src/Unayka.Core/Accounts/PhoneNumber.cs: normalizes +258 phones to the nine digit national number
-src/Unayka.Core/Accounts/OtpCodes.cs: code generation, hashing and limits
 src/Unayka.Core/Accounts/IpHash.cs: one way hash of the client address
-src/Unayka.Core/Accounts/IOtpSender.cs: IOtpSender and IDevelopmentOtpInbox contracts
-src/Unayka.Core/Accounts/DevelopmentOtpSender.cs: development sender and in memory inbox (never logs the code)
-src/Unayka.Core/Accounts/IAccountService.cs: sign in contract, outcomes and result
-src/Unayka.Core/Accounts/AccountService.cs: phone code and staff password sign in, lockout, bootstrap administrator
+src/Unayka.Core/Accounts/ExternalProviders.cs: Google and Facebook provider names, configured or locally mocked
+src/Unayka.Core/Accounts/IAccountService.cs: sign in contract, outcomes, result and ExternalIdentity
+src/Unayka.Core/Accounts/AccountService.cs: external (Google, Facebook) customer sign in, staff password sign in, lockout, bootstrap administrator
 src/Unayka.Core/Accounts/AccountServiceExtensions.cs: services.AddUnaykaAccounts()
 src/Unayka.Core/Carts/Cart.cs: server cart entity
 src/Unayka.Core/Carts/CartItem.cs: cart line entity
@@ -84,13 +80,14 @@ src/Unayka.Core/Data/Seed/DatabaseSeeder.cs: idempotent seeding of catalog, coup
 src/Unayka.Core/Data/Seed/DemoOrdersSeed.cs: demo customers, orders and payments over the last 30 days
 src/Unayka.Core/Presentation/StatusLabels.cs: Portuguese labels and tones for order and payment statuses
 src/Unayka.Web/Endpoints/Security/SecurityExtensions.cs: cookie auth, policies, antiforgery, data protection, rate limiting, security headers
-src/Unayka.Web/Endpoints/Security/RateLimitPolicies.cs: rate limit policy names (login, code, checkout, webhook)
-src/Unayka.Web/Endpoints/Account/AccountEndpoints.cs: POST endpoints for phone code, staff sign in and sign out
+src/Unayka.Web/Endpoints/Security/RateLimitPolicies.cs: rate limit policy names (login, checkout, webhook)
+src/Unayka.Web/Endpoints/Security/ExternalAuthentication.cs: external cookie scheme and Google/Facebook handlers when keys exist
+src/Unayka.Web/Endpoints/Account/AccountEndpoints.cs: external sign in start and completion (mocked locally), staff sign in and sign out
 src/Unayka.Web/Components/Layout/SiteHeader.razor: sticky header with nav, search, account menu and cart count
 src/Unayka.Web/Components/Layout/SiteFooter.razor: footer with columns, contact, hours and wallet note
 src/Unayka.Web/Components/Layout/AdminLayout.razor: administration layout with sidebar and sign out
-src/Unayka.Web/Components/Pages/Account/Login.razor: /conta/entrar with phone code and staff sections
-src/Unayka.Web/Components/Shared/ProductCard.razor: product card for listings
+src/Unayka.Web/Components/Pages/Account/Login.razor: /conta/entrar with Google, Facebook and staff sections
+src/Unayka.Web/Components/Shared/ProductCard.razor: product card with a one tap Adicionar button
 src/Unayka.Web/Components/Shared/PriceTag.razor: price with optional compare at price and discount
 src/Unayka.Web/Components/Shared/SectionHeading.razor: eyebrow, title and subtitle
 src/Unayka.Web/Components/Shared/EmptyState.razor: empty list message with optional action
@@ -102,8 +99,8 @@ src/Unayka.Core.Test/Data/TestDatabase.cs: in memory SQLite context for tests
 src/Unayka.Core.Test/Data/ManualTimeProvider.cs: controllable clock for tests
 src/Unayka.Core.Test/Data/SeedTests.cs: seed idempotency, catalog, staff and demo data tests
 src/Unayka.Core.Test/Audit/AuditLogTests.cs: audit insert only tests
-src/Unayka.Core.Test/Accounts/OtpCodesTests.cs: code format, hash and phone normalization tests
-src/Unayka.Core.Test/Accounts/AccountServiceTests.cs: code expiry, attempts and staff sign in tests
+src/Unayka.Core.Test/Accounts/PhoneNumberTests.cs: phone normalization tests
+src/Unayka.Core.Test/Accounts/AccountServiceTests.cs: external sign in, account linking and staff sign in tests
 src/Unayka.Web.Test/Pages/LoginFlowTests.cs: login page, antiforgery and sign in flow tests
 src/Unayka.Core.Test: tests for configuration and presentation helpers
 src/Unayka.Web.Test: in memory server tests for pages, health and the no loose text rule
@@ -121,11 +118,12 @@ src/Unayka.Web/Components/Store/CatalogView.razor: filters sidebar, search and s
 src/Unayka.Web/Components/Store/ProductGallery.razor: CSS only product gallery with thumbnails
 src/Unayka.Web/Components/Store/StoreStructuredData.cs: schema.org Product and Store JSON-LD builders
 src/Unayka.Web/Components/Pages/Store/Shop.razor: /loja showroom with featured marquee and product rows
-src/Unayka.Web/Components/Pages/Store/CoffeeShop.razor: /loja/cafes catalog with banner
+src/Unayka.Web/Components/Pages/Store/TeaShop.razor: /loja/chas catalog (teas and coffees) with banner
+src/Unayka.Web/Components/Store/ProductRowSection.razor: titled product row with "Ver mais" link, shared by home and /loja
 src/Unayka.Web/Components/Pages/Store/CosmeticsShop.razor: /loja/cosmeticos catalog with banner
 src/Unayka.Web/Components/Pages/Store/CategoryPage.razor: /loja/categoria/{slug} catalog with category hero
 src/Unayka.Web/Components/Pages/Store/ProductPage.razor: /produto/{slug} narrative page with order forms and mobile bottom bar
-src/Unayka.Web/Components/Pages/Home.razor: home with hero, categories, featured, story, best sellers, banners, value props and visit block
+src/Unayka.Web/Components/Pages/Home.razor: home with CSS only carousel, Destaques, Chás and Cosméticos naturais rows, how it works, natural ingredients and contact strip
 src/Unayka.Web.Test/Pages/StorefrontTests.cs: 200, 404, search and product form tests
 <!-- Counter (sprint L5) -->
 src/Unayka.Core/Counter/CashMath.cs: pure cash shift totals, expected cash, difference and change

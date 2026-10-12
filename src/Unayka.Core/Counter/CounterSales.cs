@@ -72,8 +72,8 @@ public sealed class CounterSales(IDbContextFactory<UnaykaDbContext> factory, IOr
         }
 
         var now = time.GetUtcNow();
-        var hasCoffee = lines.Any(line => !line.IsFreeAmount && products[line.ProductId].Category?.Kind == CategoryKind.Coffee);
-        var order = BuildOrder(request, lines, total, PreparationFlow.InitialStatus(hasCoffee), await orderNumbers.NextAsync(cancellationToken), now);
+        var needsPreparation = lines.Any(line => !line.IsFreeAmount && products[line.ProductId].Category?.Kind == CategoryKind.Tea);
+        var order = BuildOrder(request, lines, total, PreparationFlow.InitialStatus(needsPreparation), await orderNumbers.NextAsync(cancellationToken), now);
         database.Orders.Add(order);
         foreach (var line in lines.Where(line => !line.IsFreeAmount))
         {

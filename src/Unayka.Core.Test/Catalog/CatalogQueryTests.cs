@@ -41,11 +41,11 @@ public sealed class CatalogQueryTests : IDisposable
     [Fact]
     public async Task Search_filters_by_kind()
     {
-        var coffee = await _query.SearchAsync(new ProductSearch(Kind: CategoryKind.Coffee, Sort: ProductSort.BestSellers));
-        var categories = (await _query.CategoriesAsync(CategoryKind.Coffee)).Select(category => category.Name).ToHashSet();
+        var teas = await _query.SearchAsync(new ProductSearch(Kind: CategoryKind.Tea, Sort: ProductSort.BestSellers));
+        var categories = (await _query.CategoriesAsync(CategoryKind.Tea)).Select(category => category.Name).ToHashSet();
 
-        Assert.NotEmpty(coffee.Items);
-        Assert.All(coffee.Items, item => Assert.Contains(item.CategoryName, categories));
+        Assert.NotEmpty(teas.Items);
+        Assert.All(teas.Items, item => Assert.Contains(item.CategoryName, categories));
     }
 
     [Fact]

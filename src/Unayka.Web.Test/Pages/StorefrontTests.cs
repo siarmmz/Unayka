@@ -12,7 +12,7 @@ public sealed class StorefrontTests(UnaykaWebFactory factory)
     [InlineData("/loja")]
     [InlineData("/loja/todos?page=2&ordem=preco-asc")]
     [InlineData("/loja/todos")]
-    [InlineData("/loja/cafes")]
+    [InlineData("/loja/chas")]
     [InlineData("/loja/cosmeticos")]
     [InlineData("/loja/categoria/cafes-quentes")]
     [InlineData("/produto/cappuccino-cremoso")]
@@ -37,13 +37,13 @@ public sealed class StorefrontTests(UnaykaWebFactory factory)
     }
 
     [Fact]
-    public async Task Home_lists_featured_products_and_categories()
+    public async Task Home_lists_featured_teas_and_cosmetics_rows()
     {
         var html = await _client.GetStringAsync("/");
 
         Assert.Contains("Destaques", html, StringComparison.Ordinal);
-        Assert.Contains("Mais vendidos", html, StringComparison.Ordinal);
-        Assert.Contains("/loja/categoria/cafes-quentes", html, StringComparison.Ordinal);
+        Assert.Contains("/loja/cosmeticos", html, StringComparison.Ordinal);
+        Assert.Contains("/loja/chas", html, StringComparison.Ordinal);
         Assert.Contains("/produto/cappuccino-cremoso", html, StringComparison.Ordinal);
     }
 

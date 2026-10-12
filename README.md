@@ -1,6 +1,6 @@
 # Unayka
 
-Coffee and cosmetics shop with a modern salon atmosphere. Works as an online store and as a point of sale at the counter, in the same system, with the same orders, payments and audit. Market: Mozambique. Currency: metical (MZN). UI in Mozambican Portuguese. Payments by mobile wallet through PaySuite (paysuite.co.mz).
+Modern online shop of natural teas (coffee included) and natural cosmetics. Not a salon. Works as an online store and as a point of sale at the counter, in the same system, with the same orders, payments and audit. Market: Mozambique. Currency: metical (MZN). UI in Mozambican Portuguese. Payments by mobile wallet through PaySuite (paysuite.co.mz).
 
 Working rules and code standard are in CLAUDE.md. Tasks are in TASKS.md and the file map is in MAP.md.
 

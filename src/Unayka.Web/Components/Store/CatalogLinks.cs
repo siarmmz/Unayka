@@ -6,8 +6,6 @@ namespace Unayka.Web.Components.Store;
 
 public sealed record SortOption(string Value, string Label, ProductSort Sort);
 
-public sealed record PriceRange(string Label, long? MinMzn, long? MaxMzn);
-
 public static class CatalogLinks
 {
     public const string QueryKey = "q";
@@ -20,19 +18,11 @@ public static class CatalogLinks
 
     public static readonly IReadOnlyList<SortOption> SortOptions =
     [
-        new("relevancia", "Relevância", ProductSort.Relevance),
+        new("relevancia", "Sugestões", ProductSort.Relevance),
         new("preco-asc", "Preço, do mais baixo", ProductSort.PriceAscending),
         new("preco-desc", "Preço, do mais alto", ProductSort.PriceDescending),
         new("novidades", "Novidades", ProductSort.Newest),
         new("vendidos", "Mais vendidos", ProductSort.BestSellers),
-    ];
-
-    public static readonly IReadOnlyList<PriceRange> PriceRanges =
-    [
-        new("Até 250 MZN", null, 250),
-        new("250 a 600 MZN", 250, 600),
-        new("600 a 1200 MZN", 600, 1200),
-        new("Acima de 1200 MZN", 1200, null),
     ];
 
     public static ProductSearch Parse(string uri, CategoryKind? kind, string? categorySlug)
@@ -75,12 +65,6 @@ public static class CatalogLinks
 
         return fields;
     }
-
-    public static bool IsActive(PriceRange range, ProductSearch search) =>
-        range.MinMzn * MinorUnitsPerUnit == search.MinPriceMinor && range.MaxMzn * MinorUnitsPerUnit == search.MaxPriceMinor;
-
-    public static ProductSearch WithRange(ProductSearch search, PriceRange? range) =>
-        search with { MinPriceMinor = range?.MinMzn * MinorUnitsPerUnit, MaxPriceMinor = range?.MaxMzn * MinorUnitsPerUnit, Page = 1 };
 
     private static long? ReadMinor(Dictionary<string, Microsoft.Extensions.Primitives.StringValues> query, string key) =>
         query.TryGetValue(key, out var value) && long.TryParse(value, CultureInfo.InvariantCulture, out var units) && units >= 0

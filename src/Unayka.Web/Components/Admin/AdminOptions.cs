@@ -27,7 +27,7 @@ public static class AdminOptions
         [All, .. Enum.GetValues<PaymentMethod>().Select(method => new SelectOption(method.ToString(), StatusLabels.For(method)))];
 
     public static readonly IReadOnlyList<SelectOption> CategoryKinds =
-        [new(nameof(CategoryKind.Coffee), "Café"), new(nameof(CategoryKind.Cosmetic), "Cosméticos")];
+        [new(nameof(CategoryKind.Tea), "Chás e cafés"), new(nameof(CategoryKind.Cosmetic), "Cosméticos")];
 
     public static readonly IReadOnlyList<SelectOption> MediaKinds =
     [

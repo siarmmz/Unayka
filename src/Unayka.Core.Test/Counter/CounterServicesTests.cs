@@ -45,7 +45,7 @@ public sealed class CounterServicesTests : IDisposable
     public async Task Cash_sale_of_a_coffee_creates_a_preparing_order_with_change_and_stock_movement()
     {
         await _shifts.OpenAsync(CashierId, 50_000);
-        var product = await FirstProductAsync(CategoryKind.Coffee);
+        var product = await FirstProductAsync(CategoryKind.Tea);
         var request = new CounterSaleRequest(CashierId, [new TicketLine(product.Id, "x", 1, 2)], PaymentMethod.Cash, string.Empty, string.Empty, null, product.PriceMinor * 2 + 5_000);
 
         var result = await _sales.RegisterAsync(request);
@@ -79,7 +79,7 @@ public sealed class CounterServicesTests : IDisposable
     public async Task Cash_below_total_and_invalid_wallet_phone_are_rejected()
     {
         await _shifts.OpenAsync(CashierId, 0);
-        var product = await FirstProductAsync(CategoryKind.Coffee);
+        var product = await FirstProductAsync(CategoryKind.Tea);
         var line = new TicketLine(product.Id, "x", 1, 1);
 
         var cash = await _sales.RegisterAsync(new CounterSaleRequest(CashierId, [line], PaymentMethod.Cash, string.Empty, string.Empty, null, 1));
@@ -124,7 +124,7 @@ public sealed class CounterServicesTests : IDisposable
 
     private async Task<CounterSaleRequest> CashRequestAsync(int quantity, long received)
     {
-        var product = await FirstProductAsync(CategoryKind.Coffee);
+        var product = await FirstProductAsync(CategoryKind.Tea);
         return new CounterSaleRequest(CashierId, [new TicketLine(product.Id, "x", 1, quantity)], PaymentMethod.Cash, string.Empty, string.Empty, null, received);
     }
 
