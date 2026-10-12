@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="Unayka.Core.Test/Unayka.Core.Test.csproj" />
+  <Project Path="Unayka.Core/Unayka.Core.csproj" />
+  <Project Path="Unayka.Web.Test/Unayka.Web.Test.csproj" />
+  <Project Path="Unayka.Web/Unayka.Web.csproj" />
+</Solution>
