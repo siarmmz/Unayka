@@ -54,7 +54,7 @@ Decision (2026-10-12): all images and content are provisional mocks (placeholder
 
 ## Next
 
-### Sprint P: managed catalog, locations, digital products and a livelier store (requested 2026-10-12, analyzed, awaiting go)
+### Sprint P: managed catalog, locations, digital products and a livelier store (requested 2026-10-12, executing)
 
 Analysis summary: the catalog is hard coded around CategoryKind (Tea, Cosmetic) and the UI has rows, routes and seeds per kind. The store must become data driven: everything a customer sees (sections, categories, tags, locations, contacts, maps) is registered in the administration and the pages only loop and render. The database uses EnsureCreated (no migrations), so every schema change in this sprint requires deleting the local database.sqlite; adding the first EF migration is part of P1.
 
@@ -66,7 +66,7 @@ Naming decisions (UI in Mozambican Portuguese, code in English):
 - Cart keeps the name "Carrinho": it is the standard term in Mozambique and Portugal for online shops (not a pt-BR form). The header shows a bag icon plus the visible label "Carrinho" and the item count; the card action becomes "Adicionar ao carrinho" (short "Adicionar" with the bag icon only where width is tight), and after adding, a confirmation with "Ver carrinho" and "Continuar a comprar".
 
 Wave 1 (primary agent, sequential, before any worktree):
-- [ ] P0 (O) Rules: add to CLAUDE.md (version 5) the responsive rule (mobile, tablet and desktop always; one responsive element first; separate per breakpoint blocks rendering the same prepared data only as a last resort) and the color rule (every color comes from a theme token in globals.css, including brand colors of Google and Facebook; no Tailwind default palette, no white or black literals, no hex in markup). Update state.json.
+- [x] P0 (O) Rules: add to CLAUDE.md (version 5) the responsive rule (mobile, tablet and desktop always; one responsive element first; separate per breakpoint blocks rendering the same prepared data only as a last resort) and the color rule (every color comes from a theme token in globals.css, including brand colors of Google and Facebook; no Tailwind default palette, no white or black literals, no hex in markup). Update state.json.
 - [ ] P1 (O then S) Data model, Core/Catalog and Core/Locations: entities Section, Category (SectionId, replaces Kind), Tag, ProductTag, Product gains Kind (Physical, Digital), IsNew (manual only), IsFeatured stays, Status (Active, Inactive, Archived) replacing IsActive; Location (name, city, address, phones, emails, WhatsApp, opening hours, latitude, longitude, map embed URL, sort order, active); ContactChannel per Location; LocationStock (ProductId, LocationId, Quantity) replacing Product.StockQuantity for physical products; DigitalAsset (ProductId, storage key, file name, size); DigitalDownloadGrant (OrderLineId, UserId, download count for audit only). OrderLine gets LocationId (pickup location per line; an order may span several locations). Remove CategoryKind and every reference (about 10 files). First EF migration replaces EnsureCreated. Seed rewritten: sections Chás and Cosméticos naturais plus one example Livros section with a digital e-book, two locations (Vilanculos, Maputo Polana) with contacts and coordinates.
 
 Wave 2 (worktrees in parallel, Sonnet, split by feature folder):

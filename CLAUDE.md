@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-Project rules version: 4
+Project rules version: 5
 
 Unayka (U, N, A, Y, K, A) is a modern online shop of natural products: teas (coffee is one of them) and natural cosmetics, online and at the counter, in the same system. It is not a salon; never describe it as one. Market: Mozambique, currency MZN, UI in Mozambican Portuguese, payments by mobile wallet via PaySuite. Any spelling such as Unaika, Unaica or Unayca must be read and written as Unayka.
 
@@ -38,9 +38,15 @@ Public pages use static server rendering only. No global render mode. Interactiv
 
 Only Tailwind utilities in markup and src/Unayka.Web/wwwroot/styles/globals.css. Forbidden: .razor.css, style blocks, style attributes or any other CSS. app.css is generated, ignored by Git and never edited.
 
+Every color comes from a theme token in globals.css (for example --color-accent, --color-surface, --color-ink), brand colors such as Google and Facebook included. No Tailwind default palette, no white or black literals and no hex values in markup, so changing one token changes the whole site.
+
+## Responsive
+
+Every page works on mobile, tablet and desktop. Prefer one responsive element. Only as a last resort render separate blocks per breakpoint, always from the same data prepared in @code.
+
 ## Look and feel
 
-Minimalist, modern online store, lots of white space, soft neutral palette, handwritten font on highlights, mobile first. No emojis, no em dashes, no decorative hyphens, no typographic bullets, no version badges in the UI and nothing that suggests AI generated content. No mention of AI or Claude in code, texts, commits or trailers.
+Minimalist, modern online store, lots of white space, lively natural palette on light surfaces, handwritten font on highlights, mobile first. No emojis, no em dashes, no decorative hyphens, no typographic bullets, no version badges in the UI and nothing that suggests AI generated content. No mention of AI or Claude in code, texts, commits or trailers.
 
 ## Security
 
