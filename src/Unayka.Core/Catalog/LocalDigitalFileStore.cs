@@ -13,6 +13,17 @@ public sealed class LocalDigitalFileStore : IDigitalFileStore
         await content.CopyToAsync(target, cancellationToken);
     }
 
+    public Stream? Open(string storageKey)
+    {
+        if (string.IsNullOrEmpty(storageKey) || Path.GetFileName(storageKey) != storageKey)
+        {
+            return null;
+        }
+
+        var path = PathFor(storageKey);
+        return File.Exists(path) ? new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read) : null;
+    }
+
     public Task DeleteAsync(string storageKey, CancellationToken cancellationToken = default)
     {
         var path = PathFor(storageKey);

@@ -73,6 +73,10 @@ public sealed class CheckoutFixture : IDisposable
 
     private sealed class InMemoryFileStore : IDigitalFileStore
     {
+        public Task SaveAsync(string storageKey, Stream content, CancellationToken cancellationToken = default) => Task.CompletedTask;
+
         public Stream? Open(string storageKey) => new MemoryStream([1, 2, 3]);
+
+        public Task DeleteAsync(string storageKey, CancellationToken cancellationToken = default) => Task.CompletedTask;
     }
 }

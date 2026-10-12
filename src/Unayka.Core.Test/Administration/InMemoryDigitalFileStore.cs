@@ -13,6 +13,8 @@ public sealed class InMemoryDigitalFileStore : IDigitalFileStore
         Files[storageKey] = buffer.ToArray();
     }
 
+    public Stream? Open(string storageKey) => Files.TryGetValue(storageKey, out var bytes) ? new MemoryStream(bytes) : null;
+
     public Task DeleteAsync(string storageKey, CancellationToken cancellationToken = default)
     {
         Files.Remove(storageKey);
