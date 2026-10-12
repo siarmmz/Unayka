@@ -5,9 +5,9 @@
 
     private static readonly Dictionary<CatalogStatus, (string Label, string Class)> Styles = new()
     {
-        [CatalogStatus.Active] = ("Ativo", BaseClass + "bg-sage-soft text-espresso"),
-        [CatalogStatus.Inactive] = ("Inativo", BaseClass + "bg-cream text-stone"),
-        [CatalogStatus.Archived] = ("Arquivado", BaseClass + "bg-rose-soft text-clay"),
+        [CatalogStatus.Active] = ("Ativo", BaseClass + "bg-success-soft text-accent-strong"),
+        [CatalogStatus.Inactive] = ("Inativo", BaseClass + "bg-surface-alt text-muted"),
+        [CatalogStatus.Archived] = ("Arquivado", BaseClass + "bg-accent-soft text-accent"),
     };
 
     [Parameter, EditorRequired]

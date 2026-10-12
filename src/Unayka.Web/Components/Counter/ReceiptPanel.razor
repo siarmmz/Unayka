@@ -1,18 +1,18 @@
 @using Unayka.Core.Counter
 
-<article class="mx-auto w-full max-w-md rounded-3xl border border-sand bg-paper p-8 shadow-sm">
+<article class="mx-auto w-full max-w-md rounded-3xl border border-border bg-surface p-8 shadow-sm">
     <header class="text-center">
-        <p class="font-script text-4xl text-clay">@Text(Heading)</p>
-        <p class="mt-1 font-serif text-3xl text-espresso">@Text(_number)</p>
-        <p class="mt-1 text-xs uppercase tracking-widest text-stone">@Text(_when)</p>
+        <p class="font-script text-4xl text-accent">@Text(Heading)</p>
+        <p class="mt-1 font-serif text-3xl text-accent-strong">@Text(_number)</p>
+        <p class="mt-1 text-xs uppercase tracking-widest text-muted">@Text(_when)</p>
     </header>
 
-    <ul class="mt-6 divide-y divide-sand border-y border-sand">
+    <ul class="mt-6 divide-y divide-border border-y border-border">
         @foreach (var row in _rows)
         {
             <li class="flex items-baseline justify-between gap-4 py-2 text-sm">
                 <span class="text-ink">@Text(row.Label)</span>
-                <span class="text-stone">@Text(row.Amount)</span>
+                <span class="text-muted">@Text(row.Amount)</span>
             </li>
         }
     </ul>
@@ -21,7 +21,7 @@
         @foreach (var row in _summary)
         {
             <div class="flex justify-between">
-                <dt class="text-stone">@Text(row.Label)</dt>
+                <dt class="text-muted">@Text(row.Label)</dt>
                 <dd class="@row.CssClass">@Text(row.Value)</dd>
             </div>
         }
@@ -43,7 +43,7 @@
     private const string ChangeLabel = "Troco";
     private const string CustomerLabel = "Cliente";
     private const string NormalClass = "text-ink";
-    private const string StrongClass = "font-serif text-xl text-espresso";
+    private const string StrongClass = "font-serif text-xl text-accent-strong";
     private const string QuantityFormat = "{0} x {1}";
 
     [Parameter, EditorRequired]

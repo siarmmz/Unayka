@@ -13,7 +13,7 @@
 
     @if (_form is not null)
     {
-        <form class="space-y-5 rounded-2xl border border-sand bg-white p-5 shadow-sm sm:p-8" @onsubmit="SaveAsync">
+        <form class="space-y-5 rounded-2xl border border-border bg-surface p-5 shadow-sm sm:p-8" @onsubmit="SaveAsync">
             <h2 class="font-serif text-2xl">@Text(_formTitle)</h2>
             <ErrorList Messages="@_errors"/>
             <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
@@ -61,7 +61,7 @@
                     <input id="coupon-end" type="date" class="field" @bind="_form.EndsOn"/>
                 </div>
                 <label class="flex items-center gap-3 self-end pb-3 text-sm">
-                    <input type="checkbox" class="h-4 w-4 accent-clay" @bind="_form.IsActive"/>
+                    <input type="checkbox" class="h-4 w-4 accent-accent" @bind="_form.IsActive"/>
                     <span>@Text(Texts.ActiveLabel)</span>
                 </label>
                 <div class="sm:col-span-2 lg:col-span-3">
@@ -78,7 +78,7 @@
 
     @if (_notice is not null)
     {
-        <p class="rounded-xl bg-sage-soft px-4 py-3 text-sm text-espresso">@Text(_notice)</p>
+        <p class="rounded-xl bg-success-soft px-4 py-3 text-sm text-accent-strong">@Text(_notice)</p>
     }
 
     @if (_rows.Count == 0)
@@ -88,10 +88,10 @@
 
     @if (_rows.Count > 0)
     {
-        <section class="overflow-hidden rounded-2xl border border-sand bg-white shadow-sm">
+        <section class="overflow-hidden rounded-2xl border border-border bg-surface shadow-sm">
             <div class="overflow-x-auto">
                 <table class="w-full text-left text-sm">
-                    <thead class="bg-cream text-xs uppercase tracking-widest text-stone">
+                    <thead class="bg-surface-alt text-xs uppercase tracking-widest text-muted">
                         <tr>
                             <th class="px-5 py-3 font-medium">@Text(Texts.CodeColumn)</th>
                             <th class="px-5 py-3 font-medium">@Text(Texts.DiscountColumn)</th>
@@ -102,19 +102,19 @@
                             <th class="px-5 py-3"></th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-sand">
+                    <tbody class="divide-y divide-border">
                         @foreach (var coupon in _rows)
                         {
-                            <tr class="hover:bg-cream/60">
-                                <td class="px-5 py-3"><p class="font-medium text-espresso">@Text(coupon.Code)</p><p class="text-xs text-stone">@Text(coupon.Description)</p></td>
+                            <tr class="hover:bg-surface-alt/60">
+                                <td class="px-5 py-3"><p class="font-medium text-accent-strong">@Text(coupon.Code)</p><p class="text-xs text-muted">@Text(coupon.Description)</p></td>
                                 <td class="whitespace-nowrap px-5 py-3">@Text(DiscountLabel(coupon))</td>
                                 <td class="whitespace-nowrap px-5 py-3">@Text(UsageLabel(coupon))</td>
                                 <td class="whitespace-nowrap px-5 py-3 text-right">@Text(FormatMoney(coupon.RevenueMinor))</td>
-                                <td class="whitespace-nowrap px-5 py-3 text-stone">@Text(ValidityLabel(coupon))</td>
+                                <td class="whitespace-nowrap px-5 py-3 text-muted">@Text(ValidityLabel(coupon))</td>
                                 <td class="px-5 py-3"><span class="@StatusClass(coupon.IsActive)">@Text(StatusLabel(coupon.IsActive))</span></td>
                                 <td class="whitespace-nowrap px-5 py-3 text-right">
-                                    <button type="button" class="mr-4 text-clay hover:text-espresso" @onclick="EditHandler(coupon.Id)">@Text(Texts.Edit)</button>
-                                    <button type="button" class="text-stone hover:text-espresso" @onclick="ToggleHandler(coupon)">@Text(ToggleLabel(coupon.IsActive))</button>
+                                    <button type="button" class="mr-4 text-accent hover:text-accent-strong" @onclick="EditHandler(coupon.Id)">@Text(Texts.Edit)</button>
+                                    <button type="button" class="text-muted hover:text-accent-strong" @onclick="ToggleHandler(coupon)">@Text(ToggleLabel(coupon.IsActive))</button>
                                 </td>
                             </tr>
                         }
@@ -169,8 +169,8 @@
         public const string Until = "até";
     }
 
-    private const string ActiveClass = "rounded-full bg-emerald-50 px-3 py-1 text-xs text-emerald-700";
-    private const string PausedClass = "rounded-full bg-cream px-3 py-1 text-xs text-stone";
+    private const string ActiveClass = "rounded-full bg-success-soft px-3 py-1 text-xs text-success";
+    private const string PausedClass = "rounded-full bg-surface-alt px-3 py-1 text-xs text-muted";
     private const int BasisPointsPerPercent = 100;
 
     private IReadOnlyList<CouponRow> _rows = [];

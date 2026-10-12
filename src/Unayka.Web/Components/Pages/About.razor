@@ -10,20 +10,20 @@
         <SectionHeading Eyebrow="@Data.StoryEyebrow" Title="@Data.StoryTitle"/>
         @foreach (var paragraph in Data.Paragraphs)
         {
-            <p class="text-lg leading-relaxed text-stone">@Text(paragraph)</p>
+            <p class="text-lg leading-relaxed text-muted">@Text(paragraph)</p>
         }
     </div>
 </section>
 
-<section class="bg-cream py-20">
+<section class="bg-surface-alt py-20">
     <div class="container-page">
         <SectionHeading Title="@Data.ValuesTitle" Centered="true"/>
         <div class="mt-12 grid gap-6 md:grid-cols-3">
             @foreach (var value in Data.Values)
             {
-                <div class="rounded-3xl bg-paper p-8">
+                <div class="rounded-3xl bg-surface p-8">
                     <h3 class="font-serif text-2xl">@Text(value.Title)</h3>
-                    <p class="mt-3 text-stone">@Text(value.Description)</p>
+                    <p class="mt-3 text-muted">@Text(value.Description)</p>
                 </div>
             }
         </div>

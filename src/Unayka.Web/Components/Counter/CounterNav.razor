@@ -1,7 +1,7 @@
 <nav class="mb-6 flex flex-wrap items-center gap-2">
     @foreach (var item in Items)
     {
-        <NavLink href="@ToUrl(item.Url)" Match="NavLinkMatch.All" class="rounded-full border border-sand bg-paper px-5 py-2 text-sm text-stone transition hover:border-clay hover:text-espresso" ActiveClass="border-espresso bg-espresso text-paper hover:text-paper">@Text(item.Label)</NavLink>
+        <NavLink href="@ToUrl(item.Url)" Match="NavLinkMatch.All" class="rounded-full border border-border bg-surface px-5 py-2 text-sm text-muted transition hover:border-accent hover:text-accent-strong" ActiveClass="border-accent-strong bg-accent-strong text-surface hover:text-surface">@Text(item.Label)</NavLink>
     }
 </nav>
 

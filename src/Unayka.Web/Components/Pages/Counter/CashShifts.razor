@@ -11,8 +11,8 @@
 
 <div class="mx-auto max-w-5xl">
     <header class="mb-6">
-        <p class="font-script text-3xl text-clay">@Text(Texts.Eyebrow)</p>
-        <h1 class="font-serif text-4xl text-espresso">@Text(Texts.Title)</h1>
+        <p class="font-script text-3xl text-accent">@Text(Texts.Eyebrow)</p>
+        <h1 class="font-serif text-4xl text-accent-strong">@Text(Texts.Title)</h1>
     </header>
 
     <CounterNav/>
@@ -21,14 +21,14 @@
     {
         @if (_error is not null)
         {
-            <p role="alert" class="mb-4 rounded-xl bg-rose-soft px-4 py-3 text-sm text-red-700">@Text(_error)</p>
+            <p role="alert" class="mb-4 rounded-xl bg-accent-soft px-4 py-3 text-sm text-danger">@Text(_error)</p>
         }
 
         @if (_summary is null)
         {
-            <section class="rounded-3xl bg-paper p-8 shadow-sm">
-                <h2 class="font-serif text-2xl text-espresso">@Text(Texts.OpenTitle)</h2>
-                <p class="mt-2 text-sm text-stone">@Text(Texts.OpenIntro)</p>
+            <section class="rounded-3xl bg-surface p-8 shadow-sm">
+                <h2 class="font-serif text-2xl text-accent-strong">@Text(Texts.OpenTitle)</h2>
+                <p class="mt-2 text-sm text-muted">@Text(Texts.OpenIntro)</p>
                 <div class="mt-6 max-w-xs">
                     <label for="opening" class="field-label">@Text(Texts.OpeningLabel)</label>
                     <input id="opening" type="text" inputmode="decimal" @bind="_openingText" @bind:event="oninput" class="field"/>
@@ -39,24 +39,24 @@
 
         @if (_summary is not null)
         {
-            <section class="rounded-3xl bg-paper p-8 shadow-sm">
+            <section class="rounded-3xl bg-surface p-8 shadow-sm">
                 <div class="flex flex-wrap items-baseline justify-between gap-2">
-                    <h2 class="font-serif text-2xl text-espresso">@Text(Texts.CurrentTitle)</h2>
-                    <p class="text-sm text-stone">@Text(_openedLabel)</p>
+                    <h2 class="font-serif text-2xl text-accent-strong">@Text(Texts.CurrentTitle)</h2>
+                    <p class="text-sm text-muted">@Text(_openedLabel)</p>
                 </div>
 
                 <div class="mt-6 grid gap-4 sm:grid-cols-3">
                     @foreach (var figure in _figures)
                     {
-                        <div class="rounded-2xl bg-cream p-5">
-                            <p class="text-xs uppercase tracking-widest text-stone">@Text(figure.Label)</p>
-                            <p class="mt-2 font-serif text-3xl text-espresso">@Text(figure.Value)</p>
+                        <div class="rounded-2xl bg-surface-alt p-5">
+                            <p class="text-xs uppercase tracking-widest text-muted">@Text(figure.Label)</p>
+                            <p class="mt-2 font-serif text-3xl text-accent-strong">@Text(figure.Value)</p>
                         </div>
                     }
                 </div>
 
                 <table class="mt-8 w-full text-left text-sm">
-                    <thead class="text-xs uppercase tracking-widest text-stone">
+                    <thead class="text-xs uppercase tracking-widest text-muted">
                         <tr>
                             <th class="pb-2 font-normal">@Text(Texts.MethodHeader)</th>
                             <th class="pb-2 text-right font-normal">@Text(Texts.CountHeader)</th>
@@ -66,18 +66,18 @@
                     <tbody>
                         @foreach (var row in _methodRows)
                         {
-                            <tr class="border-t border-sand">
+                            <tr class="border-t border-border">
                                 <td class="py-3">@Text(row.Method)</td>
-                                <td class="py-3 text-right text-stone">@Text(row.Count)</td>
+                                <td class="py-3 text-right text-muted">@Text(row.Count)</td>
                                 <td class="py-3 text-right">@Text(row.Total)</td>
                             </tr>
                         }
                     </tbody>
                 </table>
 
-                <div class="mt-10 border-t border-sand pt-8">
-                    <h3 class="font-serif text-xl text-espresso">@Text(Texts.CloseTitle)</h3>
-                    <p class="mt-1 text-sm text-stone">@Text(Texts.CloseIntro)</p>
+                <div class="mt-10 border-t border-border pt-8">
+                    <h3 class="font-serif text-xl text-accent-strong">@Text(Texts.CloseTitle)</h3>
+                    <p class="mt-1 text-sm text-muted">@Text(Texts.CloseIntro)</p>
                     <div class="mt-4 grid max-w-xl gap-4 sm:grid-cols-2">
                         <div>
                             <label for="counted" class="field-label">@Text(Texts.CountedLabel)</label>
@@ -99,20 +99,20 @@
 
         @if (_closedMessage is not null)
         {
-            <p class="mt-4 rounded-xl bg-sage-soft px-4 py-3 text-sm text-espresso">@Text(_closedMessage)</p>
+            <p class="mt-4 rounded-xl bg-success-soft px-4 py-3 text-sm text-accent-strong">@Text(_closedMessage)</p>
         }
 
         <section class="mt-10">
-            <h2 class="mb-4 font-serif text-2xl text-espresso">@Text(Texts.HistoryTitle)</h2>
+            <h2 class="mb-4 font-serif text-2xl text-accent-strong">@Text(Texts.HistoryTitle)</h2>
             @if (_history.Count == 0)
             {
                 <EmptyState Title="@Texts.HistoryEmptyTitle" Message="@Texts.HistoryEmptyMessage"/>
             }
             @if (_history.Count > 0)
             {
-                <div class="overflow-x-auto rounded-3xl bg-paper shadow-sm">
+                <div class="overflow-x-auto rounded-3xl bg-surface shadow-sm">
                     <table class="w-full text-left text-sm">
-                        <thead class="text-xs uppercase tracking-widest text-stone">
+                        <thead class="text-xs uppercase tracking-widest text-muted">
                             <tr>
                                 @foreach (var header in HistoryHeaders)
                                 {
@@ -123,9 +123,9 @@
                         <tbody>
                             @foreach (var row in _historyRows)
                             {
-                                <tr class="border-t border-sand">
+                                <tr class="border-t border-border">
                                     <td class="px-5 py-3">@Text(row.Opened)</td>
-                                    <td class="px-5 py-3 text-stone">@Text(row.Closed)</td>
+                                    <td class="px-5 py-3 text-muted">@Text(row.Closed)</td>
                                     <td class="px-5 py-3">@Text(row.Opening)</td>
                                     <td class="px-5 py-3">@Text(row.Expected)</td>
                                     <td class="px-5 py-3">@Text(row.Counted)</td>
@@ -145,9 +145,9 @@
     private const string OpenedFormat = "Aberto às {0}";
     private const string ClosedFormat = "Caixa fechado. Diferença de {0}.";
     private const string PositiveSign = "+";
-    private const string BalancedClass = "pt-2 font-serif text-2xl text-espresso";
-    private const string ShortClass = "pt-2 font-serif text-2xl text-red-700";
-    private const string OverClass = "pt-2 font-serif text-2xl text-clay";
+    private const string BalancedClass = "pt-2 font-serif text-2xl text-accent-strong";
+    private const string ShortClass = "pt-2 font-serif text-2xl text-danger";
+    private const string OverClass = "pt-2 font-serif text-2xl text-accent";
     private const string CellClass = "px-5 py-3 ";
 
     private static readonly (string PageTitle, string Eyebrow, string Title, string OpenTitle, string OpenIntro, string OpeningLabel, string OpenButton, string CurrentTitle,
@@ -248,7 +248,7 @@
     private static HistoryRowView ToHistoryRow(ShiftHistoryRow row)
     {
         var difference = row.CountedMinor is null ? 0 : CashMath.Difference(row.CountedMinor.Value, row.ExpectedMinor);
-        var differenceClass = CellClass + (difference < 0 ? "text-red-700" : "text-ink");
+        var differenceClass = CellClass + (difference < 0 ? "text-danger" : "text-ink");
         return new HistoryRowView(
             CounterTimes.FormatDateTime(row.OpenedAt),
             row.ClosedAt is null ? string.Empty : CounterTimes.FormatDateTime(row.ClosedAt.Value),

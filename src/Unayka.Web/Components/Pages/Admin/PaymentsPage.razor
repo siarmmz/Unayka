@@ -18,7 +18,7 @@
         </section>
     }
 
-    <section class="grid gap-4 rounded-2xl border border-sand bg-white p-5 shadow-sm sm:grid-cols-2 lg:grid-cols-5">
+    <section class="grid gap-4 rounded-2xl border border-border bg-surface p-5 shadow-sm sm:grid-cols-2 lg:grid-cols-5">
         <div>
             <label for="payment-status" class="field-label">@Text(Texts.StatusLabel)</label>
             <select id="payment-status" class="field" @bind="_status">
@@ -68,10 +68,10 @@
 
     @if (_overview is not null && _overview.Page.Items.Count > 0)
     {
-        <section class="overflow-hidden rounded-2xl border border-sand bg-white shadow-sm">
+        <section class="overflow-hidden rounded-2xl border border-border bg-surface shadow-sm">
             <div class="overflow-x-auto">
                 <table class="w-full text-left text-sm">
-                    <thead class="bg-cream text-xs uppercase tracking-widest text-stone">
+                    <thead class="bg-surface-alt text-xs uppercase tracking-widest text-muted">
                         <tr>
                             <th class="px-5 py-3 font-medium">@Text(Texts.OrderColumn)</th>
                             <th class="px-5 py-3 font-medium">@Text(Texts.MethodColumn)</th>
@@ -82,17 +82,17 @@
                             <th class="px-5 py-3 font-medium">@Text(Texts.DateColumn)</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-sand">
+                    <tbody class="divide-y divide-border">
                         @foreach (var payment in _overview.Page.Items)
                         {
-                            <tr class="hover:bg-cream/60">
-                                <td class="px-5 py-3"><a href="@ToUrl(OrderUrl(payment.OrderNumber))" class="font-medium text-espresso hover:text-clay">@Text(payment.OrderNumber)</a></td>
+                            <tr class="hover:bg-surface-alt/60">
+                                <td class="px-5 py-3"><a href="@ToUrl(OrderUrl(payment.OrderNumber))" class="font-medium text-accent-strong hover:text-accent">@Text(payment.OrderNumber)</a></td>
                                 <td class="px-5 py-3">@Text(StatusLabels.For(payment.Method))</td>
-                                <td class="px-5 py-3 text-stone">@Text(payment.Provider)</td>
+                                <td class="px-5 py-3 text-muted">@Text(payment.Provider)</td>
                                 <td class="px-5 py-3"><StatusBadge Payment="@payment.Status"/></td>
                                 <td class="whitespace-nowrap px-5 py-3 text-right">@Text(FormatMoney(payment.AmountMinor))</td>
-                                <td class="whitespace-nowrap px-5 py-3 text-right text-stone">@Text(FormatMoney(payment.FeeMinor))</td>
-                                <td class="whitespace-nowrap px-5 py-3 text-stone">@Text(FormatDateTime(payment.CreatedAt))</td>
+                                <td class="whitespace-nowrap px-5 py-3 text-right text-muted">@Text(FormatMoney(payment.FeeMinor))</td>
+                                <td class="whitespace-nowrap px-5 py-3 text-muted">@Text(FormatDateTime(payment.CreatedAt))</td>
                             </tr>
                         }
                     </tbody>

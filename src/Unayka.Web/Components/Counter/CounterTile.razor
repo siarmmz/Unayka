@@ -1,24 +1,24 @@
 @using Unayka.Core.Counter
 
 <button type="button" disabled="@_soldOut" @onclick="Pick" class="@_cssClass">
-    <span class="block aspect-[4/3] w-full overflow-hidden bg-cream">
+    <span class="block aspect-[4/3] w-full overflow-hidden bg-surface-alt">
         @if (_hasImage)
         {
             <img src="@Product.ImageUrl" alt="" loading="lazy" class="h-full w-full object-cover"/>
         }
     </span>
     <span class="block px-3 py-3">
-        <span class="block min-h-10 font-serif text-lg leading-tight text-espresso">@Text(Product.Name)</span>
+        <span class="block min-h-10 font-serif text-lg leading-tight text-accent-strong">@Text(Product.Name)</span>
         <span class="mt-1 flex items-center justify-between text-sm">
             <span class="font-medium text-ink">@Text(_price)</span>
-            <span class="text-xs text-stone">@Text(_stock)</span>
+            <span class="text-xs text-muted">@Text(_stock)</span>
         </span>
     </span>
 </button>
 
 @code {
-    private const string BaseClass = "overflow-hidden rounded-2xl border border-sand bg-paper text-left transition";
-    private const string ActiveClass = "hover:border-clay hover:shadow-md active:scale-95";
+    private const string BaseClass = "overflow-hidden rounded-2xl border border-border bg-surface text-left transition";
+    private const string ActiveClass = "hover:border-accent hover:shadow-md active:scale-95";
     private const string SoldOutClass = "cursor-not-allowed opacity-50";
     private const string StockFormat = "{0} em stock";
     private const string SoldOutLabel = "Esgotado";

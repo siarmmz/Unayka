@@ -23,10 +23,10 @@
             <ErrorList Messages="@_errors"/>
             @if (_notice is not null)
             {
-                <p class="rounded-xl bg-sage-soft px-4 py-3 text-sm text-espresso">@Text(_notice)</p>
+                <p class="rounded-xl bg-success-soft px-4 py-3 text-sm text-accent-strong">@Text(_notice)</p>
             }
 
-            <section class="grid gap-5 rounded-2xl border border-sand bg-paper p-5 shadow-sm sm:grid-cols-2 sm:p-8">
+            <section class="grid gap-5 rounded-2xl border border-border bg-surface p-5 shadow-sm sm:grid-cols-2 sm:p-8">
                 <div class="sm:col-span-2">
                     <label for="product-name" class="field-label">@Text(Texts.NameLabel)</label>
                     <input id="product-name" type="text" maxlength="120" class="field" @bind="_form.Name" @bind:event="oninput" @bind:after="OnNameChanged"/>
@@ -66,13 +66,13 @@
 
             @if (_sectionTags.Count > 0)
             {
-                <section class="space-y-3 rounded-2xl border border-sand bg-paper p-5 shadow-sm sm:p-8">
+                <section class="space-y-3 rounded-2xl border border-border bg-surface p-5 shadow-sm sm:p-8">
                     <h2 class="font-serif text-2xl">@Text(Texts.TagsTitle)</h2>
                     <div class="flex flex-wrap gap-x-6 gap-y-3">
                         @foreach (var tag in _sectionTags)
                         {
                             <label class="flex items-center gap-2 text-sm">
-                                <input type="checkbox" class="h-4 w-4 accent-clay" checked="@IsTagSelected(tag.Id)" @onchange="TagToggled(tag.Id)"/>
+                                <input type="checkbox" class="h-4 w-4 accent-accent" checked="@IsTagSelected(tag.Id)" @onchange="TagToggled(tag.Id)"/>
                                 <span>@Text(tag.Name)</span>
                             </label>
                         }
@@ -80,7 +80,7 @@
                 </section>
             }
 
-            <section class="grid gap-5 rounded-2xl border border-sand bg-paper p-5 shadow-sm sm:grid-cols-2 sm:p-8 lg:grid-cols-3">
+            <section class="grid gap-5 rounded-2xl border border-border bg-surface p-5 shadow-sm sm:grid-cols-2 sm:p-8 lg:grid-cols-3">
                 <div>
                     <label for="product-price" class="field-label">@Text(Texts.PriceLabel)</label>
                     <input id="product-price" type="number" step="0.01" min="0" class="field" @bind="_form.Price"/>
@@ -113,11 +113,11 @@
                 </div>
                 <div class="flex flex-wrap items-center gap-x-6 gap-y-3 sm:col-span-2 lg:col-span-1">
                     <label class="flex items-center gap-3 text-sm">
-                        <input type="checkbox" class="h-4 w-4 accent-clay" @bind="_form.IsNew"/>
+                        <input type="checkbox" class="h-4 w-4 accent-accent" @bind="_form.IsNew"/>
                         <span>@Text(Texts.NewFlagLabel)</span>
                     </label>
                     <label class="flex items-center gap-3 text-sm">
-                        <input type="checkbox" class="h-4 w-4 accent-clay" @bind="_form.IsFeatured"/>
+                        <input type="checkbox" class="h-4 w-4 accent-accent" @bind="_form.IsFeatured"/>
                         <span>@Text(Texts.FeaturedLabel)</span>
                     </label>
                 </div>
@@ -125,11 +125,11 @@
 
             @if (IsPhysical)
             {
-                <section class="space-y-4 rounded-2xl border border-sand bg-paper p-5 shadow-sm sm:p-8">
+                <section class="space-y-4 rounded-2xl border border-border bg-surface p-5 shadow-sm sm:p-8">
                     <h2 class="font-serif text-2xl">@Text(Texts.StockTitle)</h2>
                     @if (_form.Stocks.Count == 0)
                     {
-                        <p class="text-sm text-stone">@Text(Texts.NoLocations)</p>
+                        <p class="text-sm text-muted">@Text(Texts.NoLocations)</p>
                     }
                     <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
                         @foreach (var stock in _form.Stocks)
@@ -145,9 +145,9 @@
 
             @if (IsDigital)
             {
-                <section class="space-y-4 rounded-2xl border border-sand bg-paper p-5 shadow-sm sm:p-8">
+                <section class="space-y-4 rounded-2xl border border-border bg-surface p-5 shadow-sm sm:p-8">
                     <h2 class="font-serif text-2xl">@Text(Texts.FileTitle)</h2>
-                    <p class="text-sm text-stone">@Text(_fileSummary)</p>
+                    <p class="text-sm text-muted">@Text(_fileSummary)</p>
                     @if (_form.Id is not null)
                     {
                         <div class="flex flex-wrap items-center gap-4">
@@ -161,14 +161,14 @@
                 </section>
             }
 
-            <section class="space-y-4 rounded-2xl border border-sand bg-paper p-5 shadow-sm sm:p-8">
+            <section class="space-y-4 rounded-2xl border border-border bg-surface p-5 shadow-sm sm:p-8">
                 <div class="flex items-center justify-between gap-4">
                     <h2 class="font-serif text-2xl">@Text(Texts.MediaTitle)</h2>
                     <button type="button" class="btn-outline px-5 py-2" @onclick="AddMedia">@Text(Texts.AddMedia)</button>
                 </div>
                 @foreach (var media in _form.Media)
                 {
-                    <div class="grid items-end gap-3 rounded-xl border border-sand p-4 sm:grid-cols-12">
+                    <div class="grid items-end gap-3 rounded-xl border border-border p-4 sm:grid-cols-12">
                         <div class="sm:col-span-5">
                             <label class="field-label">@Text(Texts.MediaUrlLabel)</label>
                             <input type="url" class="field" @bind="media.Url"/>
@@ -197,14 +197,14 @@
                 }
             </section>
 
-            <section class="space-y-4 rounded-2xl border border-sand bg-paper p-5 shadow-sm sm:p-8">
+            <section class="space-y-4 rounded-2xl border border-border bg-surface p-5 shadow-sm sm:p-8">
                 <div class="flex items-center justify-between gap-4">
                     <h2 class="font-serif text-2xl">@Text(Texts.FactsTitle)</h2>
                     <button type="button" class="btn-outline px-5 py-2" @onclick="AddFact">@Text(Texts.AddFact)</button>
                 </div>
                 @foreach (var fact in _form.Facts)
                 {
-                    <div class="grid items-end gap-3 rounded-xl border border-sand p-4 sm:grid-cols-12">
+                    <div class="grid items-end gap-3 rounded-xl border border-border p-4 sm:grid-cols-12">
                         <div class="sm:col-span-3">
                             <label class="field-label">@Text(Texts.FactGroupLabel)</label>
                             <input type="text" maxlength="60" class="field" @bind="fact.Group"/>

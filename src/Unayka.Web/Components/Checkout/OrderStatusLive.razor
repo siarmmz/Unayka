@@ -2,17 +2,17 @@
 @using Unayka.Web.Endpoints.Downloads
 @inject IServiceScopeFactory ScopeFactory
 
-<div class="space-y-8 rounded-3xl border border-sand p-8 sm:p-10">
+<div class="space-y-8 rounded-3xl border border-border p-8 sm:p-10">
     <div class="flex items-center justify-between gap-4">
-        <p class="font-script text-3xl text-clay">@Text(_title)</p>
+        <p class="font-script text-3xl text-accent">@Text(_title)</p>
         <StatusBadge Order="_orderStatus"/>
     </div>
-    <p class="text-stone">@Text(_message)</p>
+    <p class="text-muted">@Text(_message)</p>
 
     @if (_phase == Phase.Pending)
     {
-        <div class="flex items-center gap-3 rounded-2xl bg-cream px-5 py-4 text-sm text-espresso">
-            <span class="h-3 w-3 animate-pulse rounded-full bg-clay"></span>
+        <div class="flex items-center gap-3 rounded-2xl bg-surface-alt px-5 py-4 text-sm text-accent-strong">
+            <span class="h-3 w-3 animate-pulse rounded-full bg-accent"></span>
             <span>@Text(Texts.WaitingLabel)</span>
         </div>
     }
@@ -20,14 +20,14 @@
     @if (_phase == Phase.Paid)
     {
         <div class="space-y-4">
-            <p class="rounded-2xl bg-sage-soft px-5 py-4 text-sm text-espresso">@Text(_fulfillmentNote)</p>
+            <p class="rounded-2xl bg-success-soft px-5 py-4 text-sm text-accent-strong">@Text(_fulfillmentNote)</p>
             @if (_downloads.Count > 0)
             {
                 <ul class="space-y-3">
                     @foreach (var download in _downloads)
                     {
-                        <li class="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-sand px-5 py-4">
-                            <span class="text-espresso">@Text(download.Name)</span>
+                        <li class="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border px-5 py-4">
+                            <span class="text-accent-strong">@Text(download.Name)</span>
                             <a href="@download.Url" class="btn-primary">@Text(Texts.DownloadButton)</a>
                         </li>
                     }
@@ -40,8 +40,8 @@
     @if (_phase == Phase.Failed)
     {
         <div class="space-y-5">
-            <p role="alert" class="rounded-2xl bg-rose-soft px-5 py-4 text-sm text-red-700">@Text(_failureText)</p>
-            <h2 class="font-serif text-2xl text-espresso">@Text(Texts.RetryTitle)</h2>
+            <p role="alert" class="rounded-2xl bg-accent-soft px-5 py-4 text-sm text-danger">@Text(_failureText)</p>
+            <h2 class="font-serif text-2xl text-accent-strong">@Text(Texts.RetryTitle)</h2>
             <div>
                 <label for="retry-method" class="field-label">@Text(Texts.MethodLabel)</label>
                 <select id="retry-method" class="field" @bind="_retryMethod">
@@ -60,7 +60,7 @@
             }
             @if (_retryError is not null)
             {
-                <p role="alert" class="text-sm text-red-700">@Text(_retryError)</p>
+                <p role="alert" class="text-sm text-danger">@Text(_retryError)</p>
             }
             <button type="button" class="btn-primary" @onclick="RetryAsync">@Text(Texts.RetryButton)</button>
         </div>

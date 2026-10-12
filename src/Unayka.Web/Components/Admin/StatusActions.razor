@@ -2,15 +2,15 @@
     @ChildContent
     @if (_confirming)
     {
-        <span class="text-stone">@Text(ConfirmQuestion)</span>
-        <button type="button" class="text-clay hover:text-espresso" @onclick="ConfirmDelete">@Text(ConfirmLabel)</button>
-        <button type="button" class="text-stone hover:text-espresso" @onclick="CancelDelete">@Text(CancelLabel)</button>
+        <span class="text-muted">@Text(ConfirmQuestion)</span>
+        <button type="button" class="text-accent hover:text-accent-strong" @onclick="ConfirmDelete">@Text(ConfirmLabel)</button>
+        <button type="button" class="text-muted hover:text-accent-strong" @onclick="CancelDelete">@Text(CancelLabel)</button>
     }
     @if (!_confirming)
     {
         @foreach (var action in _actions)
         {
-            <button type="button" class="text-clay hover:text-espresso" @onclick="action.Handler">@Text(action.Label)</button>
+            <button type="button" class="text-accent hover:text-accent-strong" @onclick="action.Handler">@Text(action.Label)</button>
         }
     }
 </div>

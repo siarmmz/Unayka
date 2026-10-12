@@ -1,20 +1,20 @@
 @using Unayka.Core.Counter
 
-<section class="flex min-h-64 flex-col rounded-3xl bg-paper p-4 shadow-sm">
+<section class="flex min-h-64 flex-col rounded-3xl bg-surface p-4 shadow-sm">
     <header class="mb-4 flex items-center justify-between px-1">
-        <h2 class="font-serif text-2xl text-espresso">@Text(Title)</h2>
-        <span class="rounded-full bg-cream px-3 py-1 text-xs text-stone">@Text(_count)</span>
+        <h2 class="font-serif text-2xl text-accent-strong">@Text(Title)</h2>
+        <span class="rounded-full bg-surface-alt px-3 py-1 text-xs text-muted">@Text(_count)</span>
     </header>
 
     <div class="space-y-3">
         @foreach (var card in _cards)
         {
-            <article class="rounded-2xl border border-sand p-4 transition hover:border-clay">
+            <article class="rounded-2xl border border-border p-4 transition hover:border-accent">
                 <div class="flex items-start justify-between gap-2">
-                    <p class="font-serif text-xl text-espresso">@Text(card.Number)</p>
+                    <p class="font-serif text-xl text-accent-strong">@Text(card.Number)</p>
                     <span class="@card.ChannelClass">@Text(card.ChannelLabel)</span>
                 </div>
-                <p class="mt-1 text-sm text-stone">@Text(card.Customer)</p>
+                <p class="mt-1 text-sm text-muted">@Text(card.Customer)</p>
                 <ul class="mt-3 space-y-1 text-sm text-ink">
                     @foreach (var item in card.Items)
                     {
@@ -25,14 +25,14 @@
                     <span class="@card.AgeClass">@Text(card.Age)</span>
                     @if (card.CanAdvance)
                     {
-                        <button type="button" @onclick="card.Advance" class="rounded-full bg-espresso px-4 py-2 text-xs text-paper transition hover:bg-clay">@Text(AdvanceLabel)</button>
+                        <button type="button" @onclick="card.Advance" class="rounded-full bg-accent-strong px-4 py-2 text-xs text-surface transition hover:bg-accent">@Text(AdvanceLabel)</button>
                     }
                 </div>
             </article>
         }
         @if (_cards.Count == 0)
         {
-            <p class="px-1 py-6 text-center font-script text-2xl text-stone">@Text(EmptyMessage)</p>
+            <p class="px-1 py-6 text-center font-script text-2xl text-muted">@Text(EmptyMessage)</p>
         }
     </div>
 </section>
@@ -49,10 +49,10 @@
     private const int MinutesPerDay = 1440;
     private const int LateAfterMinutes = 10;
     private const string ChannelBase = "rounded-full px-3 py-1 text-xs ";
-    private const string CounterClass = ChannelBase + "bg-sage-soft text-sage";
-    private const string OnlineClass = ChannelBase + "bg-rose-soft text-clay";
-    private const string AgeNormalClass = "text-xs text-stone";
-    private const string AgeLateClass = "text-xs font-medium text-red-700";
+    private const string CounterClass = ChannelBase + "bg-success-soft text-success";
+    private const string OnlineClass = ChannelBase + "bg-accent-soft text-accent";
+    private const string AgeNormalClass = "text-xs text-muted";
+    private const string AgeLateClass = "text-xs font-medium text-danger";
 
     private sealed record CardView(
         string Number,

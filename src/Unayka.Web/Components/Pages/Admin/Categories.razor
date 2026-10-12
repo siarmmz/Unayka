@@ -12,7 +12,7 @@
 
     @if (_form is not null)
     {
-        <form class="space-y-5 rounded-2xl border border-sand bg-paper p-5 shadow-sm sm:p-8" @onsubmit="SaveAsync">
+        <form class="space-y-5 rounded-2xl border border-border bg-surface p-5 shadow-sm sm:p-8" @onsubmit="SaveAsync">
             <h2 class="font-serif text-2xl">@Text(_formTitle)</h2>
             <ErrorList Messages="@_errors"/>
             <div class="grid gap-5 sm:grid-cols-2">
@@ -64,7 +64,7 @@
 
     @if (_notice is not null)
     {
-        <p class="rounded-xl bg-sage-soft px-4 py-3 text-sm text-espresso">@Text(_notice)</p>
+        <p class="rounded-xl bg-success-soft px-4 py-3 text-sm text-accent-strong">@Text(_notice)</p>
     }
 
     <ErrorList Messages="@_actionErrors"/>
@@ -76,8 +76,8 @@
 
     @if (_rows.Count > 0)
     {
-        <section class="overflow-hidden rounded-2xl border border-sand bg-paper shadow-sm">
-            <div class="hidden grid-cols-12 gap-4 bg-cream px-4 py-3 text-xs uppercase tracking-widest text-stone md:grid">
+        <section class="overflow-hidden rounded-2xl border border-border bg-surface shadow-sm">
+            <div class="hidden grid-cols-12 gap-4 bg-surface-alt px-4 py-3 text-xs uppercase tracking-widest text-muted md:grid">
                 <span class="col-span-3">@Text(Texts.NameLabel)</span>
                 <span class="col-span-2">@Text(Texts.SectionLabel)</span>
                 <span class="col-span-2">@Text(Texts.ProductsColumn)</span>
@@ -85,21 +85,21 @@
                 <span class="col-span-1">@Text(Texts.StatusLabel)</span>
                 <span class="col-span-3">@Text(Texts.ActionsColumn)</span>
             </div>
-            <div class="divide-y divide-sand">
+            <div class="divide-y divide-border">
                 @foreach (var category in _rows)
                 {
                     <article class="grid gap-3 p-4 md:grid-cols-12 md:items-center md:gap-4">
                         <div class="md:col-span-3">
-                            <p class="font-medium text-espresso">@Text(category.Name)</p>
-                            <p class="text-xs text-stone">@Text(category.Slug)</p>
+                            <p class="font-medium text-accent-strong">@Text(category.Name)</p>
+                            <p class="text-xs text-muted">@Text(category.Slug)</p>
                         </div>
-                        <p class="text-sm text-stone md:col-span-2">@Text(category.SectionName)</p>
-                        <p class="text-sm text-stone md:col-span-2">@Text(FormatNumber(category.ProductCount))</p>
-                        <p class="text-sm text-stone md:col-span-1">@Text(FormatNumber(category.SortOrder))</p>
+                        <p class="text-sm text-muted md:col-span-2">@Text(category.SectionName)</p>
+                        <p class="text-sm text-muted md:col-span-2">@Text(FormatNumber(category.ProductCount))</p>
+                        <p class="text-sm text-muted md:col-span-1">@Text(FormatNumber(category.SortOrder))</p>
                         <div class="md:col-span-1"><CatalogStatusBadge Status="@category.Status"/></div>
                         <div class="md:col-span-3">
                             <StatusActions Status="@category.Status" CanDelete="@category.CanDelete" OnStatus="StatusHandler(category)" OnDelete="DeleteHandler(category)">
-                                <button type="button" class="text-clay hover:text-espresso" @onclick="EditHandler(category.Id)">@Text(Texts.Edit)</button>
+                                <button type="button" class="text-accent hover:text-accent-strong" @onclick="EditHandler(category.Id)">@Text(Texts.Edit)</button>
                             </StatusActions>
                         </div>
                     </article>

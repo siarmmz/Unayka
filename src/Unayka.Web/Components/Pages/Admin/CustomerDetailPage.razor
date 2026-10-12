@@ -24,23 +24,23 @@
             }
         </section>
 
-        <section class="rounded-2xl border border-sand bg-white p-5 shadow-sm sm:p-8">
+        <section class="rounded-2xl border border-border bg-surface p-5 shadow-sm sm:p-8">
             <h2 class="font-serif text-2xl">@Text(Texts.OrdersTitle)</h2>
             @if (_detail.Orders.Count == 0)
             {
-                <p class="mt-4 text-sm text-stone">@Text(Texts.NoOrders)</p>
+                <p class="mt-4 text-sm text-muted">@Text(Texts.NoOrders)</p>
             }
             <div class="mt-4 overflow-x-auto">
                 <table class="w-full text-left text-sm">
-                    <tbody class="divide-y divide-sand">
+                    <tbody class="divide-y divide-border">
                         @foreach (var order in _detail.Orders)
                         {
-                            <tr class="hover:bg-cream/60">
-                                <td class="py-3 pr-4"><a href="@ToUrl(OrderUrl(order.Number))" class="font-medium text-espresso hover:text-clay">@Text(order.Number)</a></td>
-                                <td class="py-3 pr-4 text-stone">@Text(ChannelLabel(order.Channel))</td>
+                            <tr class="hover:bg-surface-alt/60">
+                                <td class="py-3 pr-4"><a href="@ToUrl(OrderUrl(order.Number))" class="font-medium text-accent-strong hover:text-accent">@Text(order.Number)</a></td>
+                                <td class="py-3 pr-4 text-muted">@Text(ChannelLabel(order.Channel))</td>
                                 <td class="py-3 pr-4"><StatusBadge Order="@order.Status"/></td>
                                 <td class="whitespace-nowrap py-3 pr-4 text-right">@Text(FormatMoney(order.TotalMinor))</td>
-                                <td class="whitespace-nowrap py-3 text-stone">@Text(FormatDateTime(order.CreatedAt))</td>
+                                <td class="whitespace-nowrap py-3 text-muted">@Text(FormatDateTime(order.CreatedAt))</td>
                             </tr>
                         }
                     </tbody>

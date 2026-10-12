@@ -17,7 +17,7 @@
     </div>
 
     <div class="mt-14 space-y-6">
-        <h2 class="font-serif text-3xl text-espresso">@Text(Texts.OrdersTitle)</h2>
+        <h2 class="font-serif text-3xl text-accent-strong">@Text(Texts.OrdersTitle)</h2>
 
         @if (_orders.Count == 0)
         {
@@ -26,18 +26,18 @@
 
         @if (_orders.Count > 0)
         {
-            <ul class="divide-y divide-sand border-y border-sand">
+            <ul class="divide-y divide-border border-y border-border">
                 @foreach (var order in _orders)
                 {
                     <li class="space-y-4 py-6 sm:px-4">
-                        <a href="@order.Url" class="flex flex-wrap items-center justify-between gap-4 transition hover:bg-cream/60">
+                        <a href="@order.Url" class="flex flex-wrap items-center justify-between gap-4 transition hover:bg-surface-alt/60">
                             <div>
-                                <p class="font-serif text-xl text-espresso">@Text(order.Number)</p>
-                                <p class="text-sm text-stone">@Text(order.Summary)</p>
+                                <p class="font-serif text-xl text-accent-strong">@Text(order.Number)</p>
+                                <p class="text-sm text-muted">@Text(order.Summary)</p>
                             </div>
                             <div class="flex items-center gap-6">
                                 <StatusBadge Order="order.Status"/>
-                                <span class="font-serif text-xl text-espresso">@Text(order.Total)</span>
+                                <span class="font-serif text-xl text-accent-strong">@Text(order.Total)</span>
                             </div>
                         </a>
                         <OrderLinesList Lines="order.Lines" AllowDownloads="order.AllowDownloads"/>

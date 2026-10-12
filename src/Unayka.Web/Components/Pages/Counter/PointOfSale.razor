@@ -12,8 +12,8 @@
 
 <div class="mx-auto max-w-7xl">
     <header class="mb-6">
-        <p class="font-script text-3xl text-clay">@Text(Texts.Eyebrow)</p>
-        <h1 class="font-serif text-4xl text-espresso">@Text(Texts.Title)</h1>
+        <p class="font-script text-3xl text-accent">@Text(Texts.Eyebrow)</p>
+        <h1 class="font-serif text-4xl text-accent-strong">@Text(Texts.Title)</h1>
     </header>
 
     <CounterNav/>
@@ -22,12 +22,12 @@
     {
         @if (!_shiftOpen)
         {
-            <section class="mx-auto max-w-lg rounded-3xl bg-paper p-8 shadow-sm">
-                <h2 class="font-serif text-2xl text-espresso">@Text(Texts.NoShiftTitle)</h2>
-                <p class="mt-2 text-sm text-stone">@Text(Texts.NoShiftIntro)</p>
+            <section class="mx-auto max-w-lg rounded-3xl bg-surface p-8 shadow-sm">
+                <h2 class="font-serif text-2xl text-accent-strong">@Text(Texts.NoShiftTitle)</h2>
+                <p class="mt-2 text-sm text-muted">@Text(Texts.NoShiftIntro)</p>
                 @if (_error is not null)
                 {
-                    <p role="alert" class="mt-4 rounded-xl bg-rose-soft px-4 py-3 text-sm text-red-700">@Text(_error)</p>
+                    <p role="alert" class="mt-4 rounded-xl bg-accent-soft px-4 py-3 text-sm text-danger">@Text(_error)</p>
                 }
                 <div class="mt-6">
                     <label for="opening" class="field-label">@Text(Texts.OpeningLabel)</label>
@@ -66,12 +66,12 @@
                     }
                 </section>
 
-                <aside class="h-fit space-y-5 rounded-3xl bg-paper p-6 shadow-sm lg:sticky lg:top-6">
-                    <h2 class="font-serif text-2xl text-espresso">@Text(Texts.TicketTitle)</h2>
+                <aside class="h-fit space-y-5 rounded-3xl bg-surface p-6 shadow-sm lg:sticky lg:top-6">
+                    <h2 class="font-serif text-2xl text-accent-strong">@Text(Texts.TicketTitle)</h2>
 
                     @if (_lines.Count == 0)
                     {
-                        <p class="py-4 text-center font-script text-2xl text-stone">@Text(Texts.EmptyTicket)</p>
+                        <p class="py-4 text-center font-script text-2xl text-muted">@Text(Texts.EmptyTicket)</p>
                     }
                     <ul>
                         @for (var index = 0; index < _lines.Count; index++)
@@ -80,8 +80,8 @@
                         }
                     </ul>
 
-                    <details class="rounded-2xl bg-cream px-4 py-3">
-                        <summary class="cursor-pointer text-sm text-espresso">@Text(Texts.FreeAmountTitle)</summary>
+                    <details class="rounded-2xl bg-surface-alt px-4 py-3">
+                        <summary class="cursor-pointer text-sm text-accent-strong">@Text(Texts.FreeAmountTitle)</summary>
                         <div class="mt-3 space-y-3">
                             <input type="text" maxlength="80" @bind="_freeDescription" placeholder="@Texts.FreeDescriptionPlaceholder" class="field"/>
                             <input type="text" inputmode="decimal" @bind="_freeAmount" placeholder="@Texts.FreeAmountPlaceholder" class="field"/>
@@ -94,9 +94,9 @@
                         <input type="tel" inputmode="numeric" maxlength="16" @bind="_customerPhone" placeholder="@Texts.CustomerPhonePlaceholder" class="field"/>
                     </div>
 
-                    <div class="flex items-baseline justify-between border-t border-sand pt-4">
-                        <span class="text-sm uppercase tracking-widest text-stone">@Text(Texts.TotalLabel)</span>
-                        <span class="font-serif text-4xl text-espresso">@Text(TotalText)</span>
+                    <div class="flex items-baseline justify-between border-t border-border pt-4">
+                        <span class="text-sm uppercase tracking-widest text-muted">@Text(Texts.TotalLabel)</span>
+                        <span class="font-serif text-4xl text-accent-strong">@Text(TotalText)</span>
                     </div>
 
                     <div class="grid grid-cols-2 gap-2">
@@ -112,7 +112,7 @@
                             <label for="received" class="field-label">@Text(Texts.ReceivedLabel)</label>
                             <input id="received" type="text" inputmode="decimal" @bind="_receivedText" @bind:event="oninput" class="field"/>
                             <div class="flex items-center justify-between text-sm">
-                                <button type="button" @onclick="FillExact" class="text-clay underline-offset-4 hover:underline">@Text(Texts.ExactLabel)</button>
+                                <button type="button" @onclick="FillExact" class="text-accent underline-offset-4 hover:underline">@Text(Texts.ExactLabel)</button>
                                 <span class="@ChangeClass">@Text(ChangeText)</span>
                             </div>
                         </div>
@@ -128,17 +128,17 @@
 
                     @if (_method == PaymentMethod.Card)
                     {
-                        <p class="rounded-xl bg-cream px-4 py-3 text-sm text-stone">@Text(Texts.CardHint)</p>
+                        <p class="rounded-xl bg-surface-alt px-4 py-3 text-sm text-muted">@Text(Texts.CardHint)</p>
                     }
 
                     @if (_stage == PosStage.WalletWaiting)
                     {
-                        <p role="status" class="animate-pulse rounded-xl bg-sage-soft px-4 py-3 text-sm text-espresso">@Text(_walletStatus)</p>
+                        <p role="status" class="animate-pulse rounded-xl bg-success-soft px-4 py-3 text-sm text-accent-strong">@Text(_walletStatus)</p>
                     }
 
                     @if (_error is not null)
                     {
-                        <p role="alert" class="rounded-xl bg-rose-soft px-4 py-3 text-sm text-red-700">@Text(_error)</p>
+                        <p role="alert" class="rounded-xl bg-accent-soft px-4 py-3 text-sm text-danger">@Text(_error)</p>
                     }
 
                     <button type="button" @onclick="Pay" disabled="@(_stage == PosStage.WalletWaiting)" class="btn-primary w-full disabled:opacity-60">@Text(PayLabel)</button>
@@ -151,13 +151,13 @@
 @code {
     private const string AllCategoriesLabel = "Todos";
     private const string TabBase = "rounded-full border px-5 py-2 text-sm transition ";
-    private const string TabIdle = TabBase + "border-sand bg-paper text-stone hover:border-clay";
-    private const string TabActive = TabBase + "border-espresso bg-espresso text-paper";
+    private const string TabIdle = TabBase + "border-border bg-surface text-muted hover:border-accent";
+    private const string TabActive = TabBase + "border-accent-strong bg-accent-strong text-surface";
     private const string MethodBase = "rounded-2xl border px-3 py-3 text-sm transition ";
-    private const string MethodIdle = MethodBase + "border-sand bg-paper text-stone hover:border-clay";
-    private const string MethodActive = MethodBase + "border-espresso bg-espresso text-paper";
-    private const string ChangeEnoughClass = "font-medium text-espresso";
-    private const string ChangeMissingClass = "font-medium text-red-700";
+    private const string MethodIdle = MethodBase + "border-border bg-surface text-muted hover:border-accent";
+    private const string MethodActive = MethodBase + "border-accent-strong bg-accent-strong text-surface";
+    private const string ChangeEnoughClass = "font-medium text-accent-strong";
+    private const string ChangeMissingClass = "font-medium text-danger";
     private const string ChangeFormat = "Troco {0}";
     private const string MissingFormat = "Falta {0}";
     private const string WalletReference = "Pedido de pagamento enviado para {0}.";

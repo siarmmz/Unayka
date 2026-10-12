@@ -8,7 +8,7 @@
 <div class="mx-auto max-w-6xl space-y-8">
     <AdminPageHeader Title="@Texts.Title" Eyebrow="@Texts.Eyebrow" Subtitle="@Texts.Subtitle"/>
 
-    <section class="flex flex-wrap items-end gap-4 rounded-2xl border border-sand bg-white p-5 shadow-sm">
+    <section class="flex flex-wrap items-end gap-4 rounded-2xl border border-border bg-surface p-5 shadow-sm">
         <div class="min-w-64 flex-1">
             <label for="customer-search" class="field-label">@Text(Texts.SearchLabel)</label>
             <input id="customer-search" type="search" class="field" placeholder="@Texts.SearchPlaceholder" @bind="_search" @bind:event="oninput" @onkeydown="OnSearchKey"/>
@@ -23,10 +23,10 @@
 
     @if (_result is not null && _result.Items.Count > 0)
     {
-        <section class="overflow-hidden rounded-2xl border border-sand bg-white shadow-sm">
+        <section class="overflow-hidden rounded-2xl border border-border bg-surface shadow-sm">
             <div class="overflow-x-auto">
                 <table class="w-full text-left text-sm">
-                    <thead class="bg-cream text-xs uppercase tracking-widest text-stone">
+                    <thead class="bg-surface-alt text-xs uppercase tracking-widest text-muted">
                         <tr>
                             <th class="px-5 py-3 font-medium">@Text(Texts.CustomerColumn)</th>
                             <th class="px-5 py-3 text-right font-medium">@Text(Texts.OrdersColumn)</th>
@@ -35,17 +35,17 @@
                             <th class="px-5 py-3 font-medium">@Text(Texts.SegmentColumn)</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-sand">
+                    <tbody class="divide-y divide-border">
                         @foreach (var customer in _result.Items)
                         {
-                            <tr class="hover:bg-cream/60">
+                            <tr class="hover:bg-surface-alt/60">
                                 <td class="px-5 py-3">
-                                    <a href="@ToUrl(DetailUrl(customer.Id))" class="font-medium text-espresso hover:text-clay">@Text(customer.Name)</a>
-                                    <p class="text-xs text-stone">@Text(Contact(customer))</p>
+                                    <a href="@ToUrl(DetailUrl(customer.Id))" class="font-medium text-accent-strong hover:text-accent">@Text(customer.Name)</a>
+                                    <p class="text-xs text-muted">@Text(Contact(customer))</p>
                                 </td>
                                 <td class="px-5 py-3 text-right">@Text(FormatNumber(customer.OrderCount))</td>
                                 <td class="whitespace-nowrap px-5 py-3 text-right">@Text(FormatMoney(customer.TotalSpentMinor))</td>
-                                <td class="whitespace-nowrap px-5 py-3 text-stone">@Text(LastOrder(customer))</td>
+                                <td class="whitespace-nowrap px-5 py-3 text-muted">@Text(LastOrder(customer))</td>
                                 <td class="px-5 py-3"><span class="@SegmentClass(customer.Segment)">@Text(CustomerSegments.Label(customer.Segment))</span></td>
                             </tr>
                         }
@@ -78,9 +78,9 @@
         public const string EnterKey = "Enter";
     }
 
-    private const string RecurringClass = "rounded-full bg-emerald-50 px-3 py-1 text-xs text-emerald-700";
-    private const string NewClass = "rounded-full bg-sage-soft px-3 py-1 text-xs text-sage";
-    private const string NoPurchasesClass = "rounded-full bg-cream px-3 py-1 text-xs text-stone";
+    private const string RecurringClass = "rounded-full bg-success-soft px-3 py-1 text-xs text-success";
+    private const string NewClass = "rounded-full bg-success-soft px-3 py-1 text-xs text-success";
+    private const string NoPurchasesClass = "rounded-full bg-surface-alt px-3 py-1 text-xs text-muted";
 
     private string _search = string.Empty;
     private PagedResult<CustomerRow>? _result;

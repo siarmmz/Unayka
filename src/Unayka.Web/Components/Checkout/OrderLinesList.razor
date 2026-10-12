@@ -5,27 +5,27 @@
     {
         <section class="space-y-2">
             <div>
-                <h3 class="font-serif text-xl text-espresso">@Text(group.Title)</h3>
+                <h3 class="font-serif text-xl text-accent-strong">@Text(group.Title)</h3>
                 @if (group.Detail is not null)
                 {
-                    <p class="text-sm text-stone">@Text(group.Detail)</p>
+                    <p class="text-sm text-muted">@Text(group.Detail)</p>
                 }
             </div>
-            <ul class="divide-y divide-sand border-y border-sand">
+            <ul class="divide-y divide-border border-y border-border">
                 @foreach (var row in group.Rows)
                 {
                     <li class="flex items-center gap-4 py-3 text-sm">
-                        <img src="@row.ImageUrl" alt="@row.Name" class="h-14 w-12 shrink-0 rounded-lg bg-cream object-cover"/>
+                        <img src="@row.ImageUrl" alt="@row.Name" class="h-14 w-12 shrink-0 rounded-lg bg-surface-alt object-cover"/>
                         <div class="min-w-0 flex-1 space-y-1">
                             @if (row.ProductUrl is not null)
                             {
-                                <a href="@row.ProductUrl" class="block text-espresso hover:text-clay">@Text(row.Name)</a>
+                                <a href="@row.ProductUrl" class="block text-accent-strong hover:text-accent">@Text(row.Name)</a>
                             }
                             @if (row.ProductUrl is null)
                             {
-                                <p class="text-espresso">@Text(row.Name)</p>
+                                <p class="text-accent-strong">@Text(row.Name)</p>
                             }
-                            <p class="text-stone">@Text(row.Quantity)</p>
+                            <p class="text-muted">@Text(row.Quantity)</p>
                         </div>
                         <div class="flex shrink-0 flex-col items-end gap-2">
                             <span>@Text(row.Total)</span>

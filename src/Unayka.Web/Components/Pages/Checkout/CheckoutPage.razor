@@ -28,11 +28,11 @@
             <div class="space-y-10 lg:col-span-3">
                 @if (_error is not null)
                 {
-                    <p role="alert" class="rounded-xl bg-rose-soft px-4 py-3 text-sm text-red-700">@Text(_error)</p>
+                    <p role="alert" class="rounded-xl bg-accent-soft px-4 py-3 text-sm text-danger">@Text(_error)</p>
                 }
 
-                <fieldset class="space-y-5 rounded-3xl border border-sand p-6 sm:p-8">
-                    <legend class="px-2 font-serif text-2xl text-espresso">@Text(Texts.ContactTitle)</legend>
+                <fieldset class="space-y-5 rounded-3xl border border-border p-6 sm:p-8">
+                    <legend class="px-2 font-serif text-2xl text-accent-strong">@Text(Texts.ContactTitle)</legend>
                     <div>
                         <label for="name" class="field-label">@Text(Texts.NameLabel)</label>
                         <input id="name" name="name" type="text" maxlength="80" autocomplete="name" required value="@_name" class="field"/>
@@ -41,7 +41,7 @@
                         <div>
                             <label for="phone" class="field-label">@Text(Texts.PhoneLabel)</label>
                             <div class="flex items-stretch gap-2">
-                                <span class="flex items-center rounded-xl border border-sand bg-cream px-4 text-sm text-stone">@Text(Texts.CountryCode)</span>
+                                <span class="flex items-center rounded-xl border border-border bg-surface-alt px-4 text-sm text-muted">@Text(Texts.CountryCode)</span>
                                 <input id="phone" name="phone" type="tel" inputmode="numeric" autocomplete="tel-national" required pattern="@Texts.PhonePattern" placeholder="@Texts.PhonePlaceholder" value="@_phone" class="field"/>
                             </div>
                         </div>
@@ -58,17 +58,17 @@
 
                 @if (_pickups.Count > 0)
                 {
-                    <fieldset class="space-y-5 rounded-3xl border border-sand p-6 sm:p-8">
-                        <legend class="px-2 font-serif text-2xl text-espresso">@Text(Texts.PickupTitle)</legend>
-                        <p class="text-sm text-stone">@Text(Texts.PickupIntro)</p>
+                    <fieldset class="space-y-5 rounded-3xl border border-border p-6 sm:p-8">
+                        <legend class="px-2 font-serif text-2xl text-accent-strong">@Text(Texts.PickupTitle)</legend>
+                        <p class="text-sm text-muted">@Text(Texts.PickupIntro)</p>
                         <div class="grid gap-4 md:grid-cols-2">
                             @foreach (var pickup in _pickups)
                             {
-                                <div class="space-y-2 rounded-2xl border border-sand bg-paper p-5">
-                                    <p class="font-serif text-xl text-espresso">@Text(pickup.Name)</p>
+                                <div class="space-y-2 rounded-2xl border border-border bg-surface p-5">
+                                    <p class="font-serif text-xl text-accent-strong">@Text(pickup.Name)</p>
                                     <p class="text-sm text-ink">@Text(pickup.Address)</p>
-                                    <p class="text-sm text-stone">@Text(pickup.Hours)</p>
-                                    <ul class="space-y-1 border-t border-sand pt-3 text-sm text-espresso">
+                                    <p class="text-sm text-muted">@Text(pickup.Hours)</p>
+                                    <ul class="space-y-1 border-t border-border pt-3 text-sm text-accent-strong">
                                         @foreach (var item in pickup.Items)
                                         {
                                             <li>@Text(item)</li>
@@ -82,10 +82,10 @@
 
                 @if (_digitalItems.Count > 0)
                 {
-                    <fieldset class="space-y-3 rounded-3xl border border-sand p-6 sm:p-8">
-                        <legend class="px-2 font-serif text-2xl text-espresso">@Text(Texts.DigitalTitle)</legend>
-                        <p class="text-sm text-stone">@Text(Texts.DigitalIntro)</p>
-                        <ul class="space-y-1 text-sm text-espresso">
+                    <fieldset class="space-y-3 rounded-3xl border border-border p-6 sm:p-8">
+                        <legend class="px-2 font-serif text-2xl text-accent-strong">@Text(Texts.DigitalTitle)</legend>
+                        <p class="text-sm text-muted">@Text(Texts.DigitalIntro)</p>
+                        <ul class="space-y-1 text-sm text-accent-strong">
                             @foreach (var item in _digitalItems)
                             {
                                 <li>@Text(item)</li>
@@ -94,73 +94,73 @@
                     </fieldset>
                 }
 
-                <fieldset class="space-y-5 rounded-3xl border border-sand p-6 sm:p-8">
-                    <legend class="px-2 font-serif text-2xl text-espresso">@Text(Texts.PaymentTitle)</legend>
+                <fieldset class="space-y-5 rounded-3xl border border-border p-6 sm:p-8">
+                    <legend class="px-2 font-serif text-2xl text-accent-strong">@Text(Texts.PaymentTitle)</legend>
                     <div class="grid gap-4 sm:grid-cols-2">
                         @foreach (var option in _methodOptions)
                         {
-                            <label class="flex min-h-16 cursor-pointer items-center gap-4 rounded-2xl border border-sand bg-white p-4 transition hover:border-clay has-[:checked]:border-espresso has-[:checked]:bg-cream">
-                                <input type="radio" name="method" id="@option.Id" value="@option.Value" checked="@option.IsSelected" class="h-5 w-5 accent-espresso"/>
+                            <label class="flex min-h-16 cursor-pointer items-center gap-4 rounded-2xl border border-border bg-surface p-4 transition hover:border-accent has-[:checked]:border-accent-strong has-[:checked]:bg-surface-alt">
+                                <input type="radio" name="method" id="@option.Id" value="@option.Value" checked="@option.IsSelected" class="h-5 w-5 accent-accent-strong"/>
                                 <span class="flex shrink-0 gap-1.5">
                                     @foreach (var icon in option.Icons)
                                     {
-                                        <img src="@icon.Url" alt="@icon.Alt" width="40" height="40" class="h-10 w-10 rounded-lg border border-sand bg-white object-contain p-0.5"/>
+                                        <img src="@icon.Url" alt="@icon.Alt" width="40" height="40" class="h-10 w-10 rounded-lg border border-border bg-surface object-contain p-0.5"/>
                                     }
                                 </span>
-                                <span class="font-medium text-espresso">@Text(option.Title)</span>
+                                <span class="font-medium text-accent-strong">@Text(option.Title)</span>
                             </label>
                         }
                     </div>
                     <div class="group-has-[#method-card:checked]:hidden">
                         <label for="walletPhone" class="field-label">@Text(Texts.WalletLabel)</label>
                         <div class="flex items-stretch gap-2">
-                            <span class="flex items-center rounded-xl border border-sand bg-cream px-4 text-sm text-stone">@Text(Texts.CountryCode)</span>
+                            <span class="flex items-center rounded-xl border border-border bg-surface-alt px-4 text-sm text-muted">@Text(Texts.CountryCode)</span>
                             <input id="walletPhone" name="walletPhone" type="tel" inputmode="numeric" pattern="@Texts.PhonePattern" placeholder="@Texts.PhonePlaceholder" value="@_wallet" class="field"/>
                         </div>
-                        <p class="mt-2 text-xs text-stone">@Text(Texts.WalletHint)</p>
+                        <p class="mt-2 text-xs text-muted">@Text(Texts.WalletHint)</p>
                     </div>
-                    <p class="hidden rounded-xl bg-sage-soft px-4 py-3 text-sm text-espresso group-has-[#method-card:checked]:block">@Text(Texts.CardHint)</p>
+                    <p class="hidden rounded-xl bg-success-soft px-4 py-3 text-sm text-accent-strong group-has-[#method-card:checked]:block">@Text(Texts.CardHint)</p>
                 </fieldset>
             </div>
 
-            <aside class="h-fit space-y-6 rounded-3xl border border-sand bg-cream/60 p-8 lg:col-span-2">
-                <h2 class="font-serif text-2xl text-espresso">@Text(Texts.SummaryTitle)</h2>
-                <ul class="divide-y divide-sand">
+            <aside class="h-fit space-y-6 rounded-3xl border border-border bg-surface-alt/60 p-8 lg:col-span-2">
+                <h2 class="font-serif text-2xl text-accent-strong">@Text(Texts.SummaryTitle)</h2>
+                <ul class="divide-y divide-border">
                     @foreach (var line in _lines)
                     {
                         <li class="flex items-center gap-4 py-3">
-                            <img src="@line.ImageUrl" alt="@line.Name" class="h-14 w-12 rounded-lg bg-cream object-cover"/>
+                            <img src="@line.ImageUrl" alt="@line.Name" class="h-14 w-12 rounded-lg bg-surface-alt object-cover"/>
                             <div class="flex-1 text-sm">
-                                <p class="text-espresso">@Text(line.Name)</p>
-                                <p class="text-stone">@Text(line.Quantity)</p>
-                                <p class="text-stone">@Text(line.Where)</p>
+                                <p class="text-accent-strong">@Text(line.Name)</p>
+                                <p class="text-muted">@Text(line.Quantity)</p>
+                                <p class="text-muted">@Text(line.Where)</p>
                             </div>
                             <p class="text-sm">@Text(line.Total)</p>
                         </li>
                     }
                 </ul>
                 <dl class="space-y-3 text-sm">
-                    <div class="flex justify-between"><dt class="text-stone">@Text(Texts.SubtotalLabel)</dt><dd>@Text(_subtotal)</dd></div>
+                    <div class="flex justify-between"><dt class="text-muted">@Text(Texts.SubtotalLabel)</dt><dd>@Text(_subtotal)</dd></div>
                     @if (_discount is not null)
                     {
-                        <div class="flex justify-between"><dt class="text-stone">@Text(_discountLabel)</dt><dd class="text-sage">@Text(_discount)</dd></div>
+                        <div class="flex justify-between"><dt class="text-muted">@Text(_discountLabel)</dt><dd class="text-success">@Text(_discount)</dd></div>
                     }
-                    <div class="flex justify-between border-t border-sand pt-4 font-serif text-xl text-espresso">
+                    <div class="flex justify-between border-t border-border pt-4 font-serif text-xl text-accent-strong">
                         <dt>@Text(Texts.TotalLabel)</dt>
                         <dd>@Text(_total)</dd>
                     </div>
                 </dl>
                 @if (_needsSignIn)
                 {
-                    <p role="alert" class="rounded-xl bg-rose-soft px-4 py-3 text-sm text-red-700">@Text(Texts.SignInNeeded)</p>
+                    <p role="alert" class="rounded-xl bg-accent-soft px-4 py-3 text-sm text-danger">@Text(Texts.SignInNeeded)</p>
                     <a href="@_signInUrl" class="btn-primary w-full">@Text(Texts.SignInLabel)</a>
                 }
                 @if (!_needsSignIn)
                 {
                     <button type="submit" class="btn-primary w-full">@Text(Texts.PlaceOrderButton)</button>
                 }
-                <p class="text-center text-xs text-stone">@Text(Texts.PaymentNote)</p>
-                <a href="@Texts.CartUrl" class="block text-center text-sm text-stone underline underline-offset-4 hover:text-clay">@Text(Texts.BackToCart)</a>
+                <p class="text-center text-xs text-muted">@Text(Texts.PaymentNote)</p>
+                <a href="@Texts.CartUrl" class="block text-center text-sm text-muted underline underline-offset-4 hover:text-accent">@Text(Texts.BackToCart)</a>
             </aside>
         </form>
     }

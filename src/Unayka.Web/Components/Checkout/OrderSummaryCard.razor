@@ -1,5 +1,5 @@
-<div class="h-fit space-y-6 rounded-3xl border border-sand bg-cream/60 p-8">
-    <h2 class="font-serif text-2xl text-espresso">@Text(Texts.Title)</h2>
+<div class="h-fit space-y-6 rounded-3xl border border-border bg-surface-alt/60 p-8">
+    <h2 class="font-serif text-2xl text-accent-strong">@Text(Texts.Title)</h2>
     <OrderLinesList Lines="Order.Lines" AllowDownloads="_allowDownloads"/>
     <dl class="space-y-3 text-sm">
         @foreach (var row in _totals)
@@ -9,7 +9,7 @@
     </dl>
     @if (_notes is not null)
     {
-        <p class="border-t border-sand pt-5 text-sm text-stone">@Text(_notes)</p>
+        <p class="border-t border-border pt-5 text-sm text-muted">@Text(_notes)</p>
     }
 </div>
 
@@ -18,8 +18,8 @@
 
     private sealed record TotalRow(string Label, string Value, string CssClass);
 
-    private const string PlainRowClass = "flex justify-between text-stone";
-    private const string TotalRowClass = "flex justify-between border-t border-sand pt-4 font-serif text-xl text-espresso";
+    private const string PlainRowClass = "flex justify-between text-muted";
+    private const string TotalRowClass = "flex justify-between border-t border-border pt-4 font-serif text-xl text-accent-strong";
 
     private static readonly SummaryTexts Texts = new(
         "Resumo do pedido",

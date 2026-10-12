@@ -13,7 +13,7 @@
 
     <AdminTabs Tabs="Tabs" ActiveUrl="@_activeUrl"/>
 
-    <section class="flex flex-wrap items-end gap-4 rounded-2xl border border-sand bg-paper p-5 shadow-sm">
+    <section class="flex flex-wrap items-end gap-4 rounded-2xl border border-border bg-surface p-5 shadow-sm">
         <div class="min-w-48 flex-1">
             <label for="product-search" class="field-label">@Text(Texts.SearchLabel)</label>
             <input id="product-search" type="search" class="field" placeholder="@Texts.SearchPlaceholder" @bind="_search" @bind:event="oninput" @onkeydown="OnSearchKey"/>
@@ -30,8 +30,8 @@
 
     @if (_result is not null && _result.Items.Count > 0)
     {
-        <section class="overflow-hidden rounded-2xl border border-sand bg-paper shadow-sm">
-            <div class="hidden grid-cols-12 gap-4 bg-cream px-4 py-3 text-xs uppercase tracking-widest text-stone md:grid">
+        <section class="overflow-hidden rounded-2xl border border-border bg-surface shadow-sm">
+            <div class="hidden grid-cols-12 gap-4 bg-surface-alt px-4 py-3 text-xs uppercase tracking-widest text-muted md:grid">
                 <span class="col-span-4">@Text(Texts.ProductColumn)</span>
                 <span class="col-span-2">@Text(Texts.CategoryColumn)</span>
                 <span class="col-span-1 text-right">@Text(Texts.PriceColumn)</span>
@@ -39,24 +39,24 @@
                 <span class="col-span-1">@Text(Texts.StatusColumn)</span>
                 <span class="col-span-3">@Text(Texts.ActionsColumn)</span>
             </div>
-            <div class="divide-y divide-sand">
+            <div class="divide-y divide-border">
                 @foreach (var product in _result.Items)
                 {
                     <article class="grid gap-3 p-4 md:grid-cols-12 md:items-center md:gap-4">
                         <div class="flex items-center gap-4 md:col-span-4">
                             <ThumbnailImage Url="@product.ImageUrl"/>
                             <div class="min-w-0">
-                                <a href="@ToUrl(EditUrl(product.Id))" class="block truncate font-medium text-espresso hover:text-clay">@Text(product.Name)</a>
-                                <p class="text-xs text-clay">@Text(FlagsText(product))</p>
+                                <a href="@ToUrl(EditUrl(product.Id))" class="block truncate font-medium text-accent-strong hover:text-accent">@Text(product.Name)</a>
+                                <p class="text-xs text-accent">@Text(FlagsText(product))</p>
                             </div>
                         </div>
-                        <p class="text-sm text-stone md:col-span-2">@Text(product.CategoryName)</p>
+                        <p class="text-sm text-muted md:col-span-2">@Text(product.CategoryName)</p>
                         <p class="whitespace-nowrap text-sm md:col-span-1 md:text-right">@Text(FormatMoney(product.PriceMinor))</p>
-                        <p class="text-sm text-stone md:col-span-1 md:text-right">@Text(StockText(product))</p>
+                        <p class="text-sm text-muted md:col-span-1 md:text-right">@Text(StockText(product))</p>
                         <div class="md:col-span-1"><CatalogStatusBadge Status="@product.Status"/></div>
                         <div class="md:col-span-3">
                             <StatusActions Status="@product.Status" CanDelete="@product.CanDelete" OnStatus="StatusHandler(product)" OnDelete="DeleteHandler(product)">
-                                <a href="@ToUrl(EditUrl(product.Id))" class="text-clay hover:text-espresso">@Text(Texts.Edit)</a>
+                                <a href="@ToUrl(EditUrl(product.Id))" class="text-accent hover:text-accent-strong">@Text(Texts.Edit)</a>
                             </StatusActions>
                         </div>
                     </article>

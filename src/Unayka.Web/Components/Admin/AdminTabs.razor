@@ -7,8 +7,8 @@
 
 @code {
     private const string BaseClass = "whitespace-nowrap rounded-full border px-4 py-2 text-sm transition ";
-    private const string ActiveClass = BaseClass + "border-espresso bg-espresso text-paper";
-    private const string IdleClass = BaseClass + "border-sand bg-paper text-stone hover:border-clay hover:text-espresso";
+    private const string ActiveClass = BaseClass + "border-accent-strong bg-accent-strong text-surface";
+    private const string IdleClass = BaseClass + "border-border bg-surface text-muted hover:border-accent hover:text-accent-strong";
 
     [Parameter, EditorRequired]
     public IReadOnlyList<(string Label, string Url)> Tabs { get; set; } = [];

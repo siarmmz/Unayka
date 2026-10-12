@@ -1,17 +1,17 @@
 @using Unayka.Core.Counter
 
-<li class="flex items-center gap-3 border-b border-sand py-3 last:border-b-0">
+<li class="flex items-center gap-3 border-b border-border py-3 last:border-b-0">
     <div class="min-w-0 flex-1">
         <p class="truncate text-sm font-medium text-ink">@Text(Line.Name)</p>
-        <p class="text-xs text-stone">@Text(_unitPrice)</p>
+        <p class="text-xs text-muted">@Text(_unitPrice)</p>
     </div>
     <div class="flex items-center gap-1">
-        <button type="button" @onclick="Decrease" class="h-9 w-9 rounded-full border border-sand text-lg text-espresso transition hover:border-clay" aria-label="@DecreaseLabel">@Text(DecreaseSymbol)</button>
+        <button type="button" @onclick="Decrease" class="h-9 w-9 rounded-full border border-border text-lg text-accent-strong transition hover:border-accent" aria-label="@DecreaseLabel">@Text(DecreaseSymbol)</button>
         <span class="w-8 text-center text-sm">@Text(_quantity)</span>
-        <button type="button" @onclick="Increase" class="h-9 w-9 rounded-full border border-sand text-lg text-espresso transition hover:border-clay" aria-label="@IncreaseLabel">@Text(IncreaseSymbol)</button>
+        <button type="button" @onclick="Increase" class="h-9 w-9 rounded-full border border-border text-lg text-accent-strong transition hover:border-accent" aria-label="@IncreaseLabel">@Text(IncreaseSymbol)</button>
     </div>
     <p class="w-24 text-right text-sm font-medium">@Text(_total)</p>
-    <button type="button" @onclick="Remove" class="h-9 w-9 rounded-full text-stone transition hover:bg-rose-soft hover:text-red-700" aria-label="@RemoveLabel">@Text(RemoveSymbol)</button>
+    <button type="button" @onclick="Remove" class="h-9 w-9 rounded-full text-muted transition hover:bg-accent-soft hover:text-danger" aria-label="@RemoveLabel">@Text(RemoveSymbol)</button>
 </li>
 
 @code {

@@ -12,7 +12,7 @@
 
     @if (_form is not null)
     {
-        <form class="space-y-6 rounded-2xl border border-sand bg-paper p-5 shadow-sm sm:p-8" @onsubmit="SaveAsync">
+        <form class="space-y-6 rounded-2xl border border-border bg-surface p-5 shadow-sm sm:p-8" @onsubmit="SaveAsync">
             <h2 class="font-serif text-2xl">@Text(_formTitle)</h2>
             <ErrorList Messages="@_errors"/>
             <div class="grid gap-5 sm:grid-cols-2">
@@ -70,7 +70,7 @@
                 </div>
                 @foreach (var contact in _form.Contacts)
                 {
-                    <div class="grid items-end gap-3 rounded-xl border border-sand p-4 sm:grid-cols-12">
+                    <div class="grid items-end gap-3 rounded-xl border border-border p-4 sm:grid-cols-12">
                         <div class="sm:col-span-3">
                             <label class="field-label">@Text(Texts.ContactKindLabel)</label>
                             <select class="field" @bind="contact.Kind">
@@ -108,7 +108,7 @@
 
     @if (_notice is not null)
     {
-        <p class="rounded-xl bg-sage-soft px-4 py-3 text-sm text-espresso">@Text(_notice)</p>
+        <p class="rounded-xl bg-success-soft px-4 py-3 text-sm text-accent-strong">@Text(_notice)</p>
     }
 
     <ErrorList Messages="@_actionErrors"/>
@@ -120,8 +120,8 @@
 
     @if (_rows.Count > 0)
     {
-        <section class="overflow-hidden rounded-2xl border border-sand bg-paper shadow-sm">
-            <div class="hidden grid-cols-12 gap-4 bg-cream px-4 py-3 text-xs uppercase tracking-widest text-stone md:grid">
+        <section class="overflow-hidden rounded-2xl border border-border bg-surface shadow-sm">
+            <div class="hidden grid-cols-12 gap-4 bg-surface-alt px-4 py-3 text-xs uppercase tracking-widest text-muted md:grid">
                 <span class="col-span-3">@Text(Texts.NameLabel)</span>
                 <span class="col-span-2">@Text(Texts.CityLabel)</span>
                 <span class="col-span-1">@Text(Texts.ContactsColumn)</span>
@@ -129,21 +129,21 @@
                 <span class="col-span-1">@Text(Texts.StatusLabel)</span>
                 <span class="col-span-4">@Text(Texts.ActionsColumn)</span>
             </div>
-            <div class="divide-y divide-sand">
+            <div class="divide-y divide-border">
                 @foreach (var row in _rows)
                 {
                     <article class="grid gap-3 p-4 md:grid-cols-12 md:items-center md:gap-4">
                         <div class="md:col-span-3">
-                            <p class="font-medium text-espresso">@Text(row.Name)</p>
-                            <p class="text-xs text-stone">@Text(row.Slug)</p>
+                            <p class="font-medium text-accent-strong">@Text(row.Name)</p>
+                            <p class="text-xs text-muted">@Text(row.Slug)</p>
                         </div>
-                        <p class="text-sm text-stone md:col-span-2">@Text(row.City)</p>
-                        <p class="text-sm text-stone md:col-span-1">@Text(FormatNumber(row.ContactCount))</p>
-                        <p class="text-sm text-stone md:col-span-1">@Text(FormatNumber(row.SortOrder))</p>
+                        <p class="text-sm text-muted md:col-span-2">@Text(row.City)</p>
+                        <p class="text-sm text-muted md:col-span-1">@Text(FormatNumber(row.ContactCount))</p>
+                        <p class="text-sm text-muted md:col-span-1">@Text(FormatNumber(row.SortOrder))</p>
                         <div class="md:col-span-1"><CatalogStatusBadge Status="@row.Status"/></div>
                         <div class="md:col-span-4">
                             <StatusActions Status="@row.Status" CanDelete="@row.CanDelete" OnStatus="StatusHandler(row)" OnDelete="DeleteHandler(row)">
-                                <button type="button" class="text-clay hover:text-espresso" @onclick="EditHandler(row.Id)">@Text(Texts.Edit)</button>
+                                <button type="button" class="text-accent hover:text-accent-strong" @onclick="EditHandler(row.Id)">@Text(Texts.Edit)</button>
                             </StatusActions>
                         </div>
                     </article>

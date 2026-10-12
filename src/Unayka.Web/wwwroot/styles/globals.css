@@ -14,6 +14,7 @@
   --color-success: #2b7a30;
   --color-success-soft: #e2f3da;
   --color-warning: #a65f00;
+  --color-warning-soft: #fdf0d8;
   --color-danger: #b3261e;
   --color-brand-google: #ffffff;
   --color-brand-google-text: #1f1f1f;
@@ -24,16 +25,6 @@
   --color-google-green: #34a853;
   --color-brand-facebook: #1877f2;
   --color-brand-facebook-text: #ffffff;
-  --color-paper: var(--color-surface);
-  --color-cream: var(--color-surface-alt);
-  --color-stone: var(--color-muted);
-  --color-sand: var(--color-border);
-  --color-clay: var(--color-accent);
-  --color-espresso: var(--color-accent-strong);
-  --color-sage: var(--color-success);
-  --color-sage-soft: var(--color-success-soft);
-  --color-rose: var(--color-danger);
-  --color-rose-soft: var(--color-accent-soft);
   --font-sans: "Inter", "Helvetica Neue", "Segoe UI", Arial, sans-serif;
   --font-serif: "Cormorant Garamond", "Georgia", "Times New Roman", serif;
   --font-script: "Caveat", "Segoe Script", "Brush Script MT", cursive;

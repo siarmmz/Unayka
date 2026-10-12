@@ -8,7 +8,7 @@
 <div class="mx-auto max-w-6xl space-y-8">
     <AdminPageHeader Title="@Texts.Title" Eyebrow="@Texts.Eyebrow" Subtitle="@Texts.Subtitle"/>
 
-    <section class="grid gap-4 rounded-2xl border border-sand bg-white p-5 shadow-sm sm:grid-cols-2 lg:grid-cols-6">
+    <section class="grid gap-4 rounded-2xl border border-border bg-surface p-5 shadow-sm sm:grid-cols-2 lg:grid-cols-6">
         <div class="lg:col-span-2">
             <label for="order-search" class="field-label">@Text(Texts.SearchLabel)</label>
             <input id="order-search" type="search" class="field" placeholder="@Texts.SearchPlaceholder" @bind="_search" @bind:event="oninput" @onkeydown="OnSearchKey"/>
@@ -52,10 +52,10 @@
 
     @if (_result is not null && _result.Items.Count > 0)
     {
-        <section class="overflow-hidden rounded-2xl border border-sand bg-white shadow-sm">
+        <section class="overflow-hidden rounded-2xl border border-border bg-surface shadow-sm">
             <div class="overflow-x-auto">
                 <table class="w-full text-left text-sm">
-                    <thead class="bg-cream text-xs uppercase tracking-widest text-stone">
+                    <thead class="bg-surface-alt text-xs uppercase tracking-widest text-muted">
                         <tr>
                             <th class="px-5 py-3 font-medium">@Text(Texts.NumberColumn)</th>
                             <th class="px-5 py-3 font-medium">@Text(Texts.CustomerColumn)</th>
@@ -65,16 +65,16 @@
                             <th class="px-5 py-3 font-medium">@Text(Texts.DateColumn)</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-sand">
+                    <tbody class="divide-y divide-border">
                         @foreach (var order in _result.Items)
                         {
-                            <tr class="hover:bg-cream/60">
-                                <td class="px-5 py-3"><a href="@ToUrl(OrderUrl(order.Number))" class="font-medium text-espresso hover:text-clay">@Text(order.Number)</a></td>
+                            <tr class="hover:bg-surface-alt/60">
+                                <td class="px-5 py-3"><a href="@ToUrl(OrderUrl(order.Number))" class="font-medium text-accent-strong hover:text-accent">@Text(order.Number)</a></td>
                                 <td class="px-5 py-3">@Text(order.CustomerName)</td>
-                                <td class="px-5 py-3 text-stone">@Text(ChannelLabel(order.Channel))</td>
+                                <td class="px-5 py-3 text-muted">@Text(ChannelLabel(order.Channel))</td>
                                 <td class="px-5 py-3"><StatusBadge Order="@order.Status"/></td>
                                 <td class="whitespace-nowrap px-5 py-3 text-right">@Text(FormatMoney(order.TotalMinor))</td>
-                                <td class="whitespace-nowrap px-5 py-3 text-stone">@Text(FormatDateTime(order.CreatedAt))</td>
+                                <td class="whitespace-nowrap px-5 py-3 text-muted">@Text(FormatDateTime(order.CreatedAt))</td>
                             </tr>
                         }
                     </tbody>

@@ -10,7 +10,7 @@
 
     @if (_notice is not null)
     {
-        <p role="status" class="mt-8 rounded-xl bg-sage-soft px-4 py-3 text-sm text-espresso">@Text(_notice)</p>
+        <p role="status" class="mt-8 rounded-xl bg-success-soft px-4 py-3 text-sm text-accent-strong">@Text(_notice)</p>
         @if (_showSignIn)
         {
             <a href="@Texts.SignInUrl" class="btn-outline mt-4">@Text(Texts.SignInLabel)</a>
@@ -31,27 +31,27 @@
                 @foreach (var group in _groups)
                 {
                     <section class="space-y-2">
-                        <h2 class="font-serif text-2xl text-espresso">@Text(group.Title)</h2>
+                        <h2 class="font-serif text-2xl text-accent-strong">@Text(group.Title)</h2>
                         @if (group.Subtitle is not null)
                         {
-                            <p class="text-sm text-stone">@Text(group.Subtitle)</p>
+                            <p class="text-sm text-muted">@Text(group.Subtitle)</p>
                         }
-                        <ul class="divide-y divide-sand border-y border-sand">
+                        <ul class="divide-y divide-border border-y border-border">
                             @foreach (var row in group.Rows)
                             {
                                 <li class="flex flex-col gap-5 py-6 sm:flex-row">
-                                    <a href="@row.ProductUrl" class="shrink-0"><img src="@row.ImageUrl" alt="@row.Name" class="h-32 w-28 rounded-2xl bg-cream object-cover"/></a>
+                                    <a href="@row.ProductUrl" class="shrink-0"><img src="@row.ImageUrl" alt="@row.Name" class="h-32 w-28 rounded-2xl bg-surface-alt object-cover"/></a>
                                     <div class="flex flex-1 flex-col justify-between gap-4 sm:flex-row">
                                         <div class="space-y-1">
-                                            <a href="@row.ProductUrl" class="font-serif text-xl text-espresso hover:text-clay">@Text(row.Name)</a>
-                                            <p class="text-sm text-stone">@Text(row.UnitPrice)</p>
+                                            <a href="@row.ProductUrl" class="font-serif text-xl text-accent-strong hover:text-accent">@Text(row.Name)</a>
+                                            <p class="text-sm text-muted">@Text(row.UnitPrice)</p>
                                             @if (row.PickupNote is not null)
                                             {
-                                                <p class="text-sm text-stone">@Text(row.PickupNote)</p>
+                                                <p class="text-sm text-muted">@Text(row.PickupNote)</p>
                                             }
                                             @if (row.Warning is not null)
                                             {
-                                                <p role="alert" class="text-sm text-red-700">@Text(row.Warning)</p>
+                                                <p role="alert" class="text-sm text-danger">@Text(row.Warning)</p>
                                             }
                                             @if (row.LocationChoices.Count > 1)
                                             {
@@ -70,7 +70,7 @@
                                             }
                                         </div>
                                         <div class="flex flex-col items-start gap-3 sm:items-end">
-                                            <p class="font-serif text-xl text-espresso">@Text(row.LineTotal)</p>
+                                            <p class="font-serif text-xl text-accent-strong">@Text(row.LineTotal)</p>
                                             <form method="post" action="@Texts.UpdateAction" class="flex items-center gap-2">
                                                 <AntiforgeryToken/>
                                                 <input type="hidden" name="productId" value="@row.ProductId"/>
@@ -81,7 +81,7 @@
                                             <form method="post" action="@Texts.RemoveAction">
                                                 <AntiforgeryToken/>
                                                 <input type="hidden" name="productId" value="@row.ProductId"/>
-                                                <button type="submit" class="text-sm text-stone underline underline-offset-4 hover:text-clay">@Text(Texts.RemoveButton)</button>
+                                                <button type="submit" class="text-sm text-muted underline underline-offset-4 hover:text-accent">@Text(Texts.RemoveButton)</button>
                                             </form>
                                         </div>
                                     </div>
@@ -92,8 +92,8 @@
                 }
             </div>
 
-            <aside class="h-fit space-y-8 rounded-3xl border border-sand bg-cream/60 p-8">
-                <h2 class="font-serif text-2xl text-espresso">@Text(Texts.SummaryTitle)</h2>
+            <aside class="h-fit space-y-8 rounded-3xl border border-border bg-surface-alt/60 p-8">
+                <h2 class="font-serif text-2xl text-accent-strong">@Text(Texts.SummaryTitle)</h2>
 
                 <form method="post" action="@Texts.CouponAction" class="space-y-3">
                     <AntiforgeryToken/>
@@ -109,14 +109,14 @@
                 </form>
 
                 <dl class="space-y-3 text-sm">
-                    <div class="flex justify-between"><dt class="text-stone">@Text(Texts.SubtotalLabel)</dt><dd>@Text(_subtotal)</dd></div>
+                    <div class="flex justify-between"><dt class="text-muted">@Text(Texts.SubtotalLabel)</dt><dd>@Text(_subtotal)</dd></div>
                     @if (_discount is not null)
                     {
-                        <div class="flex justify-between"><dt class="text-stone">@Text(_discountLabel)</dt><dd class="text-sage">@Text(_discount)</dd></div>
+                        <div class="flex justify-between"><dt class="text-muted">@Text(_discountLabel)</dt><dd class="text-success">@Text(_discount)</dd></div>
                     }
-                    <div class="flex justify-between border-t border-sand pt-4 font-serif text-xl text-espresso"><dt>@Text(Texts.TotalLabel)</dt><dd>@Text(_total)</dd></div>
+                    <div class="flex justify-between border-t border-border pt-4 font-serif text-xl text-accent-strong"><dt>@Text(Texts.TotalLabel)</dt><dd>@Text(_total)</dd></div>
                 </dl>
-                <p class="text-xs text-stone">@Text(Texts.DeliveryNote)</p>
+                <p class="text-xs text-muted">@Text(Texts.DeliveryNote)</p>
 
                 @if (_canCheckout)
                 {
@@ -124,9 +124,9 @@
                 }
                 @if (!_canCheckout)
                 {
-                    <p class="rounded-xl bg-rose-soft px-4 py-3 text-sm text-red-700">@Text(Texts.StockProblem)</p>
+                    <p class="rounded-xl bg-accent-soft px-4 py-3 text-sm text-danger">@Text(Texts.StockProblem)</p>
                 }
-                <a href="@Texts.ShopUrl" class="block text-center text-sm text-stone underline underline-offset-4 hover:text-clay">@Text(Texts.ContinueShopping)</a>
+                <a href="@Texts.ShopUrl" class="block text-center text-sm text-muted underline underline-offset-4 hover:text-accent">@Text(Texts.ContinueShopping)</a>
             </aside>
         </div>
     }
@@ -219,8 +219,8 @@
     };
 
     private static readonly string[] PositiveFeedback = [CartEndpoints.CouponApplied, CartEndpoints.CouponRemoved];
-    private const string PositiveClass = "text-sm text-sage";
-    private const string NegativeClass = "text-sm text-red-700";
+    private const string PositiveClass = "text-sm text-success";
+    private const string NegativeClass = "text-sm text-danger";
 
     [CascadingParameter]
     private HttpContext? HttpContext { get; set; }

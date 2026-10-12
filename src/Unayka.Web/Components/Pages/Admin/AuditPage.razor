@@ -15,10 +15,10 @@
 
     @if (_result is not null && _result.Items.Count > 0)
     {
-        <section class="overflow-hidden rounded-2xl border border-sand bg-white shadow-sm">
+        <section class="overflow-hidden rounded-2xl border border-border bg-surface shadow-sm">
             <div class="overflow-x-auto">
                 <table class="w-full text-left text-sm">
-                    <thead class="bg-cream text-xs uppercase tracking-widest text-stone">
+                    <thead class="bg-surface-alt text-xs uppercase tracking-widest text-muted">
                         <tr>
                             <th class="px-5 py-3 font-medium">@Text(Texts.DateColumn)</th>
                             <th class="px-5 py-3 font-medium">@Text(Texts.ActorColumn)</th>
@@ -27,14 +27,14 @@
                             <th class="px-5 py-3 font-medium">@Text(Texts.SummaryColumn)</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-sand">
+                    <tbody class="divide-y divide-border">
                         @foreach (var entry in _result.Items)
                         {
-                            <tr class="hover:bg-cream/60">
-                                <td class="whitespace-nowrap px-5 py-3 text-stone">@Text(FormatDateTime(entry.At))</td>
+                            <tr class="hover:bg-surface-alt/60">
+                                <td class="whitespace-nowrap px-5 py-3 text-muted">@Text(FormatDateTime(entry.At))</td>
                                 <td class="whitespace-nowrap px-5 py-3">@Text(entry.ActorName)</td>
-                                <td class="whitespace-nowrap px-5 py-3"><span class="rounded-full bg-cream px-3 py-1 text-xs text-stone">@Text(entry.Action)</span></td>
-                                <td class="whitespace-nowrap px-5 py-3 text-stone">@Text(EntityLabel(entry))</td>
+                                <td class="whitespace-nowrap px-5 py-3"><span class="rounded-full bg-surface-alt px-3 py-1 text-xs text-muted">@Text(entry.Action)</span></td>
+                                <td class="whitespace-nowrap px-5 py-3 text-muted">@Text(EntityLabel(entry))</td>
                                 <td class="px-5 py-3">@Text(entry.Summary)</td>
                             </tr>
                         }
