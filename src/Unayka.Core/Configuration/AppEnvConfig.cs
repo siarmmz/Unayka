@@ -4,7 +4,11 @@ namespace Unayka.Core.Configuration;
 public static class AppEnvConfig
 {
     private const string ProductionEnvironmentName = "Production";
-    private const int UndefinedNumber = -1;
+    private const string DefaultSqliteFilePath = "database.sqlite";
+    private const string DefaultLocalUploadsPath = "data/uploads";
+    private const string SolutionFileName = "Unayka.slnx";
+    private const string SourceFolderName = "src";
+    private const int DefaultPostgresPort = 5432;
     private const int DefaultLoginPerMinute = 5;
     private const int DefaultOtpPerHour = 5;
     private const int DefaultCheckoutPerMinute = 10;
@@ -12,37 +16,44 @@ public static class AppEnvConfig
 
     public static string AspNetCoreUrls => GetText("ASPNETCORE_URLS");
     public static string AspNetCoreEnvironment => GetText("ASPNETCORE_ENVIRONMENT");
-    public static string DotNetEnvironment => GetText("DOTNET_ENVIRONMENT");
-    public static string PublicBaseUrl => GetText("PUBLIC_BASE_URL");
+    public static string PublicBaseUrl => GetText("APP_PUBLIC_BASE_URL");
 
-    public static string PostgresConnectionString => GetText("POSTGRES_SQL_CONNECTION_STRING");
-    public static string PostgresHost => GetText("POSTGRES_HOST");
-    public static int PostgresPort => GetNumber("POSTGRES_PORT", UndefinedNumber);
-    public static string PostgresDatabase => GetText("POSTGRES_DATABASE");
-    public static string PostgresUser => GetText("POSTGRES_USER");
-    public static string PostgresPassword => GetText("POSTGRES_PASSWORD");
-    public static string SqlitePath => GetText("SQLITE_PATH");
+    public static string PostgresHost => GetText("DATABASE_POSTGRESQL_CONNECTION_HOST");
+    public static int PostgresPort => GetNumber("DATABASE_POSTGRESQL_CONNECTION_PORT", DefaultPostgresPort);
+    public static string PostgresDatabase => GetText("DATABASE_POSTGRESQL_CONNECTION_DATABASE");
+    public static string PostgresUser => GetText("DATABASE_POSTGRESQL_CONNECTION_USER");
+    public static string PostgresPassword => GetText("DATABASE_POSTGRESQL_CONNECTION_PASSWORD");
 
-    public static string S3Endpoint => GetText("S3_ENDPOINT");
-    public static string S3Region => GetText("S3_REGION");
-    public static string S3Bucket => GetText("S3_BUCKET");
-    public static string S3AccessKey => GetText("S3_ACCESS_KEY");
-    public static string S3SecretKey => GetText("S3_SECRET_KEY");
-    public static string S3PublicBaseUrl => GetText("S3_PUBLIC_BASE_URL");
-    public static string LocalUploadsPath => GetText("LOCAL_UPLOADS_PATH");
+    public static string SqliteFilePath =>
+        GetTextOrDefault("DATABASE_SQLITE_FILE_PATH", DefaultSqliteFilePath);
 
-    public static string PaySuiteBaseUrl => GetText("PAYSUITE_BASE_URL");
-    public static string PaySuiteApiKey => GetText("PAYSUITE_API_KEY");
-    public static string PaySuiteWebhookSecret => GetText("PAYSUITE_WEBHOOK_SECRET");
-    public static decimal PaySuiteFeePercent => GetDecimal("PAYSUITE_FEE_PERCENT");
-    public static decimal PaySuiteFeeFixed => GetDecimal("PAYSUITE_FEE_FIXED");
-    public static string PayoutPhone => GetText("PAYOUT_PHONE");
+    public static string SqliteFullPath =>
+        Path.IsPathRooted(SqliteFilePath)
+            ? SqliteFilePath
+            : Path.Combine(FindRootDirectory(), SqliteFilePath);
 
-    public static string GoogleClientId => GetText("GOOGLE_CLIENT_ID");
-    public static string GoogleClientSecret => GetText("GOOGLE_CLIENT_SECRET");
-    public static string SmsProvider => GetText("SMS_PROVIDER");
-    public static string SmsApiKey => GetText("SMS_API_KEY");
-    public static string AdminBootstrapEmail => GetText("ADMIN_BOOTSTRAP_EMAIL");
+    public static string S3Endpoint => GetText("STORAGE_S3_ENDPOINT");
+    public static string S3Region => GetText("STORAGE_S3_REGION");
+    public static string S3Bucket => GetText("STORAGE_S3_BUCKET");
+    public static string S3AccessKey => GetText("STORAGE_S3_ACCESS_KEY");
+    public static string S3SecretKey => GetText("STORAGE_S3_SECRET_KEY");
+    public static string S3PublicBaseUrl => GetText("STORAGE_S3_PUBLIC_BASE_URL");
+
+    public static string LocalUploadsPath =>
+        GetTextOrDefault("STORAGE_LOCAL_UPLOADS_PATH", DefaultLocalUploadsPath);
+
+    public static string PaySuiteBaseUrl => GetText("PAYMENT_PAYSUITE_BASE_URL");
+    public static string PaySuiteApiKey => GetText("PAYMENT_PAYSUITE_API_KEY");
+    public static string PaySuiteWebhookSecret => GetText("PAYMENT_PAYSUITE_WEBHOOK_SECRET");
+    public static decimal PaySuiteFeePercent => GetDecimal("PAYMENT_PAYSUITE_FEE_PERCENT");
+    public static decimal PaySuiteFeeFixed => GetDecimal("PAYMENT_PAYSUITE_FEE_FIXED");
+    public static string PayoutPhone => GetText("PAYMENT_PAYOUT_PHONE");
+
+    public static string GoogleClientId => GetText("AUTH_GOOGLE_CLIENT_ID");
+    public static string GoogleClientSecret => GetText("AUTH_GOOGLE_CLIENT_SECRET");
+    public static string SmsProvider => GetText("AUTH_SMS_PROVIDER");
+    public static string SmsApiKey => GetText("AUTH_SMS_API_KEY");
+    public static string AdminBootstrapEmail => GetText("AUTH_ADMIN_BOOTSTRAP_EMAIL");
 
     public static int RateLimitLoginPerMinute => GetNumber("RATE_LIMIT_LOGIN_PER_MINUTE", DefaultLoginPerMinute);
     public static int RateLimitOtpPerHour => GetNumber("RATE_LIMIT_OTP_PER_HOUR", DefaultOtpPerHour);
@@ -54,8 +65,7 @@ public static class AppEnvConfig
         || string.Equals(AspNetCoreEnvironment, ProductionEnvironmentName, StringComparison.OrdinalIgnoreCase);
 
     public static bool UsePostgres =>
-        !string.IsNullOrEmpty(PostgresConnectionString)
-        || (!string.IsNullOrEmpty(PostgresHost) && !string.IsNullOrEmpty(PostgresDatabase));
+        !string.IsNullOrEmpty(PostgresHost) && !string.IsNullOrEmpty(PostgresDatabase);
 
     public static bool UseS3 =>
         !string.IsNullOrEmpty(S3Endpoint)
@@ -63,26 +73,24 @@ public static class AppEnvConfig
         && !string.IsNullOrEmpty(S3AccessKey)
         && !string.IsNullOrEmpty(S3SecretKey);
 
-    public static bool TryGetPostgresPort(out int port) => TryGetNumber("POSTGRES_PORT", out port);
+    public static bool TryGetPostgresPort(out int port) =>
+        TryGetNumber("DATABASE_POSTGRESQL_CONNECTION_PORT", out port);
 
     public static IReadOnlyList<string> GetMissingProductionVariables()
     {
         var missing = new List<string>();
-        AddIfEmpty(missing, "PUBLIC_BASE_URL", PublicBaseUrl);
-        AddIfEmpty(missing, "PAYSUITE_BASE_URL", PaySuiteBaseUrl);
-        AddIfEmpty(missing, "PAYSUITE_API_KEY", PaySuiteApiKey);
-        AddIfEmpty(missing, "PAYSUITE_WEBHOOK_SECRET", PaySuiteWebhookSecret);
-
-        if (!UsePostgres)
-        {
-            missing.Add("POSTGRES_SQL_CONNECTION_STRING or POSTGRES_HOST and POSTGRES_DATABASE");
-        }
-
-        if (!UseS3)
-        {
-            missing.Add("S3_ENDPOINT, S3_BUCKET, S3_ACCESS_KEY and S3_SECRET_KEY");
-        }
-
+        AddIfEmpty(missing, "APP_PUBLIC_BASE_URL", PublicBaseUrl);
+        AddIfEmpty(missing, "PAYMENT_PAYSUITE_BASE_URL", PaySuiteBaseUrl);
+        AddIfEmpty(missing, "PAYMENT_PAYSUITE_API_KEY", PaySuiteApiKey);
+        AddIfEmpty(missing, "PAYMENT_PAYSUITE_WEBHOOK_SECRET", PaySuiteWebhookSecret);
+        AddIfEmpty(missing, "DATABASE_POSTGRESQL_CONNECTION_HOST", PostgresHost);
+        AddIfEmpty(missing, "DATABASE_POSTGRESQL_CONNECTION_DATABASE", PostgresDatabase);
+        AddIfEmpty(missing, "DATABASE_POSTGRESQL_CONNECTION_USER", PostgresUser);
+        AddIfEmpty(missing, "DATABASE_POSTGRESQL_CONNECTION_PASSWORD", PostgresPassword);
+        AddIfEmpty(missing, "STORAGE_S3_ENDPOINT", S3Endpoint);
+        AddIfEmpty(missing, "STORAGE_S3_BUCKET", S3Bucket);
+        AddIfEmpty(missing, "STORAGE_S3_ACCESS_KEY", S3AccessKey);
+        AddIfEmpty(missing, "STORAGE_S3_SECRET_KEY", S3SecretKey);
         return missing;
     }
 
@@ -100,7 +108,7 @@ public static class AppEnvConfig
         }
 
         throw new InvalidOperationException(
-            "Missing required environment variables for production: " + string.Join("; ", missing));
+            "Missing required environment variables for production: " + string.Join(", ", missing));
     }
 
     private static void AddIfEmpty(List<string> missing, string name, string value)
@@ -111,8 +119,30 @@ public static class AppEnvConfig
         }
     }
 
+    private static string FindRootDirectory()
+    {
+        var directory = new DirectoryInfo(AppContext.BaseDirectory);
+        while (directory is not null)
+        {
+            if (File.Exists(Path.Combine(directory.FullName, SourceFolderName, SolutionFileName)))
+            {
+                return directory.FullName;
+            }
+
+            directory = directory.Parent;
+        }
+
+        return Directory.GetCurrentDirectory();
+    }
+
     private static string GetText(string name) =>
         Environment.GetEnvironmentVariable(name)?.Trim() ?? string.Empty;
+
+    private static string GetTextOrDefault(string name, string fallback)
+    {
+        var value = GetText(name);
+        return value.Length == 0 ? fallback : value;
+    }
 
     private static bool TryGetNumber(string name, out int value) =>
         int.TryParse(GetText(name), out value);

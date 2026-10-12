@@ -10,3 +10,4 @@
 .claude/
 PLAN.md
 *.md
+database.sqlite

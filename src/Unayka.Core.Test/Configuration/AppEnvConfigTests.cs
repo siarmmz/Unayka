@@ -5,12 +5,17 @@ namespace Unayka.Core.Test.Configuration;
 [Collection(SharedEnvironment.Name)]
 public sealed class AppEnvConfigTests : IDisposable
 {
+    private const string PostgresHost = "DATABASE_POSTGRESQL_CONNECTION_HOST";
+    private const string PostgresPort = "DATABASE_POSTGRESQL_CONNECTION_PORT";
+    private const string PostgresDatabase = "DATABASE_POSTGRESQL_CONNECTION_DATABASE";
+    private const string SqliteFilePath = "DATABASE_SQLITE_FILE_PATH";
+
     private readonly List<string> _touched = [];
 
     [Fact]
     public void Text_returns_empty_when_not_set()
     {
-        Set("S3_BUCKET", null);
+        Set("STORAGE_S3_BUCKET", null);
 
         Assert.Equal(string.Empty, AppEnvConfig.S3Bucket);
     }
@@ -24,53 +29,66 @@ public sealed class AppEnvConfigTests : IDisposable
     }
 
     [Fact]
-    public void Number_returns_minus_one_when_port_not_set()
+    public void Postgres_port_defaults_to_5432_and_reports_it_was_not_defined()
     {
-        Set("POSTGRES_PORT", null);
+        Set(PostgresPort, null);
 
-        Assert.Equal(-1, AppEnvConfig.PostgresPort);
+        Assert.Equal(5432, AppEnvConfig.PostgresPort);
         Assert.False(AppEnvConfig.TryGetPostgresPort(out _));
     }
 
     [Fact]
     public void TryGetPostgresPort_reads_defined_value()
     {
-        Set("POSTGRES_PORT", "5433");
+        Set(PostgresPort, "5433");
 
         Assert.True(AppEnvConfig.TryGetPostgresPort(out var port));
         Assert.Equal(5433, port);
     }
 
     [Fact]
-    public void UsePostgres_is_true_with_connection_string()
+    public void UsePostgres_needs_host_and_database()
     {
-        Set("POSTGRES_SQL_CONNECTION_STRING", "Host=localhost;Database=unayka");
-        Set("POSTGRES_HOST", null);
+        Set(PostgresHost, "localhost");
+        Set(PostgresDatabase, null);
+
+        Assert.False(AppEnvConfig.UsePostgres);
+
+        Set(PostgresDatabase, "unayka");
 
         Assert.True(AppEnvConfig.UsePostgres);
     }
 
     [Fact]
-    public void UsePostgres_is_false_when_nothing_is_set()
+    public void Sqlite_defaults_to_database_sqlite_at_repository_root()
     {
-        Set("POSTGRES_SQL_CONNECTION_STRING", null);
-        Set("POSTGRES_HOST", null);
-        Set("POSTGRES_DATABASE", null);
+        Set(SqliteFilePath, null);
 
-        Assert.False(AppEnvConfig.UsePostgres);
+        Assert.Equal("database.sqlite", AppEnvConfig.SqliteFilePath);
+        Assert.Equal("database.sqlite", Path.GetFileName(AppEnvConfig.SqliteFullPath));
+        Assert.True(File.Exists(Path.Combine(Path.GetDirectoryName(AppEnvConfig.SqliteFullPath)!, "src", "Unayka.slnx")));
     }
 
     [Fact]
-    public void UseS3_needs_all_four_values()
+    public void Sqlite_path_can_be_overridden_with_absolute_path()
     {
-        Set("S3_ENDPOINT", "https://s3.example.com");
-        Set("S3_BUCKET", "unayka");
-        Set("S3_ACCESS_KEY", "key");
-        Set("S3_SECRET_KEY", null);
+        var path = Path.Combine(Path.GetTempPath(), "custom.sqlite");
+        Set(SqliteFilePath, path);
+
+        Assert.Equal(path, AppEnvConfig.SqliteFullPath);
+    }
+
+    [Fact]
+    public void UseS3_needs_endpoint_bucket_and_both_keys()
+    {
+        Set("STORAGE_S3_ENDPOINT", "https://s3.example.com");
+        Set("STORAGE_S3_BUCKET", "unayka");
+        Set("STORAGE_S3_ACCESS_KEY", "key");
+        Set("STORAGE_S3_SECRET_KEY", null);
 
         Assert.False(AppEnvConfig.UseS3);
 
-        Set("S3_SECRET_KEY", "secret");
+        Set("STORAGE_S3_SECRET_KEY", "secret");
 
         Assert.True(AppEnvConfig.UseS3);
     }
@@ -87,22 +105,21 @@ public sealed class AppEnvConfigTests : IDisposable
     public void Validate_lists_missing_variables_in_production()
     {
         Set("ASPNETCORE_ENVIRONMENT", "Production");
-        Set("PAYSUITE_API_KEY", null);
-        Set("POSTGRES_SQL_CONNECTION_STRING", null);
-        Set("POSTGRES_HOST", null);
+        Set("PAYMENT_PAYSUITE_API_KEY", null);
+        Set(PostgresHost, null);
 
         var error = Assert.Throws<InvalidOperationException>(AppEnvConfig.Validate);
 
-        Assert.Contains("PAYSUITE_API_KEY", error.Message);
-        Assert.Contains("POSTGRES_SQL_CONNECTION_STRING", error.Message);
+        Assert.Contains("PAYMENT_PAYSUITE_API_KEY", error.Message);
+        Assert.Contains(PostgresHost, error.Message);
     }
 
     [Fact]
     public void Validate_does_not_leak_secret_values()
     {
         Set("ASPNETCORE_ENVIRONMENT", "Production");
-        Set("PAYSUITE_WEBHOOK_SECRET", "super-secret-value");
-        Set("PAYSUITE_API_KEY", null);
+        Set("PAYMENT_PAYSUITE_WEBHOOK_SECRET", "super-secret-value");
+        Set("PAYMENT_PAYSUITE_API_KEY", null);
 
         var error = Assert.Throws<InvalidOperationException>(AppEnvConfig.Validate);
 

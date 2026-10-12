@@ -22,6 +22,7 @@ Unayka/
   MAP.md
   TASKS.md
   PLAN.md                      (ignored by Git)
+  database.sqlite              (SQLite fallback, created at runtime, not ignored by Git)
   .claude/
     agents/                    (opus, sonnet, haiku; whole .claude folder ignored by Git)
     local/state.json
@@ -43,50 +44,9 @@ Core is organized by feature: Catalog, Orders, Cart, Coupons, Payments, Customer
 
 All configuration comes from environment variables. The file src/Unayka.Web/.env is loaded by DotNetEnv on the first line of Program.cs without overriding variables already set. The static class AppEnvConfig, in Unayka.Core, is the single read point. Validate() runs at startup and, in production, fails with the list of missing required variables.
 
-.env.example variables:
+The full, commented list of variables is in src/Unayka.Web/.env.example. Variable names are complete and grouped by prefix: APP_, DATABASE_, STORAGE_, PAYMENT_, AUTH_ and RATE_LIMIT_. Standard ASP.NET variables (ASPNETCORE_URLS, ASPNETCORE_ENVIRONMENT) keep their framework names.
 
-```
-ASPNETCORE_URLS=http://+:10000
-ASPNETCORE_ENVIRONMENT=Development
-DOTNET_ENVIRONMENT=Development
-PUBLIC_BASE_URL=http://localhost:10000
-
-POSTGRES_SQL_CONNECTION_STRING=
-POSTGRES_HOST=
-POSTGRES_PORT=5432
-POSTGRES_DATABASE=
-POSTGRES_USER=
-POSTGRES_PASSWORD=
-SQLITE_PATH=./data/unayka.db
-
-S3_ENDPOINT=
-S3_REGION=
-S3_BUCKET=
-S3_ACCESS_KEY=
-S3_SECRET_KEY=
-S3_PUBLIC_BASE_URL=
-LOCAL_UPLOADS_PATH=./data/uploads
-
-PAYSUITE_BASE_URL=
-PAYSUITE_API_KEY=
-PAYSUITE_WEBHOOK_SECRET=
-PAYSUITE_FEE_PERCENT=0
-PAYSUITE_FEE_FIXED=0
-PAYOUT_PHONE=
-
-GOOGLE_CLIENT_ID=
-GOOGLE_CLIENT_SECRET=
-SMS_PROVIDER=
-SMS_API_KEY=
-ADMIN_BOOTSTRAP_EMAIL=
-
-RATE_LIMIT_LOGIN_PER_MINUTE=5
-RATE_LIMIT_OTP_PER_HOUR=5
-RATE_LIMIT_CHECKOUT_PER_MINUTE=10
-RATE_LIMIT_WEBHOOK_PER_MINUTE=120
-```
-
-Database: if PostgreSQL is configured it uses Npgsql, otherwise SQLite at SQLITE_PATH. Storage: if S3 is configured and answers at startup it uses S3, otherwise LOCAL_UPLOADS_PATH, outside wwwroot, served by a controlled endpoint.
+Database: PostgreSQL (Npgsql) is used when DATABASE_POSTGRESQL_CONNECTION_HOST and DATABASE_POSTGRESQL_CONNECTION_DATABASE are set, otherwise SQLite. The SQLite file is database.sqlite at the repository root by default, works without any .env, can be overridden with DATABASE_SQLITE_FILE_PATH and is not ignored by Git. Storage: S3 is used when endpoint, bucket and keys are set and it answers at startup, otherwise STORAGE_LOCAL_UPLOADS_PATH (default data/uploads), outside wwwroot, served by a controlled endpoint.
 
 ## Development
 
