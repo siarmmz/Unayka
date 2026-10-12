@@ -16,8 +16,6 @@ public static class CheckoutEndpoints
     public const string NameKey = "nome";
     public const string PhoneKey = "telefone";
     public const string EmailKey = "email";
-    public const string FulfillmentKey = "entrega";
-    public const string AddressKey = "morada";
     public const string NotesKey = "notas";
     public const string MethodKey = "metodo";
     public const string WalletKey = "carteira";
@@ -43,8 +41,6 @@ public static class CheckoutEndpoints
             form.Name,
             form.Phone,
             form.Email,
-            Enum.TryParse<FulfillmentKind>(form.Fulfillment, out var fulfillment) ? fulfillment : FulfillmentKind.Pickup,
-            form.Address,
             form.Notes,
             Enum.TryParse<PaymentMethod>(form.Method, out var method) ? method : PaymentMethod.MPesa,
             form.WalletPhone);
@@ -67,8 +63,6 @@ public static class CheckoutEndpoints
             [NameKey] = form.Name,
             [PhoneKey] = form.Phone,
             [EmailKey] = form.Email,
-            [FulfillmentKey] = form.Fulfillment,
-            [AddressKey] = form.Address,
             [NotesKey] = form.Notes,
             [MethodKey] = form.Method,
             [WalletKey] = form.WalletPhone,
@@ -81,8 +75,6 @@ public static class CheckoutEndpoints
         public string? Name { get; set; }
         public string? Phone { get; set; }
         public string? Email { get; set; }
-        public string? Fulfillment { get; set; }
-        public string? Address { get; set; }
         public string? Notes { get; set; }
         public string? Method { get; set; }
         public string? WalletPhone { get; set; }

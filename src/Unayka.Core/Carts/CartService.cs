@@ -43,25 +43,32 @@ public sealed class CartService(UnaykaDbContext database, TimeProvider time) : I
             return new CartChangeResult(cartId ?? Guid.Empty, CartChange.UnknownProduct);
         }
 
+        if (product.Kind == ProductKind.Digital && userId is null)
+        {
+            return new CartChangeResult(cartId ?? Guid.Empty, CartChange.SignInRequired);
+        }
+
         var cart = await FindOrCreateAsync(cartId, userId, cancellationToken);
-        var available = ProductStock.Total(product);
+        var line = await database.CartItems.FirstOrDefaultAsync(
+            item => item.CartId == cart.Id && item.ProductId == productId, cancellationToken);
+        var location = ResolveLocation(product, line?.LocationId);
+        var available = AvailableAt(product, location);
         if (available <= 0)
         {
             await database.SaveChangesAsync(cancellationToken);
             return new CartChangeResult(cart.Id, CartChange.OutOfStock);
         }
 
-        var line = await database.CartItems.FirstOrDefaultAsync(
-            item => item.CartId == cart.Id && item.ProductId == productId, cancellationToken);
         var wanted = (line?.Quantity ?? 0) + Math.Max(quantity, 1);
         var allowed = Math.Min(wanted, Math.Min(available, MaxQuantityPerLine));
         if (line is null)
         {
-            database.CartItems.Add(new CartItem { CartId = cart.Id, ProductId = productId, Quantity = allowed });
+            database.CartItems.Add(new CartItem { CartId = cart.Id, ProductId = productId, Quantity = allowed, LocationId = location?.LocationId });
         }
         else
         {
             line.Quantity = allowed;
+            line.LocationId = location?.LocationId;
         }
 
         cart.UpdatedAt = time.GetUtcNow();
@@ -84,9 +91,46 @@ public sealed class CartService(UnaykaDbContext database, TimeProvider time) : I
             return;
         }
 
-        line.Quantity = Math.Max(1, Math.Min(quantity, Math.Min(ProductStock.Total(line.Product), MaxQuantityPerLine)));
+        var location = ResolveLocation(line.Product, line.LocationId);
+        line.Quantity = Math.Max(1, Math.Min(quantity, Math.Min(AvailableAt(line.Product, location), MaxQuantityPerLine)));
         await TouchAsync(cartId, cancellationToken);
     }
+
+    public async Task<CartChange> SetLocationAsync(Guid cartId, int productId, int locationId, CancellationToken cancellationToken = default)
+    {
+        var line = await database.CartItems.Include(item => item.Product).ThenInclude(product => product!.Stocks).ThenInclude(stock => stock.Location)
+            .FirstOrDefaultAsync(item => item.CartId == cartId && item.ProductId == productId, cancellationToken);
+        if (line?.Product is null || line.Product.Kind == ProductKind.Digital)
+        {
+            return CartChange.UnknownProduct;
+        }
+
+        var target = LocationOptions(line.Product).FirstOrDefault(option => option.LocationId == locationId);
+        if (target is null || target.Quantity <= 0)
+        {
+            return CartChange.OutOfStock;
+        }
+
+        var limited = line.Quantity > target.Quantity;
+        line.LocationId = target.LocationId;
+        line.Quantity = Math.Min(line.Quantity, target.Quantity);
+        await TouchAsync(cartId, cancellationToken);
+        return limited ? CartChange.LimitedByStock : CartChange.LocationChanged;
+    }
+
+    private static List<CartLocationOption> LocationOptions(Product product) =>
+        product.Stocks
+            .Where(stock => stock.Location?.Status == CatalogStatus.Active)
+            .OrderBy(stock => stock.Location!.SortOrder)
+            .ThenBy(stock => stock.Location!.Name)
+            .Select(stock => new CartLocationOption(stock.LocationId, stock.Location!.Name, stock.Quantity))
+            .ToList();
+
+    private static CartLocationOption? ResolveLocation(Product product, int? chosenLocationId) =>
+        product.Kind == ProductKind.Digital ? null : PickupLocations.Resolve(LocationOptions(product), chosenLocationId);
+
+    private static int AvailableAt(Product product, CartLocationOption? location) =>
+        product.Kind == ProductKind.Digital ? ProductStock.Unlimited : location?.Quantity ?? 0;
 
     public async Task RemoveAsync(Guid cartId, int productId, CancellationToken cancellationToken = default)
     {
@@ -189,17 +233,26 @@ public sealed class CartService(UnaykaDbContext database, TimeProvider time) : I
                 IsPublic = item.Product.Status == CatalogStatus.Active
                            && item.Product.Category!.Status == CatalogStatus.Active
                            && item.Product.Category.Section!.Status == CatalogStatus.Active,
-                LocationStock = item.Product.Stocks.Where(stock => stock.Location!.Status == CatalogStatus.Active).Sum(stock => stock.Quantity),
+                item.LocationId,
+                Options = item.Product.Stocks
+                    .Where(stock => stock.Location!.Status == CatalogStatus.Active)
+                    .OrderBy(stock => stock.Location!.SortOrder)
+                    .ThenBy(stock => stock.Location!.Name)
+                    .Select(stock => new CartLocationOption(stock.LocationId, stock.Location!.Name, stock.Quantity))
+                    .ToList(),
                 Image = item.Product.Media.OrderBy(media => media.SortOrder).Select(media => media.Url).FirstOrDefault(),
             })
             .ToListAsync(cancellationToken);
         return rows
             .Select(row =>
             {
-                var stock = row.Kind == ProductKind.Digital ? ProductStock.Unlimited : row.LocationStock;
+                var isDigital = row.Kind == ProductKind.Digital;
+                var location = isDigital ? null : PickupLocations.Resolve(row.Options, row.LocationId);
+                var stock = isDigital ? ProductStock.Unlimited : location?.Quantity ?? 0;
                 return new CartLineView(
                     row.ProductId, row.Slug, row.Name, row.Image ?? string.Empty, row.CategoryId,
-                    row.PriceMinor, row.Quantity, stock, row.IsPublic && stock > 0);
+                    row.PriceMinor, row.Quantity, stock, row.IsPublic && stock > 0,
+                    isDigital, location?.LocationId, location?.Name, isDigital ? [] : row.Options);
             })
             .ToList();
     }

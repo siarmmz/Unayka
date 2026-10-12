@@ -1,5 +1,6 @@
 @page "/conta"
 @using System.Security.Claims
+@using Unayka.Web.Components.Checkout
 @using Unayka.Web.Endpoints.Cart
 @attribute [Authorize]
 @inject IOrderQueries OrderQueries
@@ -28,8 +29,8 @@
             <ul class="divide-y divide-sand border-y border-sand">
                 @foreach (var order in _orders)
                 {
-                    <li>
-                        <a href="@order.Url" class="flex flex-wrap items-center justify-between gap-4 py-6 transition hover:bg-cream/60 sm:px-4">
+                    <li class="space-y-4 py-6 sm:px-4">
+                        <a href="@order.Url" class="flex flex-wrap items-center justify-between gap-4 transition hover:bg-cream/60">
                             <div>
                                 <p class="font-serif text-xl text-espresso">@Text(order.Number)</p>
                                 <p class="text-sm text-stone">@Text(order.Summary)</p>
@@ -39,6 +40,7 @@
                                 <span class="font-serif text-xl text-espresso">@Text(order.Total)</span>
                             </div>
                         </a>
+                        <OrderLinesList Lines="order.Lines" AllowDownloads="order.AllowDownloads"/>
                     </li>
                 }
             </ul>
@@ -47,7 +49,7 @@
 </section>
 
 @code {
-    private sealed record OrderRow(string Number, string Url, string Summary, OrderStatus Status, string Total);
+    private sealed record OrderRow(string Number, string Url, string Summary, OrderStatus Status, string Total, IReadOnlyList<OrderLineDetail> Lines, bool AllowDownloads);
 
     private static readonly (string SeoTitle, string SeoDescription, string Eyebrow, string GreetingTemplate, string SignOutAction, string SignOutButton, string OrdersTitle, string EmptyTitle, string EmptyMessage, string EmptyAction, string ShopUrl, string SummaryTemplate) Texts = (
         "A minha conta | Unayka",
@@ -94,7 +96,9 @@
                 ToUrl($"/pedido/{order.Number}"),
                 string.Format(System.Globalization.CultureInfo.InvariantCulture, Texts.SummaryTemplate, FormatDate(order.CreatedAt), order.ItemCount),
                 order.Status,
-                FormatMoney(order.TotalMinor)))
+                FormatMoney(order.TotalMinor),
+                order.Lines,
+                OrderPayments.IsPaid(order.Status)))
             .ToList();
     }
 }

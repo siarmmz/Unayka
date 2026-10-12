@@ -11,6 +11,9 @@ public interface ICartService
     /// <summary>Sets the quantity of a line, limited by stock. Zero or less removes the line.</summary>
     Task SetQuantityAsync(Guid cartId, int productId, int quantity, CancellationToken cancellationToken = default);
 
+    /// <summary>Moves a physical line to another pickup location that has stock, limiting the quantity to the stock there.</summary>
+    Task<CartChange> SetLocationAsync(Guid cartId, int productId, int locationId, CancellationToken cancellationToken = default);
+
     /// <summary>Removes one line from the cart.</summary>
     Task RemoveAsync(Guid cartId, int productId, CancellationToken cancellationToken = default);
 

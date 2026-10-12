@@ -1,15 +1,35 @@
+using Unayka.Core.Catalog;
 using Unayka.Core.Payments;
 
 namespace Unayka.Core.Orders;
 
-/// <summary>Line of an order as shown to the customer.</summary>
-public sealed record OrderLineDetail(string ProductName, long UnitPriceMinor, int Quantity)
+/// <summary>Line of an order as shown to the customer, read from the snapshot taken at purchase time. ProductSlug is null when the product is no longer publicly visible.</summary>
+public sealed record OrderLineDetail(
+    int ItemId,
+    string ProductName,
+    string ImageUrl,
+    long UnitPriceMinor,
+    int Quantity,
+    ProductKind Kind,
+    string? ProductSlug,
+    int? LocationId,
+    string? LocationName,
+    string? LocationAddress,
+    string? LocationHours)
 {
     public long LineTotalMinor => UnitPriceMinor * Quantity;
+
+    public bool IsDigital => Kind == ProductKind.Digital;
 }
 
-/// <summary>Order summary row for the customer account list.</summary>
-public sealed record OrderListItem(string Number, DateTimeOffset CreatedAt, OrderStatus Status, long TotalMinor, int ItemCount);
+/// <summary>Order summary row for the customer account list, with its lines.</summary>
+public sealed record OrderListItem(
+    string Number,
+    DateTimeOffset CreatedAt,
+    OrderStatus Status,
+    long TotalMinor,
+    int ItemCount,
+    IReadOnlyList<OrderLineDetail> Lines);
 
 /// <summary>Latest payment attempt of an order.</summary>
 public sealed record OrderPaymentDetail(PaymentMethod Method, string? Phone, PaymentStatus Status, string? FailureReason);
@@ -35,7 +55,7 @@ public sealed record OrderDetail(
 
 public interface IOrderQueries
 {
-    /// <summary>Lists the orders of a customer, newest first.</summary>
+    /// <summary>Lists the orders of a customer, newest first, with their lines.</summary>
     Task<IReadOnlyList<OrderListItem>> ListForUserAsync(int userId, CancellationToken cancellationToken = default);
 
     /// <summary>Loads one order by number, or null when it does not exist.</summary>

@@ -20,9 +20,7 @@ public sealed class OrderPlacement(
 {
     private const int MaxNameLength = 80;
     private const int MaxEmailLength = 120;
-    private const int MaxAddressLength = 300;
     private const int MaxNotesLength = 500;
-    private const int DigitalLocation = 0;
 
     public async Task<PlaceOrderResult> PlaceAsync(PlaceOrderRequest request, CancellationToken cancellationToken = default)
     {
@@ -41,6 +39,11 @@ public sealed class OrderPlacement(
         if (cart.CouponRejection is not null)
         {
             return Fail(PlaceOrderOutcome.CouponNoLongerValid);
+        }
+
+        if (cart.HasDigital && request.UserId is null)
+        {
+            return Fail(PlaceOrderOutcome.SignInRequired);
         }
 
         await using var transaction = await database.Database.BeginTransactionAsync(cancellationToken);
@@ -78,11 +81,6 @@ public sealed class OrderPlacement(
             return PlaceOrderOutcome.InvalidEmail;
         }
 
-        if (request.Fulfillment == FulfillmentKind.Delivery && string.IsNullOrWhiteSpace(request.Address))
-        {
-            return PlaceOrderOutcome.AddressRequired;
-        }
-
         if (!request.PaymentMethod.IsOnline())
         {
             return PlaceOrderOutcome.InvalidPaymentMethod;
@@ -102,60 +100,58 @@ public sealed class OrderPlacement(
             .Where(ProductVisibility.IsPublic)
             .Where(product => ids.Contains(product.Id))
             .ToListAsync(cancellationToken);
-        var plans = cart.Lines
-            .Select(line => (Line: line, Product: products.FirstOrDefault(candidate => candidate.Id == line.ProductId)))
-            .Select(pair => (pair.Line, pair.Product, Allocations: pair.Product is null ? null : Allocate(pair.Product, pair.Line.Quantity)))
-            .ToList();
-        var unavailable = plans.FirstOrDefault(plan => plan.Allocations is null);
-        if (unavailable.Line is not null)
+        var shortage = cart.Lines.FirstOrDefault(line => !CanReserve(line, products.FirstOrDefault(candidate => candidate.Id == line.ProductId)));
+        if (shortage is not null)
         {
-            return new Reservation([], unavailable.Line.Name);
+            return new Reservation([], ShortageLabel(shortage));
         }
 
-        return new Reservation(plans.SelectMany(plan => Reserve(plan.Line, plan.Product!, plan.Allocations!)).ToList(), null);
+        var items = cart.Lines.Select(line => Reserve(line, products.First(candidate => candidate.Id == line.ProductId))).ToList();
+        return new Reservation(items, null);
     }
 
-    private static IReadOnlyList<StockAllocation>? Allocate(Product product, int quantity) =>
-        product.Kind == ProductKind.Digital
-            ? [new StockAllocation(DigitalLocation, quantity)]
-            : StockAllocator.Allocate(ActiveStocks(product), quantity);
-
-    private static List<LocationStock> ActiveStocks(Product product) =>
-        product.Stocks
-            .Where(stock => stock.Location?.Status == CatalogStatus.Active)
-            .OrderBy(stock => stock.Location!.SortOrder)
-            .ToList();
-
-    private static IEnumerable<OrderItem> Reserve(CartLineView line, Product product, IReadOnlyList<StockAllocation> allocations)
+    private static bool CanReserve(CartLineView line, Product? product)
     {
-        product.SalesCount += line.Quantity;
-        foreach (var allocation in allocations)
+        if (product is null)
         {
-            var isDigital = product.Kind == ProductKind.Digital;
-            if (!isDigital)
-            {
-                product.Stocks.First(stock => stock.LocationId == allocation.LocationId).Quantity -= allocation.Quantity;
-            }
-
-            yield return new OrderItem
-            {
-                ProductId = product.Id,
-                LocationId = isDigital ? null : allocation.LocationId,
-                Kind = product.Kind,
-                ProductName = line.Name,
-                ImageUrl = line.ImageUrl,
-                UnitPriceMinor = line.UnitPriceMinor,
-                Quantity = allocation.Quantity,
-            };
+            return false;
         }
+
+        return product.Kind == ProductKind.Digital || StockAtChosenLocation(product, line.LocationId)?.Quantity >= line.Quantity;
     }
+
+    private static string ShortageLabel(CartLineView line) =>
+        line.IsDigital || line.LocationName is null ? line.Name : $"{line.Name} ({line.LocationName})";
+
+    private static OrderItem Reserve(CartLineView line, Product product)
+    {
+        var stock = product.Kind == ProductKind.Digital ? null : StockAtChosenLocation(product, line.LocationId);
+        product.SalesCount += line.Quantity;
+        if (stock is not null)
+        {
+            stock.Quantity -= line.Quantity;
+        }
+
+        return new OrderItem
+        {
+            ProductId = product.Id,
+            LocationId = stock?.LocationId,
+            Kind = product.Kind,
+            ProductName = line.Name,
+            ImageUrl = line.ImageUrl,
+            UnitPriceMinor = line.UnitPriceMinor,
+            Quantity = line.Quantity,
+        };
+    }
+
+    private static LocationStock? StockAtChosenLocation(Product product, int? locationId) =>
+        product.Stocks.FirstOrDefault(stock => stock.LocationId == locationId && stock.Location?.Status == CatalogStatus.Active);
 
     private sealed record Reservation(IReadOnlyList<OrderItem> Items, string? Shortage);
 
     private async Task<Order> CreateOrderAsync(PlaceOrderRequest request, CartView cart, IReadOnlyList<OrderItem> items, CancellationToken cancellationToken)
     {
         var now = time.GetUtcNow();
-        var deliveryFee = OrderPricing.DeliveryFor(request.Fulfillment);
         var order = new Order
         {
             Number = await numbers.NextAsync(cancellationToken),
@@ -164,14 +160,13 @@ public sealed class OrderPlacement(
             CustomerPhone = PhoneNumber.Normalize(request.Phone)!,
             CustomerEmail = string.IsNullOrWhiteSpace(request.Email) ? null : request.Email.Trim(),
             Channel = OrderChannel.Online,
-            Fulfillment = request.Fulfillment,
-            DeliveryAddress = request.Fulfillment == FulfillmentKind.Delivery ? Truncate(request.Address, MaxAddressLength) : null,
+            Fulfillment = FulfillmentKind.Pickup,
             Notes = string.IsNullOrWhiteSpace(request.Notes) ? null : Truncate(request.Notes, MaxNotesLength),
             Status = OrderStatus.AwaitingPayment,
             SubtotalMinor = cart.SubtotalMinor,
             DiscountMinor = cart.DiscountMinor,
-            DeliveryFeeMinor = deliveryFee,
-            TotalMinor = cart.TotalMinor + deliveryFee,
+            DeliveryFeeMinor = 0,
+            TotalMinor = cart.TotalMinor,
             CouponCode = cart.CouponCode,
             CreatedAt = now,
             UpdatedAt = now,
