@@ -38,10 +38,13 @@
                     }
                 </select>
             </div>
-            <div>
-                <label for="retry-phone" class="field-label">@Text(Texts.WalletLabel)</label>
-                <input id="retry-phone" type="tel" inputmode="numeric" placeholder="@Texts.PhonePlaceholder" class="field" @bind="_retryPhone"/>
-            </div>
+            @if (RetryNeedsPhone)
+            {
+                <div>
+                    <label for="retry-phone" class="field-label">@Text(Texts.WalletLabel)</label>
+                    <input id="retry-phone" type="tel" inputmode="numeric" placeholder="@Texts.PhonePlaceholder" class="field" @bind="_retryPhone"/>
+                </div>
+            }
             @if (_retryError is not null)
             {
                 <p role="alert" class="text-sm text-red-700">@Text(_retryError)</p>
@@ -92,7 +95,7 @@
         "Pedido cancelado",
         "Este pedido foi cancelado. Se precisar de ajuda, fale connosco.");
 
-    private static readonly MethodOption[] MethodOptions = WalletMethods.All.Select(method => new MethodOption(method.ToString(), StatusLabels.For(method))).ToArray();
+    private static readonly MethodOption[] MethodOptions = OnlineMethods.All.Select(method => new MethodOption(method.ToString(), PaymentChoices.Label(method))).ToArray();
 
     private static readonly TimeSpan PollInterval = TimeSpan.FromSeconds(2);
 
@@ -109,6 +112,8 @@
     private string _retryMethod = nameof(PaymentMethod.MPesa);
     private string _retryPhone = string.Empty;
     private string? _retryError;
+
+    private bool RetryNeedsPhone => _retryMethod != nameof(PaymentMethod.Card);
 
     protected override async Task OnInitializedAsync()
     {

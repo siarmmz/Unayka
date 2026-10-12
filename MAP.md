@@ -66,6 +66,9 @@ src/Unayka.Core/Payments/Payment.cs: provider agnostic payment entity
 src/Unayka.Core/Payments/PaymentEvent.cs: raw payment event entity
 src/Unayka.Core/Payments/PaymentEnums.cs: PaymentMethod and PaymentStatus
 src/Unayka.Core/Payments/WalletMethods.cs: mobile wallet methods (M-Pesa, e-Mola, mKesh) and IsWallet
+src/Unayka.Core/Payments/OnlineMethods.cs: methods accepted online (wallets and card) and IsOnline
+src/Unayka.Web/Components/Checkout/PaymentChoices.cs: payment method labels and icons (wwwroot/images/pay)
+src/Unayka.Web/wwwroot/images/pay: M-Pesa, e-Mola, mKesh, Visa and Mastercard icons
 src/Unayka.Core/Counter/CashShift.cs: cash shift entity
 src/Unayka.Core/Audit/AuditEntry.cs: insert only audit entry entity
 src/Unayka.Core/Audit/IAuditLog.cs: audit log contract

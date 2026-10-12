@@ -82,6 +82,36 @@ public sealed class PaymentTests : IDisposable
     }
 
     [Fact]
+    public async Task Card_order_needs_no_wallet_phone_and_gets_paid()
+    {
+        var product = await _fixture.FirstProductAsync();
+        var cart = await _fixture.Carts.AddAsync(null, null, product.Id, 1);
+
+        var result = await _fixture.Placement.PlaceAsync(new PlaceOrderRequest(
+            cart.CartId, null, "Ana", GoodPhone, null, FulfillmentKind.Pickup, null, null, PaymentMethod.Card, null));
+        _fixture.Time.Advance(TimeSpan.FromSeconds(6));
+        await _fixture.Payments.RefreshAsync(result.OrderNumber!);
+        var order = await LoadOrderAsync(result.OrderNumber!);
+
+        Assert.True(result.Succeeded);
+        Assert.Null(order.Payments.Single().Phone);
+        Assert.Equal(PaymentMethod.Card, order.Payments.Single().Method);
+        Assert.Equal(OrderStatus.Paid, order.Status);
+    }
+
+    [Fact]
+    public async Task Cash_is_not_accepted_online()
+    {
+        var product = await _fixture.FirstProductAsync();
+        var cart = await _fixture.Carts.AddAsync(null, null, product.Id, 1);
+
+        var result = await _fixture.Placement.PlaceAsync(new PlaceOrderRequest(
+            cart.CartId, null, "Ana", GoodPhone, null, FulfillmentKind.Pickup, null, null, PaymentMethod.Cash, null));
+
+        Assert.Equal(PlaceOrderOutcome.InvalidPaymentMethod, result.Outcome);
+    }
+
+    [Fact]
     public async Task Retry_is_refused_while_a_payment_is_pending()
     {
         var number = await PlaceOrderAsync(GoodPhone);

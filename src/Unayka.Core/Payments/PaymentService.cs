@@ -19,7 +19,7 @@ public sealed class PaymentService(
     private const string StatusEvent = "status";
 
     public async Task<Payment> StartAsync(
-        Order order, PaymentMethod method, string phone, CancellationToken cancellationToken = default)
+        Order order, PaymentMethod method, string? phone, CancellationToken cancellationToken = default)
     {
         var requested = await gateway.RequestPaymentAsync(
             new PaymentRequest(order.Number, order.TotalMinor, method, phone), cancellationToken);
@@ -62,8 +62,13 @@ public sealed class PaymentService(
     public async Task<PaymentRetryOutcome> RetryAsync(
         string orderNumber, PaymentMethod method, string? phone, CancellationToken cancellationToken = default)
     {
-        var normalized = PhoneNumber.Normalize(phone);
-        if (normalized is null)
+        if (!method.IsOnline())
+        {
+            return PaymentRetryOutcome.NotRetryable;
+        }
+
+        var normalized = method.IsWallet() ? PhoneNumber.Normalize(phone) : null;
+        if (method.IsWallet() && normalized is null)
         {
             return PaymentRetryOutcome.InvalidPhone;
         }

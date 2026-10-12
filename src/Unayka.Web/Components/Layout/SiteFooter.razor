@@ -1,9 +1,16 @@
+@using Unayka.Web.Components.Checkout
 <footer class="mt-24 border-t border-sand bg-cream text-stone">
     <div class="container-page grid gap-12 py-16 md:grid-cols-2 lg:grid-cols-6">
         <div class="lg:col-span-2">
             <p class="font-script text-5xl text-espresso">@Text(Data.BrandName)</p>
             <p class="mt-4 max-w-xs text-sm leading-relaxed text-stone">@Text(Data.Tagline)</p>
             <p class="mt-6 text-sm text-clay">@Text(Data.WalletNote)</p>
+            <ul class="mt-3 flex flex-wrap gap-2">
+                @foreach (var icon in PaymentChoices.AllIcons)
+                {
+                    <li><img src="@icon.Url" alt="@icon.Alt" width="40" height="40" loading="lazy" class="h-10 w-10 rounded-lg border border-sand bg-white object-contain p-0.5"/></li>
+                }
+            </ul>
         </div>
 
         @foreach (var column in Data.Columns)
@@ -39,7 +46,7 @@
     private static readonly (string BrandName, string Tagline, string WalletNote, string ContactTitle, string[] ContactLines, (string Title, (string Label, string Url)[] Links)[] Columns) Data = (
         "Unayka",
         "Chás e cosméticos naturais. Compre online, levante na loja ou receba em casa.",
-        "Pagamento por carteira móvel: M-Pesa, e-Mola e mKesh.",
+        "Pague com M-Pesa, e-Mola, mKesh ou cartão Visa e Mastercard.",
         "Contacto",
         [
             "Avenida 24 de Julho, Maputo",

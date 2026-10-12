@@ -48,7 +48,7 @@ public sealed class OrderPlacement(
         }
 
         var order = await CreateOrderAsync(request, cart, cancellationToken);
-        await payments.StartAsync(order, request.PaymentMethod, PhoneNumber.Normalize(request.WalletPhone)!, cancellationToken);
+        await payments.StartAsync(order, request.PaymentMethod, request.PaymentMethod.IsWallet() ? PhoneNumber.Normalize(request.WalletPhone) : null, cancellationToken);
         await carts.ClearAsync(request.CartId!.Value, cancellationToken);
         await audit.WriteAsync(
             request.UserId, "order.placed", "Order", order.Number, $"Online order {order.Number} placed", cancellationToken);
@@ -80,12 +80,12 @@ public sealed class OrderPlacement(
             return PlaceOrderOutcome.AddressRequired;
         }
 
-        if (!request.PaymentMethod.IsWallet())
+        if (!request.PaymentMethod.IsOnline())
         {
             return PlaceOrderOutcome.InvalidPaymentMethod;
         }
 
-        return PhoneNumber.Normalize(request.WalletPhone) is null ? PlaceOrderOutcome.InvalidWalletPhone : null;
+        return request.PaymentMethod.IsWallet() && PhoneNumber.Normalize(request.WalletPhone) is null ? PlaceOrderOutcome.InvalidWalletPhone : null;
     }
 
     private static bool IsValidEmail(string value) =>

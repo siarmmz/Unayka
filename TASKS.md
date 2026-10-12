@@ -43,6 +43,12 @@ Wave 2 (four worktrees in parallel, Sonnet, split by feature folder):
 
 - [x] N7 Positioning: the shop is a modern online store of natural teas and cosmetics, not a salon; every salon reference removed from UI, CLAUDE.md (version 4) and README.
 
+### Sprint O: card payments and payment icons (requested 2026-10-12, done)
+
+- [x] O1 Online checkout accepts Visa and Mastercard cards besides M-Pesa, e-Mola and mKesh (OnlineMethods); the wallet number is asked only for wallets; cash stays counter only.
+- [x] O2 Payment icons from wwwroot/images/pay on checkout options and in the footer, sized 40px on white tiles.
+- [ ] O3 (H) Before the real gateway: confirm in the PaySuite documentation whether cards are supported and how (hosted page redirect, fields, webhook), and record it here. Until then card payments go through the mock gateway.
+
 Decision (2026-10-12): all images and content are provisional mocks (placeholder stock photos, nutrition table shown as an image placeholder) to be replaced by the final products later.
 
 ## Next

@@ -1,6 +1,7 @@
 @page "/checkout"
 @using System.Globalization
 @using System.Security.Claims
+@using Unayka.Web.Components.Checkout
 @using Unayka.Web.Endpoints.Cart
 @using Unayka.Web.Endpoints.Checkout
 @inject ICartService Carts
@@ -78,20 +79,27 @@
                     <div class="grid gap-4 sm:grid-cols-2">
                         @foreach (var option in _methodOptions)
                         {
-                            <label class="flex cursor-pointer items-center gap-4 rounded-2xl border border-sand bg-white p-5 transition hover:border-clay has-[:checked]:border-espresso has-[:checked]:bg-cream">
-                                <input type="radio" name="method" id="@option.Id" value="@option.Value" checked="@option.IsSelected" class="accent-espresso"/>
+                            <label class="flex min-h-16 cursor-pointer items-center gap-4 rounded-2xl border border-sand bg-white p-4 transition hover:border-clay has-[:checked]:border-espresso has-[:checked]:bg-cream">
+                                <input type="radio" name="method" id="@option.Id" value="@option.Value" checked="@option.IsSelected" class="h-5 w-5 accent-espresso"/>
+                                <span class="flex shrink-0 gap-1.5">
+                                    @foreach (var icon in option.Icons)
+                                    {
+                                        <img src="@icon.Url" alt="@icon.Alt" width="40" height="40" class="h-10 w-10 rounded-lg border border-sand bg-white object-contain p-0.5"/>
+                                    }
+                                </span>
                                 <span class="font-medium text-espresso">@Text(option.Title)</span>
                             </label>
                         }
                     </div>
-                    <div>
+                    <div class="group-has-[#method-card:checked]:hidden">
                         <label for="walletPhone" class="field-label">@Text(Texts.WalletLabel)</label>
                         <div class="flex items-stretch gap-2">
                             <span class="flex items-center rounded-xl border border-sand bg-cream px-4 text-sm text-stone">@Text(Texts.CountryCode)</span>
-                            <input id="walletPhone" name="walletPhone" type="tel" inputmode="numeric" required pattern="@Texts.PhonePattern" placeholder="@Texts.PhonePlaceholder" value="@_wallet" class="field"/>
+                            <input id="walletPhone" name="walletPhone" type="tel" inputmode="numeric" pattern="@Texts.PhonePattern" placeholder="@Texts.PhonePlaceholder" value="@_wallet" class="field"/>
                         </div>
                         <p class="mt-2 text-xs text-stone">@Text(Texts.WalletHint)</p>
                     </div>
+                    <p class="hidden rounded-xl bg-sage-soft px-4 py-3 text-sm text-espresso group-has-[#method-card:checked]:block">@Text(Texts.CardHint)</p>
                 </fieldset>
             </div>
 
@@ -145,17 +153,17 @@
         string EmptyTitle, string EmptyMessage, string EmptyAction, string ShopUrl, string CartUrl, string ConfirmAction,
         string ContactTitle, string NameLabel, string PhoneLabel, string CountryCode, string PhonePlaceholder, string PhonePattern, string EmailLabel,
         string FulfillmentTitle, string AddressLabel, string AddressPlaceholder, string NotesLabel, string NotesPlaceholder,
-        string PaymentTitle, string WalletLabel, string WalletHint,
+        string PaymentTitle, string WalletLabel, string WalletHint, string CardHint,
         string SummaryTitle, string SubtotalLabel, string DiscountTemplate, string DeliveryLabel, string FreeLabel, string TotalLabel,
         string PlaceOrderButton, string PaymentNote, string BackToCart, string QuantityTemplate, string StockTemplate);
 
-    private sealed record ChoiceOption(string Id, string Value, string Title, string Description, string Price, bool IsSelected);
+    private sealed record ChoiceOption(string Id, string Value, string Title, string Description, string Price, bool IsSelected, IReadOnlyList<PaymentIcon> Icons);
 
     private sealed record SummaryLine(string Name, string Quantity, string Total, string ImageUrl);
 
     private static readonly CheckoutTexts Texts = new(
         "Finalizar compra | Unayka",
-        "Indique os seus dados, escolha levantamento ou entrega e pague com M-Pesa, e-Mola ou mKesh.",
+        "Indique os seus dados, escolha levantamento ou entrega e pague com M-Pesa, e-Mola, mKesh ou cartão.",
         "Quase lá",
         "Finalizar compra",
         "Uma única página, sem registos obrigatórios.",
@@ -180,6 +188,7 @@
         "Pagamento",
         "Número da carteira móvel",
         "Vai receber um pedido de confirmação no telemóvel. Aceite com o seu PIN para concluir.",
+        "Depois de confirmar o pedido, introduza os dados do cartão Visa ou Mastercard na página segura de pagamento.",
         "Resumo do pedido",
         "Subtotal",
         "Desconto ({0})",
@@ -187,7 +196,7 @@
         "Grátis",
         "Total",
         "Confirmar e pagar",
-        "Pagamento seguro por carteira móvel. Só é cobrado depois de confirmar no telemóvel.",
+        "Pagamento seguro por carteira móvel ou cartão. Só é cobrado depois de confirmar.",
         "Voltar ao carrinho",
         "Quantidade: {0}",
         "Já não temos stock suficiente de {0}. Reveja o carrinho.");
@@ -200,7 +209,7 @@
         [nameof(PlaceOrderOutcome.InvalidEmail)] = "O email não parece válido.",
         [nameof(PlaceOrderOutcome.AddressRequired)] = "Indique a morada para a entrega.",
         [nameof(PlaceOrderOutcome.InvalidWalletPhone)] = "Indique o número da carteira móvel, com nove dígitos.",
-        [nameof(PlaceOrderOutcome.InvalidPaymentMethod)] = "Escolha M-Pesa, e-Mola ou mKesh.",
+        [nameof(PlaceOrderOutcome.InvalidPaymentMethod)] = "Escolha M-Pesa, e-Mola, mKesh ou cartão.",
         [nameof(PlaceOrderOutcome.CouponNoLongerValid)] = "O cupão já não é válido. Reveja o carrinho.",
     };
 
@@ -287,12 +296,12 @@
         var isDelivery = FulfillmentValue == nameof(FulfillmentKind.Delivery);
         _fulfillmentOptions =
         [
-            new("fulfillment-pickup", nameof(FulfillmentKind.Pickup), "Levantamento na loja", "Pronto para levantar quando estiver confirmado.", "Grátis", !isDelivery),
-            new("fulfillment-delivery", nameof(FulfillmentKind.Delivery), "Entrega em Maputo", "Entregamos à porta, dentro da cidade de Maputo.", FormatMoney(OrderPricing.DeliveryFeeMinor), isDelivery),
+            new("fulfillment-pickup", nameof(FulfillmentKind.Pickup), "Levantamento na loja", "Pronto para levantar quando estiver confirmado.", "Grátis", !isDelivery, []),
+            new("fulfillment-delivery", nameof(FulfillmentKind.Delivery), "Entrega em Maputo", "Entregamos à porta, dentro da cidade de Maputo.", FormatMoney(OrderPricing.DeliveryFeeMinor), isDelivery, []),
         ];
-        var selected = WalletMethods.All.FirstOrDefault(method => method.ToString() == MethodValue, WalletMethods.All[0]);
-        _methodOptions = WalletMethods.All
-            .Select(method => new ChoiceOption($"method-{method.ToString().ToLowerInvariant()}", method.ToString(), StatusLabels.For(method), string.Empty, string.Empty, method == selected))
+        var selected = OnlineMethods.All.FirstOrDefault(method => method.ToString() == MethodValue, OnlineMethods.All[0]);
+        _methodOptions = OnlineMethods.All
+            .Select(method => new ChoiceOption($"method-{method.ToString().ToLowerInvariant()}", method.ToString(), PaymentChoices.Label(method), string.Empty, string.Empty, method == selected, PaymentChoices.Icons(method)))
             .ToList();
     }
 
