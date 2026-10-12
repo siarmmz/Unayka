@@ -21,7 +21,7 @@ Wave 2 (four worktrees in parallel, Sonnet, split by feature folder):
 - [x] L4 Administration: dashboard, products, categories, orders, coupons, customers, audit (branch sprint-l/admin)
 - [x] L5 Counter: point of sale charge mode, cash shift, preparation board (branch sprint-l/counter)
 
-Wave 3 (primary agent): merge, build, tests, browser check of every page in Chrome, MAP.md update.
+- [x] Wave 3 (primary agent): merged, build and tests green, purchase flow, admin dashboard, counter and preparation checked in Chrome.
 
 ## Next
 

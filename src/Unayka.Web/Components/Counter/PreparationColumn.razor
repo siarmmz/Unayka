@@ -42,7 +42,11 @@
     private const string AdvanceLabel = "Avançar";
     private const string CounterLabel = "Balcão";
     private const string OnlineLabel = "Online";
-    private const string AgeFormat = "há {0} min";
+    private const string AgeMinutesFormat = "há {0} min";
+    private const string AgeHoursFormat = "há {0} h";
+    private const string AgeDaysFormat = "há {0} dias";
+    private const int MinutesPerHour = 60;
+    private const int MinutesPerDay = 1440;
     private const int LateAfterMinutes = 10;
     private const string ChannelBase = "rounded-full px-3 py-1 text-xs ";
     private const string CounterClass = ChannelBase + "bg-sage-soft text-sage";
@@ -89,9 +93,20 @@
             isCounter ? CounterLabel : OnlineLabel,
             isCounter ? CounterClass : OnlineClass,
             card.Items,
-            string.Format(System.Globalization.CultureInfo.InvariantCulture, AgeFormat, card.AgeMinutes),
+            FormatAge(card.AgeMinutes),
             isLate ? AgeLateClass : AgeNormalClass,
             PreparationFlow.Next(card.Status) is not null,
             () => OnAdvance.InvokeAsync(card.OrderId));
+    }
+
+    private static string FormatAge(int minutes)
+    {
+        var (format, value) = minutes switch
+        {
+            >= MinutesPerDay => (AgeDaysFormat, minutes / MinutesPerDay),
+            >= MinutesPerHour => (AgeHoursFormat, minutes / MinutesPerHour),
+            _ => (AgeMinutesFormat, minutes),
+        };
+        return string.Format(System.Globalization.CultureInfo.InvariantCulture, format, value);
     }
 }
