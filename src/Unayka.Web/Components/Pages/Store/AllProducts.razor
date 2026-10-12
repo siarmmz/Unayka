@@ -1,0 +1,20 @@
+@page "/loja/todos"
+@using Unayka.Web.Components.Store
+
+<SeoComponent Title="@Data.Seo.Title" Description="@Data.Seo.Description"/>
+
+<section class="border-b border-sand bg-cream">
+    <div class="container-page py-16 md:py-20">
+        <SectionHeading Title="@Data.Title" Eyebrow="@Data.Eyebrow" Subtitle="@Data.Subtitle" Centered="true"/>
+    </div>
+</section>
+
+<CatalogView BasePath="@StoreUrls.AllProducts"/>
+
+@code {
+    private static readonly (string Title, string Eyebrow, string Subtitle, (string Title, string Description) Seo) Data = (
+        "Todos os produtos",
+        "Cafés, cosméticos e chás",
+        "Escolha com calma. Levante na loja ou receba em casa, em Maputo.",
+        ("Todos os produtos | Unayka", "Cafés, cosméticos naturais e chás da Unayka. Pague com M-Pesa, e-Mola ou mKesh e levante na loja ou receba em Maputo."));
+}

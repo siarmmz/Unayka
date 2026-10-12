@@ -10,7 +10,6 @@ public sealed partial class PublicPagesTests(UnaykaWebFactory factory)
 
     [Theory]
     [InlineData("/")]
-    [InlineData("/services")]
     [InlineData("/about")]
     [InlineData("/location")]
     [InlineData("/contact")]

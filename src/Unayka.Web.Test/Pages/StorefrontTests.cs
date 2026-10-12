@@ -10,7 +10,8 @@ public sealed class StorefrontTests(UnaykaWebFactory factory)
     [Theory]
     [InlineData("/")]
     [InlineData("/loja")]
-    [InlineData("/loja?page=2&ordem=preco-asc")]
+    [InlineData("/loja/todos?page=2&ordem=preco-asc")]
+    [InlineData("/loja/todos")]
     [InlineData("/loja/cafes")]
     [InlineData("/loja/cosmeticos")]
     [InlineData("/loja/categoria/cafes-quentes")]
@@ -49,7 +50,7 @@ public sealed class StorefrontTests(UnaykaWebFactory factory)
     [Fact]
     public async Task Shop_search_echoes_the_term_and_filters_results()
     {
-        var html = await _client.GetStringAsync("/loja?q=cappuccino");
+        var html = await _client.GetStringAsync("/loja/todos?q=cappuccino");
 
         Assert.Contains("value=\"cappuccino\"", html, StringComparison.Ordinal);
         Assert.Contains("/produto/cappuccino-cremoso", html, StringComparison.Ordinal);
@@ -59,7 +60,7 @@ public sealed class StorefrontTests(UnaykaWebFactory factory)
     [Fact]
     public async Task Shop_without_matches_shows_empty_state()
     {
-        var html = await _client.GetStringAsync("/loja?q=zzzzzz");
+        var html = await _client.GetStringAsync("/loja/todos?q=zzzzzz");
 
         Assert.Contains("Nada por aqui", html, StringComparison.Ordinal);
     }

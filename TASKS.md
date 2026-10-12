@@ -23,6 +23,26 @@ Wave 2 (four worktrees in parallel, Sonnet, split by feature folder):
 
 - [x] Wave 3 (primary agent): merged, build and tests green, purchase flow, admin dashboard, counter and preparation checked in Chrome.
 
+### Sprint M: cleaner store and navigation (requested 2026-10-12, done)
+
+- [x] M1 Payments: MKesh added; WalletMethods lists M-Pesa, e-Mola and mKesh for checkout, retry and counter.
+- [x] M2 Header: Início, Loja, Sobre, Contacto. Services page removed.
+- [x] M3 /loja is a showroom (featured marquee, Cafés, Cosméticos naturais e chás, each with "Ver mais"); the full filtered catalog moved to /loja/todos; /loja/cafes and /loja/cosmeticos stay as "Ver mais" targets, out of the header.
+- [x] M4 Teas use the existing three image gallery (prepared, package, plants).
+- [x] M5 Seed: tea category with three teas, moringa ointment, photos of Black women replace off brief photos.
+- [x] M6 Tests green, browser check on port 5000.
+
+### Sprint N: tea first, home vs store, lighter and simpler (requested 2026-10-12, awaiting approval)
+
+- [ ] N1 (O) Catalog focus: teas are the main product, cosmetics second, coffee optional. Add CategoryKind Tea; store rows become Destaques, Chás, Cosméticos naturais (coffee only inside "Ver mais").
+- [ ] N2 (S) Home distinct from /loja: hero carousel (CSS only, 3 slides), the three product rows, how it works (order, pay by wallet, pick up or delivery), natural ingredients story, contact strip.
+- [ ] N3 (S) Lighter palette: raise espresso and clay tones a step, keep high text contrast; fewer dark blocks.
+- [ ] N4 (S) Simpler UX for first time online shoppers: larger tap targets, one clear action per card ("Adicionar"), plain labels, fewer filters by default.
+- [ ] N5 (H) Copy review to Mozambican Portuguese (close to pt-PT): telemóvel, pequeno-almoço, contacto, autocarro style; remove pt-BR forms across all UI texts.
+- [ ] N6 (O) Sign in: Google sign in plus phone code. WhatsApp login is paid (Meta charges per authentication message), so it stays out; a free alternative is a one time link by email.
+
+Decision (2026-10-12): all images and content are provisional mocks (placeholder stock photos, nutrition table shown as an image placeholder) to be replaced by the final products later.
+
 ## Next
 
 ### Phase 0: repository base

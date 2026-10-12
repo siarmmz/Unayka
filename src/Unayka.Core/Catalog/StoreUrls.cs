@@ -3,6 +3,7 @@ namespace Unayka.Core.Catalog;
 public static class StoreUrls
 {
     public const string Shop = "/loja";
+    public const string AllProducts = "/loja/todos";
     public const string Coffee = "/loja/cafes";
     public const string Cosmetics = "/loja/cosmeticos";
     public const string Cart = "/carrinho";
@@ -16,5 +17,5 @@ public static class StoreUrls
 
     public static string Category(string slug) => $"/loja/categoria/{slug}";
 
-    public static string Search(string term) => $"{Shop}?q={Uri.EscapeDataString(term)}";
+    public static string Search(string term) => $"{AllProducts}?q={Uri.EscapeDataString(term)}";
 }

@@ -78,7 +78,7 @@
     private static readonly (string BrandName, string HomeUrl, string SearchUrl, string SearchPlaceholder, string MenuLabel, string SignInLabel, string SignInUrl, string AccountLabel, string AccountUrl, string AdminLabel, string AdminUrl, string SignOutLabel, string SignOutUrl, string CartLabel, string CartUrl, (string Label, string Url)[] Navigation) Data = (
         "Unayka",
         "/",
-        StoreUrls.Shop,
+        StoreUrls.AllProducts,
         "Pesquisar na loja",
         "Abrir o menu",
         "Entrar",
@@ -92,12 +92,10 @@
         "Carrinho",
         StoreUrls.Cart,
         [
+            ("Início", "/"),
             ("Loja", StoreUrls.Shop),
-            ("Cafés", StoreUrls.Coffee),
-            ("Cosméticos", StoreUrls.Cosmetics),
-            ("Serviços", "/services"),
             ("Sobre", "/about"),
-            ("Contato", "/contact"),
+            ("Contacto", "/contact"),
         ]
     );
 

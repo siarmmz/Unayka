@@ -53,7 +53,7 @@ public static class StoreStructuredData
             ["url"] = root + "/",
             ["image"] = imageUrl,
             ["currenciesAccepted"] = Currency,
-            ["paymentAccepted"] = "M-Pesa, e-Mola",
+            ["paymentAccepted"] = "M-Pesa, e-Mola, mKesh",
             ["openingHours"] = openingHours,
             ["address"] = new Dictionary<string, object>
             {

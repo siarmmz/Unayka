@@ -155,7 +155,7 @@
 
     private static readonly CheckoutTexts Texts = new(
         "Finalizar compra | Unayka",
-        "Indique os seus dados, escolha levantamento ou entrega e pague com M-Pesa ou e-Mola.",
+        "Indique os seus dados, escolha levantamento ou entrega e pague com M-Pesa, e-Mola ou mKesh.",
         "Quase lá",
         "Finalizar compra",
         "Uma única página, sem registos obrigatórios.",
@@ -200,7 +200,7 @@
         [nameof(PlaceOrderOutcome.InvalidEmail)] = "O email não parece válido.",
         [nameof(PlaceOrderOutcome.AddressRequired)] = "Indique a morada para a entrega.",
         [nameof(PlaceOrderOutcome.InvalidWalletPhone)] = "Indique o número da carteira móvel, com nove dígitos.",
-        [nameof(PlaceOrderOutcome.InvalidPaymentMethod)] = "Escolha M-Pesa ou e-Mola.",
+        [nameof(PlaceOrderOutcome.InvalidPaymentMethod)] = "Escolha M-Pesa, e-Mola ou mKesh.",
         [nameof(PlaceOrderOutcome.CouponNoLongerValid)] = "O cupão já não é válido. Reveja o carrinho.",
     };
 
@@ -290,12 +290,10 @@
             new("fulfillment-pickup", nameof(FulfillmentKind.Pickup), "Levantamento na loja", "Pronto para levantar quando estiver confirmado.", "Grátis", !isDelivery),
             new("fulfillment-delivery", nameof(FulfillmentKind.Delivery), "Entrega em Maputo", "Entregamos à porta, dentro da cidade de Maputo.", FormatMoney(OrderPricing.DeliveryFeeMinor), isDelivery),
         ];
-        var isEMola = MethodValue == nameof(PaymentMethod.EMola);
-        _methodOptions =
-        [
-            new("method-mpesa", nameof(PaymentMethod.MPesa), StatusLabels.For(PaymentMethod.MPesa), string.Empty, string.Empty, !isEMola),
-            new("method-emola", nameof(PaymentMethod.EMola), StatusLabels.For(PaymentMethod.EMola), string.Empty, string.Empty, isEMola),
-        ];
+        var selected = WalletMethods.All.FirstOrDefault(method => method.ToString() == MethodValue, WalletMethods.All[0]);
+        _methodOptions = WalletMethods.All
+            .Select(method => new ChoiceOption($"method-{method.ToString().ToLowerInvariant()}", method.ToString(), StatusLabels.For(method), string.Empty, string.Empty, method == selected))
+            .ToList();
     }
 
     private void PrepareSummary(CartView view)

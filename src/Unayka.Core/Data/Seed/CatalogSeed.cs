@@ -27,6 +27,7 @@ public static class CatalogSeed
     private const string Skin = "cuidados-de-pele";
     private const string Hair = "cabelo";
     private const string Body = "corpo-e-banho";
+    private const string Teas = "chas-naturais";
     private const string NewBadge = "Novo";
     private const string BestSellerBadge = "Mais vendido";
     private const string NutritionGroup = "Tabela nutricional";
@@ -47,15 +48,21 @@ public static class CatalogSeed
 
     private static readonly string[] CosmeticPhotoIds =
     [
-        "1556228720-195a672e8a03", "1620916566398-39f1143ab7be", "1596462502278-27bfdc403348",
-        "1571781926291-c477ebfd024b", "1522335789203-aabd1fc54bc9", "1612817288484-6f916006741a",
+        "1556228720-195a672e8a03", "1620916566398-39f1143ab7be", "1531123897727-8f129e1688ce",
+        "1571781926291-c477ebfd024b", "1608571423539-e951b9b3871e", "1612817288484-6f916006741a",
         "1598440947619-2c35fc9aa908", "1608248543803-ba4f8c70ae0b", "1556228578-0d85b1a4d571",
-        "1570172619644-dfd03ed5d881", "1526947425960-945c6e72858f", "1631730486784-5456119f69ae",
-        "1522337360788-8b13dee7a37e", "1522338242992-e1a54906a8da", "1507652313519-d4e9174996dd",
+        "1589156280159-27698a70f29e", "1526947425960-945c6e72858f", "1631730486784-5456119f69ae",
+        "1611432579402-7037e3e2c1e4", "1523824921871-d6f1a15151f1", "1507652313519-d4e9174996dd",
         "1608571423902-eed4a5ad8108", "1585652757141-8837d676fac8", "1544161515-4ab6ce6db874",
         "1540555700478-4be289fbecef", "1515377905703-c4788e51af15", "1519824145371-296894a0daa9",
-        "1600857062241-98e5dba7f214", "1523293182086-7651a899d37f", "1512496015851-a90fb38ba796",
-        "1487412947147-5cebf100ffc2",
+        "1600857062241-98e5dba7f214", "1556228578-0d85b1a4d571", "1608248543803-ba4f8c70ae0b",
+        "1600857062241-98e5dba7f214",
+    ];
+
+    private static readonly string[] TeaPhotoIds =
+    [
+        "1627435601361-ec25f5b1d0e5", "1571934811356-5cc061b6821f", "1597481499750-3e6b22637e12",
+        "1576092768241-dec231879fc3", "1594631252845-29fc4cc8cde9", "1558160074-4d7d8bdf4256",
     ];
 
     public static readonly IReadOnlyList<SeedCategory> Categories =
@@ -63,9 +70,10 @@ public static class CatalogSeed
         new(HotCoffee, "Cafés quentes", "Espressos e bebidas de leite preparados na hora.", CategoryKind.Coffee, "1509042239860-f550ce710b93"),
         new(IcedCoffee, "Cafés gelados", "Bebidas frescas para os dias de calor.", CategoryKind.Coffee, "1507133750040-4a8f57021571"),
         new(Beans, "Grãos e moídos", "Café para preparar em casa, em grão, moído ou em cápsulas.", CategoryKind.Coffee, "1559056199-641a0ac8b55e"),
-        new(Skin, "Cuidados de pele", "Rotina simples para uma pele hidratada e protegida.", CategoryKind.Cosmetic, "1556228720-195a672e8a03"),
-        new(Hair, "Cabelo", "Lavagem, nutrição e reparação para todos os tipos de cabelo.", CategoryKind.Cosmetic, "1522337360788-8b13dee7a37e"),
+        new(Skin, "Pomadas e cremes", "Pomadas e cremes feitos de manteigas e óleos naturais.", CategoryKind.Cosmetic, "1556228720-195a672e8a03"),
+        new(Hair, "Cabelo", "Lavagem, nutrição e reparação para todos os tipos de cabelo.", CategoryKind.Cosmetic, "1611432579402-7037e3e2c1e4"),
         new(Body, "Corpo e banho", "Texturas ricas e aromas suaves para o momento do banho.", CategoryKind.Cosmetic, "1544161515-4ab6ce6db874"),
+        new(Teas, "Chás naturais", "Chás de plantas, secas ao sol e embaladas à mão.", CategoryKind.Cosmetic, "1627435601361-ec25f5b1d0e5"),
     ];
 
     public static readonly IReadOnlyList<SeedProduct> Products =
@@ -190,6 +198,26 @@ public static class CatalogSeed
             "Uma seleção dos nossos favoritos de banho e corpo, numa caixa de oferta pronta a presentear: manteiga corporal, sabonete artesanal e esfoliante.",
             1800, 2100, null, true, 25, 70, Photos(CosmeticPhotoIds, 22, 19, 21),
             Composition("Conjunto de 3 peças", "Manteiga de karité, borra de café, óleo de coco", "Seguir as indicações de cada produto incluído no conjunto.", "Todos os tipos de pele")),
+        new("pomada-de-moringa-e-karite", "Pomada de Moringa e Karité 60 g", Skin,
+            "Pomada calmante para pele seca, mãos e pés.",
+            "Pomada de textura densa feita com manteiga de karité, óleo de moringa e cera de abelha. Acalma, protege e repara zonas muito secas.",
+            450, null, NewBadge, true, 80, 150, Photos(CosmeticPhotoIds, 4, 5, 6),
+            Composition("60 g", "Manteiga de karité, óleo de moringa, cera de abelha, vitamina E", "Aplicar uma pequena quantidade nas zonas secas, as vezes que forem precisas.", "Pele seca e sensível")),
+        new("cha-de-moringa", "Chá de Moringa, 20 saquetas", Teas,
+            "Folhas de moringa secas ao sol, sabor suave e herbáceo.",
+            "Folhas de moringa colhidas à mão, secas à sombra e embaladas em saquetas. Uma infusão leve, rica em minerais, para qualquer hora do dia.",
+            280, null, NewBadge, true, 90, 160, [TeaPhotoIds[0], TeaPhotoIds[2], TeaPhotoIds[3]],
+            Nutrition("1 chávena, 250 ml", 2, "0 g", "0,4 g", "0 g", "0,1 g", "0 mg")),
+        new("cha-de-hibisco", "Chá de Hibisco, 20 saquetas", Teas,
+            "Infusão vermelha, ácida e refrescante, boa quente ou gelada.",
+            "Cálices de hibisco secos, com notas de frutos vermelhos. Fica perfeito quente ao fim da tarde ou gelado com um pouco de mel.",
+            260, 300, BestSellerBadge, true, 100, 260, [TeaPhotoIds[1], TeaPhotoIds[2], TeaPhotoIds[4]],
+            Nutrition("1 chávena, 250 ml", 3, "0 g", "0,7 g", "0 g", "0 g", "0 mg")),
+        new("cha-de-capim-principe", "Chá de Capim Príncipe, 20 saquetas", Teas,
+            "Aroma de limão, digestivo e calmante.",
+            "Capim príncipe cultivado em Moçambique, cortado e seco lentamente. Um chá de aroma cítrico que acalma depois das refeições.",
+            240, null, null, false, 110, 120, [TeaPhotoIds[5], TeaPhotoIds[2], TeaPhotoIds[3]],
+            Nutrition("1 chávena, 250 ml", 1, "0 g", "0,2 g", "0 g", "0 g", "0 mg")),
     ];
 
     private static string[] Photos(string[] pool, params int[] indexes) =>

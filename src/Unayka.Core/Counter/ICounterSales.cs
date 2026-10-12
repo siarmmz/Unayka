@@ -13,7 +13,7 @@ public sealed record CounterCategory(int Id, string Name, CategoryKind Kind);
 /// <summary>Products and categories available for sale at the counter.</summary>
 public sealed record CounterCatalog(IReadOnlyList<CounterCategory> Categories, IReadOnlyList<CounterProduct> Products);
 
-/// <summary>One sale ready to be registered. WalletPhone is required for M-Pesa and e-Mola.</summary>
+/// <summary>One sale ready to be registered. WalletPhone is required for M-Pesa, e-Mola and mKesh.</summary>
 public sealed record CounterSaleRequest(
     int CashierId,
     IReadOnlyList<TicketLine> Lines,

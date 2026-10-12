@@ -92,11 +92,7 @@
         "Pedido cancelado",
         "Este pedido foi cancelado. Se precisar de ajuda, fale connosco.");
 
-    private static readonly MethodOption[] MethodOptions =
-    [
-        new(nameof(PaymentMethod.MPesa), StatusLabels.For(PaymentMethod.MPesa)),
-        new(nameof(PaymentMethod.EMola), StatusLabels.For(PaymentMethod.EMola)),
-    ];
+    private static readonly MethodOption[] MethodOptions = WalletMethods.All.Select(method => new MethodOption(method.ToString(), StatusLabels.For(method))).ToArray();
 
     private static readonly TimeSpan PollInterval = TimeSpan.FromSeconds(2);
 

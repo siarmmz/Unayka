@@ -38,7 +38,7 @@
             @if (_page.Items.Count == 0)
             {
                 <div class="mt-10">
-                    <EmptyState Title="@Data.EmptyTitle" Message="@Data.EmptyMessage" ActionLabel="@Data.EmptyAction" ActionUrl="@StoreUrls.Shop"/>
+                    <EmptyState Title="@Data.EmptyTitle" Message="@Data.EmptyMessage" ActionLabel="@Data.EmptyAction" ActionUrl="@StoreUrls.AllProducts"/>
                 </div>
             }
 
@@ -132,7 +132,7 @@
         var noKindSelected = Kind is null && CategorySlug is null;
         return
         [
-            new FilterLink(Data.AllLabel, ToUrl(CatalogLinks.Build(StoreUrls.Shop, carried)), ChipFor(noKindSelected)),
+            new FilterLink(Data.AllLabel, ToUrl(CatalogLinks.Build(StoreUrls.AllProducts, carried)), ChipFor(noKindSelected)),
             new FilterLink(Data.CoffeeLabel, ToUrl(CatalogLinks.Build(StoreUrls.Coffee, carried)), ChipFor(Kind == CategoryKind.Coffee && CategorySlug is null)),
             new FilterLink(Data.CosmeticLabel, ToUrl(CatalogLinks.Build(StoreUrls.Cosmetics, carried)), ChipFor(Kind == CategoryKind.Cosmetic && CategorySlug is null)),
         ];

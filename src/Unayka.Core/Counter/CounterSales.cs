@@ -102,15 +102,13 @@ public sealed class CounterSales(IDbContextFactory<UnaykaDbContext> factory, IOr
             return CounterSaleError.InvalidAmount;
         }
 
-        return IsWallet(request.Method) && PhoneNumber.Normalize(request.WalletPhone) is null
+        return request.Method.IsWallet() && PhoneNumber.Normalize(request.WalletPhone) is null
             ? CounterSaleError.InvalidWalletPhone
             : CounterSaleError.None;
     }
 
     private static bool HasUnavailableProduct(IEnumerable<TicketLine> lines, Dictionary<int, Product> products) =>
         lines.Where(line => !line.IsFreeAmount).Any(line => !products.TryGetValue(line.ProductId, out var product) || !product.IsActive || product.StockQuantity < line.Quantity);
-
-    private static bool IsWallet(PaymentMethod method) => method is PaymentMethod.MPesa or PaymentMethod.EMola;
 
     private static CounterSaleResult Failure(CounterSaleError error) => new(null, error);
 
@@ -139,7 +137,7 @@ public sealed class CounterSales(IDbContextFactory<UnaykaDbContext> factory, IOr
             _ => CounterWallet.Provider,
         },
         Method = request.Method,
-        Phone = IsWallet(request.Method) ? PhoneNumber.Normalize(request.WalletPhone) : null,
+        Phone = request.Method.IsWallet() ? PhoneNumber.Normalize(request.WalletPhone) : null,
         AmountMinor = total,
         Status = PaymentStatus.Paid,
         ProviderReference = Guid.NewGuid().ToString("N"),

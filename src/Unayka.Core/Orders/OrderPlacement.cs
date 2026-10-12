@@ -80,7 +80,7 @@ public sealed class OrderPlacement(
             return PlaceOrderOutcome.AddressRequired;
         }
 
-        if (request.PaymentMethod is not (PaymentMethod.MPesa or PaymentMethod.EMola))
+        if (!request.PaymentMethod.IsWallet())
         {
             return PlaceOrderOutcome.InvalidPaymentMethod;
         }

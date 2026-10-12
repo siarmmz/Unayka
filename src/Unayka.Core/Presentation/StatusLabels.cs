@@ -39,6 +39,7 @@ public static class StatusLabels
     {
         PaymentMethod.MPesa => "M-Pesa",
         PaymentMethod.EMola => "e-Mola",
+        PaymentMethod.MKesh => "mKesh",
         PaymentMethod.Cash => "Dinheiro",
         PaymentMethod.Card => "Cartão",
         _ => method.ToString(),

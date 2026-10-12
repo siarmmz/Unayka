@@ -213,7 +213,7 @@
         [CounterSaleError.OutOfStock] = "Um dos produtos já não tem stock suficiente.",
     };
 
-    private static readonly PaymentMethod[] Methods = [PaymentMethod.Cash, PaymentMethod.Card, PaymentMethod.MPesa, PaymentMethod.EMola];
+    private static readonly PaymentMethod[] Methods = [PaymentMethod.Cash, PaymentMethod.Card, .. WalletMethods.All];
 
     private sealed record ChoiceView(string Label, string CssClass, Action Select);
 
@@ -247,7 +247,7 @@
 
     private string TotalText => FormatMoney(Total);
 
-    private bool IsWallet => _method is PaymentMethod.MPesa or PaymentMethod.EMola;
+    private bool IsWallet => _method.IsWallet();
 
     private IEnumerable<CounterProduct> VisibleProducts =>
         _catalog.Products

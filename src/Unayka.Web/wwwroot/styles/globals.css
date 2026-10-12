@@ -17,6 +17,16 @@
   --font-sans: "Inter", "Helvetica Neue", "Segoe UI", Arial, sans-serif;
   --font-serif: "Cormorant Garamond", "Georgia", "Times New Roman", serif;
   --font-script: "Caveat", "Segoe Script", "Brush Script MT", cursive;
+  --animate-marquee: marquee 45s linear infinite;
+
+  @keyframes marquee {
+    from {
+      transform: translateX(0);
+    }
+    to {
+      transform: translateX(-50%);
+    }
+  }
 }
 
 @layer base {

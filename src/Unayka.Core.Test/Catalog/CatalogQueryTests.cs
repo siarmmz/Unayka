@@ -23,8 +23,8 @@ public sealed class CatalogQueryTests : IDisposable
         var first = await _query.SearchAsync(new ProductSearch());
         var second = await _query.SearchAsync(new ProductSearch(Page: 2));
 
-        Assert.Equal(24, first.TotalCount);
-        Assert.Equal(2, first.PageCount);
+        Assert.Equal(28, first.TotalCount);
+        Assert.Equal(3, first.PageCount);
         Assert.Equal(CatalogQuery.PageSize, first.Items.Count);
         Assert.Empty(first.Items.Select(item => item.Slug).Intersect(second.Items.Select(item => item.Slug)));
     }
@@ -99,7 +99,7 @@ public sealed class CatalogQueryTests : IDisposable
 
         var result = await _query.SearchAsync(new ProductSearch());
 
-        Assert.Equal(23, result.TotalCount);
+        Assert.Equal(27, result.TotalCount);
         Assert.Null(await _query.FindProductAsync(target.Slug));
     }
 
@@ -128,8 +128,8 @@ public sealed class CatalogQueryTests : IDisposable
     {
         var categories = await _query.CategoriesAsync();
 
-        Assert.Equal(6, categories.Count);
-        Assert.Equal(24, categories.Sum(category => category.ProductCount));
+        Assert.Equal(7, categories.Count);
+        Assert.Equal(28, categories.Sum(category => category.ProductCount));
         Assert.Null(await _query.FindCategoryAsync("does-not-exist"));
     }
 

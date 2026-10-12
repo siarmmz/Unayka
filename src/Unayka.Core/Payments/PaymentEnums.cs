@@ -6,6 +6,7 @@ public enum PaymentMethod
     EMola,
     Cash,
     Card,
+    MKesh,
 }
 
 public enum PaymentStatus

@@ -1,20 +1,95 @@
 @page "/loja"
-@using Unayka.Web.Components.Store
+@inject ICatalogQuery Catalog
 
 <SeoComponent Title="@Data.Seo.Title" Description="@Data.Seo.Description"/>
 
 <section class="border-b border-sand bg-cream">
-    <div class="container-page py-16 md:py-20">
-        <SectionHeading Title="@Data.Title" Eyebrow="@Data.Eyebrow" Subtitle="@Data.Subtitle" Centered="true"/>
+    <div class="container-page py-16 text-center md:py-20">
+        <p class="font-script text-3xl text-clay md:text-4xl">@Text(Data.Eyebrow)</p>
+        <h1 class="mt-2 text-5xl md:text-6xl">@Text(Data.Title)</h1>
+        <p class="mx-auto mt-5 max-w-xl text-stone">@Text(Data.Subtitle)</p>
     </div>
 </section>
 
-<CatalogView BasePath="@StoreUrls.Shop"/>
+@if (_featured.Count > 0)
+{
+    <section class="py-16 md:py-24">
+        <div class="container-page flex items-end justify-between gap-6">
+            <SectionHeading Eyebrow="@Data.Featured.Eyebrow" Title="@Data.Featured.Title"/>
+            <a href="@_allProductsUrl" class="shrink-0 text-sm text-espresso underline-offset-4 hover:text-clay hover:underline">@Text(Data.MoreLabel)</a>
+        </div>
+        <div class="group mt-10 overflow-hidden motion-reduce:overflow-x-auto">
+            <div class="flex w-max animate-marquee gap-6 px-4 group-hover:[animation-play-state:paused] motion-reduce:animate-none">
+                @foreach (var item in _marquee)
+                {
+                    <div class="w-56 shrink-0 md:w-64">
+                        <ProductCard Model="item"/>
+                    </div>
+                }
+            </div>
+        </div>
+    </section>
+}
+
+@foreach (var row in _rows)
+{
+    <section class="@row.SectionClass">
+        <div class="container-page py-16 md:py-24">
+            <div class="flex items-end justify-between gap-6">
+                <SectionHeading Eyebrow="@row.Eyebrow" Title="@row.Title" Subtitle="@row.Subtitle"/>
+                <a href="@row.Url" class="hidden shrink-0 text-sm text-espresso underline-offset-4 hover:text-clay hover:underline md:inline">@Text(Data.MoreLabel)</a>
+            </div>
+            <div class="mt-10 grid grid-cols-2 gap-x-4 gap-y-10 md:grid-cols-4 md:gap-x-6">
+                @foreach (var item in row.Items)
+                {
+                    <ProductCard Model="item"/>
+                }
+            </div>
+            <div class="mt-12 text-center">
+                <a href="@row.Url" class="btn-outline">@Text(Data.MoreLabel)</a>
+            </div>
+        </div>
+    </section>
+}
 
 @code {
-    private static readonly (string Title, string Eyebrow, string Subtitle, (string Title, string Description) Seo) Data = (
-        "Toda a loja",
-        "Cafés e cosméticos",
-        "Escolha com calma. Levante na loja ou receba em casa, em Maputo.",
-        ("Loja | Unayka", "Cafés, grãos e cosméticos selecionados pela Unayka. Pague com M-Pesa ou e-Mola e levante na loja ou receba em Maputo."));
+    private const int FeaturedCount = 10;
+    private const int RowItemCount = 8;
+    private const string PlainSection = "";
+    private const string TintedSection = "bg-cream";
+
+    private sealed record ShowroomRow(string Eyebrow, string Title, string Subtitle, string Url, string SectionClass, IReadOnlyList<ProductCardModel> Items);
+
+    private static readonly (string Title, string Eyebrow, string Subtitle, string MoreLabel, (string Eyebrow, string Title) Featured, (string Eyebrow, string Title, string Subtitle) Coffee, (string Eyebrow, string Title, string Subtitle) Cosmetics, (string Title, string Description) Seo) Data = (
+        "A loja",
+        "Escolhido com calma",
+        "Cafés da casa, cosméticos feitos de matérias naturais e chás de plantas. Levante na loja ou receba em Maputo.",
+        "Ver mais",
+        ("Em destaque", "Os favoritos da casa"),
+        ("Do grão à chávena", "Cafés", "Espressos, bebidas geladas e grãos para preparar em casa."),
+        ("Feito de natureza", "Cosméticos naturais e chás", "Pomadas, cremes, óleos e chás de plantas, para cuidar de dentro para fora."),
+        ("Loja | Unayka", "Cafés, cosméticos naturais e chás selecionados pela Unayka. Pague com M-Pesa, e-Mola ou mKesh e levante na loja ou receba em Maputo."));
+
+    private List<ProductCardModel> _featured = [];
+    private List<ProductCardModel> _marquee = [];
+    private List<ShowroomRow> _rows = [];
+    private string _allProductsUrl = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _featured = (await Catalog.FeaturedAsync(FeaturedCount)).ToList();
+        _marquee = [.. _featured, .. _featured];
+        _allProductsUrl = ToUrl(StoreUrls.AllProducts);
+        _rows =
+        [
+            await BuildRowAsync(Data.Coffee, CategoryKind.Coffee, StoreUrls.Coffee, PlainSection),
+            await BuildRowAsync(Data.Cosmetics, CategoryKind.Cosmetic, StoreUrls.Cosmetics, TintedSection),
+        ];
+    }
+
+    private async Task<ShowroomRow> BuildRowAsync((string Eyebrow, string Title, string Subtitle) text, CategoryKind kind, string url, string sectionClass)
+    {
+        var page = await Catalog.SearchAsync(new ProductSearch(Kind: kind, Sort: ProductSort.BestSellers));
+        return new ShowroomRow(text.Eyebrow, text.Title, text.Subtitle, ToUrl(url), sectionClass, page.Items.Take(RowItemCount).ToList());
+    }
 }

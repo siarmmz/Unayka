@@ -30,7 +30,7 @@ src/Unayka.Web/Components/Base/UnaykaLayoutBase.cs: base class for layouts expos
 src/Unayka.Web/Components/Shared/SeoComponent.razor: head title, description, canonical, Open Graph and structured data
 src/Unayka.Web/Components/Layout/MainLayout.razor: store layout (announcement bar, SiteHeader, main, SiteFooter)
 src/Unayka.Web/Components/Pages/Home.razor: home page with introduction and service list
-src/Unayka.Web/Components/Pages/Services.razor: services page
+src/Unayka.Web/Components/Pages/Store/AllProducts.razor: /loja/todos full catalog with filters and search
 src/Unayka.Web/Components/Pages/About.razor: about page
 src/Unayka.Web/Components/Pages/Location.razor: location page (placeholder until address is defined)
 src/Unayka.Web/Components/Pages/Contact.razor: contact page (placeholder until channels are defined)
@@ -69,6 +69,7 @@ src/Unayka.Core/Orders/OrderEnums.cs: OrderChannel, FulfillmentKind, OrderStatus
 src/Unayka.Core/Payments/Payment.cs: provider agnostic payment entity
 src/Unayka.Core/Payments/PaymentEvent.cs: raw payment event entity
 src/Unayka.Core/Payments/PaymentEnums.cs: PaymentMethod and PaymentStatus
+src/Unayka.Core/Payments/WalletMethods.cs: mobile wallet methods (M-Pesa, e-Mola, mKesh) and IsWallet
 src/Unayka.Core/Counter/CashShift.cs: cash shift entity
 src/Unayka.Core/Audit/AuditEntry.cs: insert only audit entry entity
 src/Unayka.Core/Audit/IAuditLog.cs: audit log contract
@@ -119,7 +120,7 @@ src/Unayka.Web/Components/Store/CatalogLinks.cs: catalog query string parsing an
 src/Unayka.Web/Components/Store/CatalogView.razor: filters sidebar, search and sort form, product grid, pagination
 src/Unayka.Web/Components/Store/ProductGallery.razor: CSS only product gallery with thumbnails
 src/Unayka.Web/Components/Store/StoreStructuredData.cs: schema.org Product and Store JSON-LD builders
-src/Unayka.Web/Components/Pages/Store/Shop.razor: /loja catalog
+src/Unayka.Web/Components/Pages/Store/Shop.razor: /loja showroom with featured marquee and product rows
 src/Unayka.Web/Components/Pages/Store/CoffeeShop.razor: /loja/cafes catalog with banner
 src/Unayka.Web/Components/Pages/Store/CosmeticsShop.razor: /loja/cosmeticos catalog with banner
 src/Unayka.Web/Components/Pages/Store/CategoryPage.razor: /loja/categoria/{slug} catalog with category hero
