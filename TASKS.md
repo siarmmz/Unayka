@@ -92,7 +92,7 @@ Wave 2 (worktrees in parallel, Sonnet, split by feature folder):
 
 Wave 3 (primary agent):
 - [ ] P13 (H) Tests: section, category and tag CRUD, archive rule (no delete when referenced), archived 404 public and visible in orders, stock per location in checkout, digital download (buyer allowed, other user and anonymous refused), token only color rule. Responsive check in Chrome at 375, 768 and 1280 widths on home, loja, product, cart, checkout, contacto and admin product form.
-- [ ] P14 (O) Merge, update MAP.md, regenerate Tailwind, build green, commits grouped by problem solved.
+- [x] P14 (O) Merge, update MAP.md, regenerate Tailwind, build green, commits grouped by problem solved.
 
 Owner decisions (2026-10-12):
 - Physical products: pickup only at a location; delivery zones and fees come later.
