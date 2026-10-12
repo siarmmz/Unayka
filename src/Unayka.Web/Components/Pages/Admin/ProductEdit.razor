@@ -182,14 +182,24 @@
             <section class="space-y-4 rounded-2xl border border-border bg-surface p-5 shadow-sm sm:p-8">
                 <div class="flex items-center justify-between gap-4">
                     <h2 class="font-serif text-2xl">@Text(Texts.MediaTitle)</h2>
-                    <button type="button" class="btn-outline px-5 py-2" @onclick="AddMedia">@Text(Texts.AddMedia)</button>
+                    <div class="flex flex-wrap gap-2">
+                        <button type="button" disabled class="btn-outline cursor-not-allowed px-5 py-2 opacity-50" title="@Texts.UploadUnavailable"><i class="bi bi-upload"></i>@Text(Texts.UploadLabel)</button>
+                        <button type="button" class="btn-outline px-5 py-2" @onclick="AddMedia"><i class="bi bi-link-45deg"></i>@Text(Texts.AddMedia)</button>
+                    </div>
                 </div>
+                <p class="text-xs text-muted">@Text(Texts.MediaHint)</p>
                 @foreach (var media in _form.Media)
                 {
                     <div class="grid items-end gap-3 rounded-xl border border-border p-4 sm:grid-cols-12">
-                        <div class="sm:col-span-5">
-                            <label class="field-label">@Text(Texts.MediaUrlLabel)</label>
-                            <input type="url" class="field" @bind="media.Url"/>
+                        <div class="flex gap-3 sm:col-span-5">
+                            @if (!string.IsNullOrWhiteSpace(media.Url))
+                            {
+                                <img src="@ToUrl(media.Url)" alt="" loading="lazy" class="h-12 w-12 shrink-0 rounded-lg border border-border object-cover"/>
+                            }
+                            <div class="min-w-0 flex-1">
+                                <label class="field-label">@Text(Texts.MediaUrlLabel)</label>
+                                <input type="url" placeholder="https://" class="field" @bind="media.Url"/>
+                            </div>
                         </div>
                         <div class="sm:col-span-3">
                             <label class="field-label">@Text(Texts.MediaKindLabel)</label>
@@ -207,9 +217,13 @@
                         <div class="sm:col-span-2">
                             <button type="button" class="btn-outline w-full px-4 py-3" @onclick="RemoveMediaHandler(media)">@Text(Texts.Remove)</button>
                         </div>
-                        <div class="sm:col-span-12">
+                        <div class="sm:col-span-6">
                             <label class="field-label">@Text(Texts.MediaAltLabel)</label>
                             <input type="text" maxlength="160" class="field" @bind="media.Alt"/>
+                        </div>
+                        <div class="sm:col-span-6">
+                            <label class="field-label">@Text(Texts.MediaCreditLabel)</label>
+                            <input type="text" maxlength="200" class="field" @bind="media.Credit"/>
                         </div>
                     </div>
                 }
@@ -290,8 +304,12 @@
         public const string FileRemoved = "Ficheiro removido.";
         public const string RemoveFile = "Remover ficheiro";
         public const string MediaTitle = "Imagens";
-        public const string AddMedia = "Adicionar imagem";
-        public const string MediaUrlLabel = "Endereço da imagem";
+        public const string AddMedia = "Adicionar imagem por URL";
+        public const string UploadLabel = "Carregar ficheiro";
+        public const string UploadUnavailable = "O carregamento de ficheiros está temporariamente indisponível. Use um URL.";
+        public const string MediaHint = "Chás e café: chávena preparada, embalagem, frasco e ingredientes. Cosméticos: produto, ingredientes e aplicação na pele ou cabelo. Livros: uma capa.";
+        public const string MediaCreditLabel = "Crédito da fotografia (autor e licença)";
+        public const string MediaUrlLabel = "URL da imagem";
         public const string MediaKindLabel = "Tipo";
         public const string MediaAltLabel = "Texto alternativo";
         public const string OrderLabel = "Ordem";

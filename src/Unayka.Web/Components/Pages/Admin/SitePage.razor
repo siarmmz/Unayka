@@ -1,0 +1,376 @@
+@page "/admin/site"
+@rendermode InteractiveServer
+@attribute [Authorize(Policy = UnaykaPolicies.Management)]
+@inject IAdminSite AdminSite
+
+<PageTitle>@PageTitle</PageTitle>
+
+<div class="mx-auto max-w-6xl space-y-8">
+    <header>
+        <p class="font-script text-2xl text-accent">@Text(Eyebrow)</p>
+        <h1 class="font-serif text-4xl text-accent-strong sm:text-5xl">@Text(Title)</h1>
+        <p class="mt-2 max-w-2xl text-sm text-muted">@Text(Subtitle)</p>
+    </header>
+
+    @if (_notice is not null)
+    {
+        <p class="rounded-xl bg-success-soft px-4 py-3 text-sm text-accent-strong">@Text(_notice)</p>
+    }
+
+    @if (_errors.Count > 0)
+    {
+        <div role="alert" class="space-y-1 rounded-xl bg-accent-soft px-4 py-3 text-sm text-danger">
+            @foreach (var errorMessage in _errors)
+            {
+                <p>@Text(errorMessage)</p>
+            }
+        </div>
+    }
+
+    <section class="space-y-4">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+            <nav class="flex gap-2 overflow-x-auto">
+                @foreach (var tab in _tabs)
+                {
+                    <button type="button" class="@tab.CssClass" @onclick="tab.Select">@Text(tab.Label)</button>
+                }
+            </nav>
+            <button type="button" class="btn-outline px-5 py-2" @onclick="StartNewBlock"><i class="bi bi-plus-lg"></i>@Text(NewBlockLabel)</button>
+        </div>
+
+        @if (_block is not null)
+        {
+            <form class="space-y-5 rounded-2xl border border-border bg-surface p-5 shadow-sm sm:p-8" @onsubmit="SaveBlockAsync">
+                <div class="grid gap-5 sm:grid-cols-3">
+                    <div>
+                        <label for="block-placement" class="field-label">@Text(PlacementLabel)</label>
+                        <input id="block-placement" list="placements" class="field" @bind="_block.Placement"/>
+                        <datalist id="placements">
+                            @foreach (var placement in Placements)
+                            {
+                                <option value="@placement"></option>
+                            }
+                        </datalist>
+                    </div>
+                    <div>
+                        <label for="block-order" class="field-label">@Text(OrderLabel)</label>
+                        <input id="block-order" type="number" class="field" @bind="_block.SortOrder"/>
+                    </div>
+                    <div>
+                        <label for="block-icon" class="field-label">@Text(IconLabel)</label>
+                        <input id="block-icon" placeholder="@IconPlaceholder" class="field" @bind="_block.Icon"/>
+                    </div>
+                    <div>
+                        <label for="block-eyebrow" class="field-label">@Text(EyebrowLabel)</label>
+                        <input id="block-eyebrow" class="field" @bind="_block.Eyebrow"/>
+                    </div>
+                    <div class="sm:col-span-2">
+                        <label for="block-title" class="field-label">@Text(TitleLabel)</label>
+                        <input id="block-title" class="field" @bind="_block.Title"/>
+                    </div>
+                    <div class="sm:col-span-3">
+                        <label for="block-body" class="field-label">@Text(BodyLabel)</label>
+                        <textarea id="block-body" rows="4" class="field" @bind="_block.Body"></textarea>
+                    </div>
+                    <div class="sm:col-span-3">
+                        <label for="block-image" class="field-label">@Text(ImageLabel)</label>
+                        <div class="flex flex-col gap-2 sm:flex-row">
+                            <input id="block-image" type="url" placeholder="@UrlPlaceholder" class="field" @bind="_block.ImageUrl"/>
+                            <button type="button" disabled class="btn-outline shrink-0 cursor-not-allowed px-5 opacity-50" title="@UploadUnavailable"><i class="bi bi-upload"></i>@Text(UploadLabel)</button>
+                        </div>
+                        <p class="mt-1 text-xs text-muted">@Text(UploadUnavailable)</p>
+                    </div>
+                    <div>
+                        <label for="block-action-label" class="field-label">@Text(ActionLabelLabel)</label>
+                        <input id="block-action-label" class="field" @bind="_block.ActionLabel"/>
+                    </div>
+                    <div class="sm:col-span-2">
+                        <label for="block-action-url" class="field-label">@Text(ActionUrlLabel)</label>
+                        <input id="block-action-url" placeholder="@ActionUrlPlaceholder" class="field" @bind="_block.ActionUrl"/>
+                    </div>
+                    <label class="flex items-center gap-3 text-sm text-ink">
+                        <input type="checkbox" class="h-5 w-5 accent-accent-strong" @bind="_block.IsActive"/>
+                        @Text(ActiveLabel)
+                    </label>
+                </div>
+                <div class="flex flex-wrap gap-3">
+                    <button type="submit" class="btn-primary px-8">@Text(SaveLabel)</button>
+                    <button type="button" class="btn-outline px-8" @onclick="CancelBlock">@Text(CancelLabel)</button>
+                    @if (_block.Id is not null)
+                    {
+                        <button type="button" class="btn-outline px-8 hover:border-danger hover:bg-accent-soft hover:text-danger" @onclick="DeleteBlockAsync"><i class="bi bi-trash"></i>@Text(DeleteLabel)</button>
+                    }
+                </div>
+            </form>
+        }
+
+        <div class="divide-y divide-border overflow-hidden rounded-2xl border border-border bg-surface shadow-sm">
+            @foreach (var row in _rows)
+            {
+                <article class="flex flex-wrap items-center gap-4 p-4">
+                    @if (row.ImageUrl is not null)
+                    {
+                        <img src="@row.ImageUrl" alt="" loading="lazy" class="h-12 w-16 shrink-0 rounded-lg border border-border object-cover"/>
+                    }
+                    @if (row.Icon is not null)
+                    {
+                        <i class="bi @row.Icon text-2xl text-accent"></i>
+                    }
+                    <div class="min-w-0 flex-1">
+                        <p class="text-xs uppercase tracking-widest text-muted">@Text(row.Placement)</p>
+                        <p class="truncate font-medium text-accent-strong">@Text(row.Title)</p>
+                    </div>
+                    <span class="@row.StatusClass">@Text(row.StatusLabel)</span>
+                    <button type="button" class="text-accent hover:text-accent-strong" @onclick="row.Edit"><i class="bi bi-pencil"></i>@Text(EditLabel)</button>
+                </article>
+            }
+            @if (_rows.Count == 0)
+            {
+                <p class="px-4 py-8 text-center text-muted">@Text(NoBlocks)</p>
+            }
+        </div>
+    </section>
+
+    <section class="space-y-4">
+        <h2 class="font-serif text-3xl text-accent-strong">@Text(PaymentsTitle)</h2>
+        <p class="text-sm text-muted">@Text(PaymentsIntro)</p>
+        <div class="space-y-4">
+            @foreach (var option in _options)
+            {
+                <form class="grid gap-4 rounded-2xl border border-border bg-surface p-5 shadow-sm sm:grid-cols-6" @onsubmit="option.Save">
+                    <div class="sm:col-span-2">
+                        <label class="field-label">@Text(LabelLabel)</label>
+                        <input class="field" @bind="option.Editor.Label"/>
+                    </div>
+                    <div class="sm:col-span-2">
+                        <label class="field-label">@Text(LogoLabel)</label>
+                        <input type="url" placeholder="@UrlPlaceholder" class="field" @bind="option.Editor.LogoUrl"/>
+                    </div>
+                    <div>
+                        <label class="field-label">@Text(IconLabel)</label>
+                        <input class="field" @bind="option.Editor.Icon"/>
+                    </div>
+                    <div>
+                        <label class="field-label">@Text(OrderLabel)</label>
+                        <input type="number" class="field" @bind="option.Editor.SortOrder"/>
+                    </div>
+                    <div>
+                        <label class="field-label">@Text(ProviderLabel)</label>
+                        <input class="field" @bind="option.Editor.Provider"/>
+                    </div>
+                    <div>
+                        <label class="field-label">@Text(ProviderCodeLabel)</label>
+                        <input class="field" @bind="option.Editor.ProviderCode"/>
+                    </div>
+                    <label class="flex items-center gap-2 text-sm text-ink"><input type="checkbox" class="h-5 w-5 accent-accent-strong" @bind="option.Editor.IsOnline"/>@Text(OnlineLabel)</label>
+                    <label class="flex items-center gap-2 text-sm text-ink"><input type="checkbox" class="h-5 w-5 accent-accent-strong" @bind="option.Editor.IsCounter"/>@Text(CounterLabel)</label>
+                    <label class="flex items-center gap-2 text-sm text-ink"><input type="checkbox" class="h-5 w-5 accent-accent-strong" @bind="option.Editor.IsActive"/>@Text(ActiveLabel)</label>
+                    <div class="flex items-end">
+                        <button type="submit" class="btn-primary w-full">@Text(SaveLabel)</button>
+                    </div>
+                </form>
+            }
+        </div>
+    </section>
+</div>
+
+@code {
+    private const string PageTitle = "Site | Unayka";
+    private const string Eyebrow = "Conteúdo";
+    private const string Title = "Site";
+    private const string Subtitle = "Textos, imagens, redes sociais e meios de pagamento que aparecem na loja. Nada disto está escrito no código.";
+    private const string NewBlockLabel = "Novo bloco";
+    private const string PlacementLabel = "Lugar";
+    private const string OrderLabel = "Ordem";
+    private const string IconLabel = "Ícone (Bootstrap Icons)";
+    private const string IconPlaceholder = "bi-facebook";
+    private const string EyebrowLabel = "Texto pequeno";
+    private const string TitleLabel = "Título";
+    private const string BodyLabel = "Texto (deixe uma linha em branco entre parágrafos)";
+    private const string ImageLabel = "URL da imagem";
+    private const string UrlPlaceholder = "https://";
+    private const string UploadLabel = "Carregar ficheiro";
+    private const string UploadUnavailable = "O carregamento de ficheiros está temporariamente indisponível. Use um URL.";
+    private const string ActionLabelLabel = "Texto do botão";
+    private const string ActionUrlLabel = "Endereço do botão ou link";
+    private const string ActionUrlPlaceholder = "/loja ou https://";
+    private const string ActiveLabel = "Ativo";
+    private const string SaveLabel = "Guardar";
+    private const string CancelLabel = "Cancelar";
+    private const string DeleteLabel = "Eliminar";
+    private const string EditLabel = "Editar";
+    private const string NoBlocks = "Esta página ainda não tem blocos.";
+    private const string Saved = "Guardado.";
+    private const string InactiveLabel = "Inativo";
+    private const string PaymentsTitle = "Meios de pagamento";
+    private const string PaymentsIntro = "O código do fornecedor é o valor enviado à PaySuite (mpesa, emola, credit_card). As chaves ficam nas variáveis de ambiente.";
+    private const string LabelLabel = "Nome";
+    private const string LogoLabel = "URL do logótipo";
+    private const string ProviderLabel = "Fornecedor";
+    private const string ProviderCodeLabel = "Código no fornecedor";
+    private const string OnlineLabel = "Online";
+    private const string CounterLabel = "Balcão";
+    private const string TabBase = "whitespace-nowrap rounded-full border px-4 py-2 text-sm transition ";
+    private const string TabActiveClass = TabBase + "border-accent-strong bg-accent-strong text-surface";
+    private const string TabIdleClass = TabBase + "border-border bg-surface text-muted hover:border-accent hover:text-accent-strong";
+    private const string ActiveBadge = "rounded-full bg-success-soft px-3 py-1 text-xs text-accent-strong";
+    private const string InactiveBadge = "rounded-full bg-surface-alt px-3 py-1 text-xs text-muted";
+
+    private static readonly Dictionary<string, string> PageLabels = new()
+    {
+        [SitePages.Shared] = "Geral",
+        [SitePages.Home] = "Início",
+        [SitePages.About] = "Sobre",
+        [SitePages.Contact] = "Contacto",
+        [SitePages.Shop] = "Loja",
+        [SitePages.Login] = "Entrar",
+    };
+
+    private static readonly string[] Placements =
+    [
+        SitePlacements.Seo, SitePlacements.Hero, SitePlacements.Featured, SitePlacements.SectionRow, SitePlacements.Steps, SitePlacements.Step,
+        SitePlacements.Contact, SitePlacements.Story, SitePlacements.Values, SitePlacements.Value, SitePlacements.Brand, SitePlacements.Announcement,
+        SitePlacements.Social, SitePlacements.HelpLink, SitePlacements.PaymentNote,
+    ];
+
+    private sealed class BlockEditor
+    {
+        public int? Id { get; set; }
+        public string Placement { get; set; } = string.Empty;
+        public int SortOrder { get; set; }
+        public string? Eyebrow { get; set; }
+        public string? Title { get; set; }
+        public string? Body { get; set; }
+        public string? ImageUrl { get; set; }
+        public string? ActionLabel { get; set; }
+        public string? ActionUrl { get; set; }
+        public string? Icon { get; set; }
+        public bool IsActive { get; set; } = true;
+    }
+
+    private sealed class OptionEditor
+    {
+        public PaymentMethod Method { get; set; }
+        public string Label { get; set; } = string.Empty;
+        public string? LogoUrl { get; set; }
+        public string Icon { get; set; } = string.Empty;
+        public string Provider { get; set; } = string.Empty;
+        public string? ProviderCode { get; set; }
+        public bool IsOnline { get; set; }
+        public bool IsCounter { get; set; }
+        public bool IsActive { get; set; }
+        public int SortOrder { get; set; }
+    }
+
+    private string _page = SitePages.Home;
+    private List<(string Label, string CssClass, Func<Task> Select)> _tabs = [];
+    private List<(string Placement, string Title, string? ImageUrl, string? Icon, string StatusLabel, string StatusClass, Action Edit)> _rows = [];
+    private List<(OptionEditor Editor, Func<Task> Save)> _options = [];
+    private IReadOnlyList<SiteBlockForm> _blocks = [];
+    private BlockEditor? _block;
+    private IReadOnlyList<string> _errors = [];
+    private string? _notice;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        await LoadPageAsync(_page);
+        await LoadOptionsAsync();
+    }
+
+    private async Task LoadPageAsync(string page)
+    {
+        _page = page;
+        _block = null;
+        _blocks = await AdminSite.BlocksAsync(page);
+        _tabs = SitePages.All.Select(candidate => (PageLabels[candidate], candidate == _page ? TabActiveClass : TabIdleClass, (Func<Task>)(() => LoadPageAsync(candidate)))).ToList();
+        _rows = _blocks.Select(block => (
+            block.Placement,
+            block.Title ?? block.Eyebrow ?? block.Body ?? string.Empty,
+            string.IsNullOrWhiteSpace(block.ImageUrl) ? null : ToUrl(block.ImageUrl),
+            string.IsNullOrWhiteSpace(block.Icon) ? null : block.Icon,
+            block.IsActive ? ActiveLabel : InactiveLabel,
+            block.IsActive ? ActiveBadge : InactiveBadge,
+            (Action)(() => Edit(block)))).ToList();
+    }
+
+    private async Task LoadOptionsAsync()
+    {
+        _options = (await AdminSite.PaymentOptionsAsync())
+            .Select(option =>
+            {
+                var editor = new OptionEditor
+                {
+                    Method = option.Method, Label = option.Label, LogoUrl = option.LogoUrl, Icon = option.Icon, Provider = option.Provider, ProviderCode = option.ProviderCode,
+                    IsOnline = option.IsOnline, IsCounter = option.IsCounter, IsActive = option.IsActive, SortOrder = option.SortOrder,
+                };
+                return (editor, (Func<Task>)(() => SaveOptionAsync(editor)));
+            })
+            .ToList();
+    }
+
+    private void Edit(SiteBlockForm block)
+    {
+        _block = new BlockEditor
+        {
+            Id = block.Id, Placement = block.Placement, SortOrder = block.SortOrder, Eyebrow = block.Eyebrow, Title = block.Title, Body = block.Body,
+            ImageUrl = block.ImageUrl, ActionLabel = block.ActionLabel, ActionUrl = block.ActionUrl, Icon = block.Icon, IsActive = block.IsActive,
+        };
+        _errors = [];
+        _notice = null;
+    }
+
+    private void StartNewBlock()
+    {
+        _block = new BlockEditor { SortOrder = _blocks.Count };
+        _errors = [];
+        _notice = null;
+    }
+
+    private void CancelBlock()
+    {
+        _block = null;
+        _errors = [];
+    }
+
+    private async Task SaveBlockAsync()
+    {
+        if (_block is null)
+        {
+            return;
+        }
+
+        var form = new SiteBlockForm(_block.Id, _page, _block.Placement, _block.SortOrder, _block.Eyebrow, _block.Title, _block.Body, _block.ImageUrl, _block.ActionLabel, _block.ActionUrl, _block.Icon, _block.IsActive);
+        await ApplyAsync(AdminSite.SaveBlockAsync(form, ActorUserId));
+    }
+
+    private async Task DeleteBlockAsync()
+    {
+        if (_block?.Id is { } id)
+        {
+            await ApplyAsync(AdminSite.DeleteBlockAsync(id, ActorUserId));
+        }
+    }
+
+    private async Task SaveOptionAsync(OptionEditor editor)
+    {
+        var form = new PaymentOptionForm(editor.Method, editor.Label, editor.LogoUrl, editor.Icon, editor.Provider, editor.ProviderCode, editor.IsOnline, editor.IsCounter, editor.IsActive, editor.SortOrder);
+        var result = await AdminSite.SavePaymentOptionAsync(form, ActorUserId);
+        _errors = result.Errors;
+        _notice = result.Succeeded ? Saved : null;
+        await LoadOptionsAsync();
+    }
+
+    private async Task ApplyAsync(Task<AdminResult> action)
+    {
+        var result = await action;
+        _errors = result.Errors;
+        if (!result.Succeeded)
+        {
+            return;
+        }
+
+        _notice = Saved;
+        await LoadPageAsync(_page);
+    }
+}

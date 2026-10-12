@@ -21,8 +21,9 @@ public sealed partial class AdminCatalogPagesTests(UnaykaWebFactory factory)
     [InlineData("/admin/produtos/1", "Editar produto")]
     [InlineData("/admin/produtos/novo", "Novo produto")]
     [InlineData("/admin/seccoes", "Secções")]
-    [InlineData("/admin/categorias", "Categorias")]
-    [InlineData("/admin/etiquetas", "Etiquetas")]
+    [InlineData("/admin/seccoes/1", "Categorias")]
+    [InlineData("/admin/seccoes/1", "Etiquetas")]
+    [InlineData("/admin/site", "Meios de pagamento")]
     [InlineData("/admin/lojas", "Lojas")]
     public async Task Administrator_sees_the_catalog_and_location_pages(string path, string expectedText)
     {
@@ -37,7 +38,7 @@ public sealed partial class AdminCatalogPagesTests(UnaykaWebFactory factory)
 
     [Theory]
     [InlineData("/admin/seccoes")]
-    [InlineData("/admin/etiquetas")]
+    [InlineData("/admin/site")]
     [InlineData("/admin/lojas")]
     public async Task Anonymous_visitor_cannot_open_catalog_administration(string path)
     {
@@ -84,7 +85,7 @@ public sealed partial class AdminPagesTests(UnaykaWebFactory factory)
     [InlineData("/admin/pedidos/UN-000001", "UN-000001")]
     [InlineData("/admin/produtos", "Produtos")]
     [InlineData("/admin/produtos/novo", "Novo produto")]
-    [InlineData("/admin/categorias", "Categorias")]
+    [InlineData("/admin/site", "Site")]
     [InlineData("/admin/cupoes", "Cupões")]
     [InlineData("/admin/clientes", "Clientes")]
     [InlineData("/admin/pagamentos", "Pagamentos")]

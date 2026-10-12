@@ -56,6 +56,7 @@
 @layer base {
   html {
     @apply bg-surface text-ink font-sans antialiased scroll-smooth;
+    -webkit-tap-highlight-color: transparent;
   }
 
   h1,
@@ -81,11 +82,11 @@
 }
 
 @utility btn-primary {
-  @apply inline-flex items-center justify-center min-h-12 rounded-full bg-accent-strong px-7 py-3 text-base font-medium tracking-wide text-surface transition hover:bg-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2;
+  @apply inline-flex items-center justify-center min-h-12 rounded-full bg-accent-strong px-7 py-3 text-base font-medium tracking-wide text-surface transition hover:bg-accent active:bg-accent-strong active:text-surface focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-accent-strong;
 }
 
 @utility btn-outline {
-  @apply inline-flex items-center justify-center min-h-12 rounded-full border border-accent-strong px-7 py-3 text-base font-medium tracking-wide text-accent-strong transition hover:bg-accent-strong hover:text-surface focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2;
+  @apply inline-flex items-center justify-center min-h-12 rounded-full border border-accent-strong px-7 py-3 text-base font-medium tracking-wide text-accent-strong transition hover:bg-accent-strong hover:text-surface active:bg-accent active:text-surface focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-accent-strong;
 }
 
 @utility field {
@@ -97,7 +98,7 @@
 }
 
 @utility btn-compact {
-  @apply inline-flex items-center justify-center gap-2 min-h-11 rounded-full bg-accent-strong px-4 text-sm font-medium text-surface transition hover:bg-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-accent-strong;
+  @apply inline-flex items-center justify-center gap-2 min-h-11 rounded-full bg-accent-strong px-4 text-sm font-medium text-surface transition hover:bg-accent active:bg-accent-strong active:text-surface focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-accent-strong;
 }
 
 @utility no-scrollbar {

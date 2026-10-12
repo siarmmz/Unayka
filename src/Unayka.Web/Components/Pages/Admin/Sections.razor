@@ -1,47 +1,66 @@
 @page "/admin/seccoes"
+@page "/admin/seccoes/{SectionId:int}"
 @rendermode InteractiveServer
 @attribute [Authorize(Policy = UnaykaPolicies.Management)]
 @inject IAdminTaxonomy Taxonomy
 
-<PageTitle>@Texts.PageTitle</PageTitle>
+<PageTitle>@PageTitle</PageTitle>
 
 <div class="mx-auto max-w-6xl space-y-6">
+    @if (_section is not null)
+    {
+        <a href="@ListUrl" class="inline-flex items-center gap-2 text-sm text-muted transition hover:text-accent"><i class="bi bi-arrow-left"></i>@Text(BackLabel)</a>
+    }
+
     <header class="flex flex-wrap items-end justify-between gap-4">
         <div>
-            <p class="font-script text-2xl text-accent">@Text(Texts.Eyebrow)</p>
-            <h1 class="font-serif text-4xl text-accent-strong sm:text-5xl">@Text(Texts.Title)</h1>
-            <p class="mt-2 max-w-2xl text-sm text-muted">@Text(Texts.Subtitle)</p>
+            <p class="font-script text-2xl text-accent">@Text(Eyebrow)</p>
+            <h1 class="font-serif text-4xl text-accent-strong sm:text-5xl">@Text(_title)</h1>
+            <p class="mt-2 max-w-2xl text-sm text-muted">@Text(_subtitle)</p>
         </div>
         <div class="flex flex-wrap items-center gap-3">
-        <button type="button" class="btn-primary px-6 py-2" @onclick="StartNew">@Text(Texts.NewLabel)</button>
+            @if (_section is null)
+            {
+                <button type="button" class="btn-primary px-6 py-2" @onclick="StartNewSection"><i class="bi bi-plus-lg"></i>@Text(NewSectionLabel)</button>
+            }
+            @if (_section is not null)
+            {
+                <button type="button" class="btn-outline px-6 py-2" @onclick="EditCurrentSection"><i class="bi bi-pencil"></i>@Text(EditSectionLabel)</button>
+            }
         </div>
     </header>
 
-    @if (_form is not null)
+    @if (_notice is not null)
     {
-        <form class="space-y-5 rounded-2xl border border-border bg-surface p-5 shadow-sm sm:p-8" @onsubmit="SaveAsync">
-            <h2 class="font-serif text-2xl">@Text(_formTitle)</h2>
-            @if (_errors.Count > 0)
+        <p class="rounded-xl bg-success-soft px-4 py-3 text-sm text-accent-strong">@Text(_notice)</p>
+    }
+
+    @if (_errors.Count > 0)
+    {
+        <div role="alert" class="space-y-1 rounded-xl bg-accent-soft px-4 py-3 text-sm text-danger">
+            @foreach (var errorMessage in _errors)
             {
-                <div role="alert" class="space-y-1 rounded-xl bg-accent-soft px-4 py-3 text-sm text-danger">
-                    @foreach (var errorMessage in _errors)
-                    {
-                        <p>@Text(errorMessage)</p>
-                    }
-                </div>
+                <p>@Text(errorMessage)</p>
             }
+        </div>
+    }
+
+    @if (_sectionForm is not null)
+    {
+        <form class="space-y-5 rounded-2xl border border-border bg-surface p-5 shadow-sm sm:p-8" @onsubmit="SaveSectionAsync">
+            <h2 class="font-serif text-2xl">@Text(_sectionForm.Id is null ? NewSectionLabel : EditSectionLabel)</h2>
             <div class="grid gap-5 sm:grid-cols-2">
                 <div>
-                    <label for="section-name" class="field-label">@Text(Texts.NameLabel)</label>
-                    <input id="section-name" type="text" maxlength="80" class="field" @bind="_form.Name" @bind:event="oninput" @bind:after="OnNameChanged"/>
+                    <label for="section-name" class="field-label">@Text(NameLabel)</label>
+                    <input id="section-name" type="text" maxlength="80" class="field" @bind="_sectionForm.Name" @bind:event="oninput" @bind:after="OnSectionNameChanged"/>
                 </div>
                 <div>
-                    <label for="section-slug" class="field-label">@Text(Texts.SlugLabel)</label>
-                    <input id="section-slug" type="text" maxlength="80" class="field" @bind="_form.Slug" @bind:after="OnSlugEdited"/>
+                    <label for="section-slug" class="field-label">@Text(SlugLabel)</label>
+                    <input id="section-slug" type="text" maxlength="80" class="field" @bind="_sectionForm.Slug" @bind:after="OnSlugEdited"/>
                 </div>
                 <div>
-                    <label for="section-status" class="field-label">@Text(Texts.StatusLabel)</label>
-                    <select id="section-status" class="field" @bind="_form.Status">
+                    <label for="section-status" class="field-label">@Text(StatusLabel)</label>
+                    <select id="section-status" class="field" @bind="_sectionForm.Status">
                         @foreach (var option in CatalogStatuses)
                         {
                             <option value="@option.Value">@Text(option.Label)</option>
@@ -49,207 +68,372 @@
                     </select>
                 </div>
                 <div>
-                    <label for="section-order" class="field-label">@Text(Texts.OrderLabel)</label>
-                    <input id="section-order" type="number" step="1" class="field" @bind="_form.SortOrder"/>
+                    <label for="section-order" class="field-label">@Text(OrderLabel)</label>
+                    <input id="section-order" type="number" step="1" class="field" @bind="_sectionForm.SortOrder"/>
                 </div>
                 <div class="sm:col-span-2">
-                    <label for="section-image" class="field-label">@Text(Texts.ImageLabel)</label>
-                    <input id="section-image" type="url" class="field" @bind="_form.ImageUrl"/>
+                    <label for="section-image" class="field-label">@Text(ImageLabel)</label>
+                    <input id="section-image" type="url" placeholder="@UrlPlaceholder" class="field" @bind="_sectionForm.ImageUrl"/>
                 </div>
                 <div class="sm:col-span-2">
-                    <label for="section-description" class="field-label">@Text(Texts.DescriptionLabel)</label>
-                    <textarea id="section-description" rows="3" class="field" @bind="_form.Description"></textarea>
+                    <label for="section-description" class="field-label">@Text(DescriptionLabel)</label>
+                    <textarea id="section-description" rows="3" class="field" @bind="_sectionForm.Description"></textarea>
                 </div>
+                <label class="flex items-center gap-3 text-sm text-ink sm:col-span-2">
+                    <input type="checkbox" class="h-5 w-5 accent-accent-strong" @bind="_sectionForm.RequiresPreparation"/>
+                    @Text(PreparationLabel)
+                </label>
             </div>
             <div class="flex gap-3">
-                <button type="submit" class="btn-primary px-8">@Text(Texts.Save)</button>
-                <button type="button" class="btn-outline px-8" @onclick="CancelEdit">@Text(Texts.Cancel)</button>
+                <button type="submit" class="btn-primary px-8">@Text(SaveLabel)</button>
+                <button type="button" class="btn-outline px-8" @onclick="CancelForms">@Text(CancelLabel)</button>
             </div>
         </form>
     }
 
-    @if (_notice is not null)
-    {
-        <p class="rounded-xl bg-success-soft px-4 py-3 text-sm text-accent-strong">@Text(_notice)</p>
-    }
-
-    @if (_actionErrors.Count > 0)
-    {
-        <div role="alert" class="space-y-1 rounded-xl bg-accent-soft px-4 py-3 text-sm text-danger">
-            @foreach (var errorMessage in _actionErrors)
-            {
-                <p>@Text(errorMessage)</p>
-            }
-        </div>
-    }
-
-    @if (_rows.Count == 0)
-    {
-        <div class="mx-auto max-w-md rounded-3xl border border-border bg-surface-alt px-8 py-14 text-center">
-            <p class="font-script text-3xl text-accent">@Text(Texts.EmptyTitle)</p>
-            <p class="mt-3 text-muted">@Text(Texts.EmptyMessage)</p>
-        </div>
-    }
-
-    @if (_rows.Count > 0)
+    @if (_section is null)
     {
         <section class="overflow-hidden rounded-2xl border border-border bg-surface shadow-sm">
-            <div class="hidden grid-cols-12 gap-4 bg-surface-alt px-4 py-3 text-xs uppercase tracking-widest text-muted md:grid">
-                <span class="col-span-4">@Text(Texts.NameLabel)</span>
-                <span class="col-span-3">@Text(Texts.CountsColumn)</span>
-                <span class="col-span-1">@Text(Texts.OrderLabel)</span>
-                <span class="col-span-1">@Text(Texts.StatusLabel)</span>
-                <span class="col-span-3">@Text(Texts.ActionsColumn)</span>
-            </div>
             <div class="divide-y divide-border">
-                @foreach (var row in _rows)
+                @foreach (var row in _sections)
                 {
                     <article class="grid gap-3 p-4 md:grid-cols-12 md:items-center md:gap-4">
+                        <a href="@SectionUrl(row.Id)" class="flex items-center gap-4 md:col-span-6">
+                            @if (!string.IsNullOrWhiteSpace(row.ImageUrl))
+                            {
+                                <img src="@ToUrl(row.ImageUrl)" alt="" loading="lazy" class="h-12 w-12 shrink-0 rounded-xl border border-border object-cover"/>
+                            }
+                            <span>
+                                <span class="block font-medium text-accent-strong">@Text(row.Name)</span>
+                                <span class="block text-xs text-muted">@Text(SectionCounts(row))</span>
+                            </span>
+                        </a>
+                        <div class="md:col-span-2"><span class="@CatalogBadge(row.Status).CssClass">@Text(CatalogBadge(row.Status).Label)</span></div>
                         <div class="md:col-span-4">
-                            <p class="font-medium text-accent-strong">@Text(row.Name)</p>
-                            <p class="text-xs text-muted">@Text(row.Slug)</p>
-                        </div>
-                        <p class="text-sm text-muted md:col-span-3">@Text(CountsText(row))</p>
-                        <p class="text-sm text-muted md:col-span-1">@Text(FormatNumber(row.SortOrder))</p>
-                        <div class="md:col-span-1"><span class="@CatalogBadge(row.Status).CssClass">@Text(CatalogBadge(row.Status).Label)</span></div>
-                        <div class="md:col-span-3">
-                            <StatusActions Status="@row.Status" CanDelete="@row.CanDelete" OnStatus="StatusHandler(row)" OnDelete="DeleteHandler(row)">
-                                <button type="button" class="text-accent hover:text-accent-strong" @onclick="EditHandler(row.Id)">@Text(Texts.Edit)</button>
+                            <StatusActions Status="@row.Status" CanDelete="@row.CanDelete" OnStatus="SectionStatusHandler(row.Id)" OnDelete="SectionDeleteHandler(row.Id)">
+                                <a href="@SectionUrl(row.Id)" class="text-accent hover:text-accent-strong">@Text(OpenLabel)</a>
                             </StatusActions>
                         </div>
                     </article>
                 }
+                @if (_sections.Count == 0)
+                {
+                    <p class="px-4 py-10 text-center text-muted">@Text(NoSections)</p>
+                }
             </div>
+        </section>
+    }
+
+    @if (_section is not null)
+    {
+        <section class="space-y-4">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+                <h2 class="font-serif text-3xl text-accent-strong">@Text(CategoriesTitle)</h2>
+                <button type="button" class="btn-outline px-5 py-2" @onclick="StartNewCategory"><i class="bi bi-plus-lg"></i>@Text(NewCategoryLabel)</button>
+            </div>
+
+            @if (_categoryForm is not null)
+            {
+                <form class="space-y-5 rounded-2xl border border-border bg-surface p-5 shadow-sm sm:p-8" @onsubmit="SaveCategoryAsync">
+                    <div class="grid gap-5 sm:grid-cols-2">
+                        <div>
+                            <label for="category-name" class="field-label">@Text(NameLabel)</label>
+                            <input id="category-name" type="text" maxlength="80" class="field" @bind="_categoryForm.Name" @bind:event="oninput" @bind:after="OnCategoryNameChanged"/>
+                        </div>
+                        <div>
+                            <label for="category-slug" class="field-label">@Text(SlugLabel)</label>
+                            <input id="category-slug" type="text" maxlength="80" class="field" @bind="_categoryForm.Slug" @bind:after="OnSlugEdited"/>
+                        </div>
+                        <div>
+                            <label for="category-status" class="field-label">@Text(StatusLabel)</label>
+                            <select id="category-status" class="field" @bind="_categoryForm.Status">
+                                @foreach (var option in CatalogStatuses)
+                                {
+                                    <option value="@option.Value">@Text(option.Label)</option>
+                                }
+                            </select>
+                        </div>
+                        <div>
+                            <label for="category-order" class="field-label">@Text(OrderLabel)</label>
+                            <input id="category-order" type="number" step="1" class="field" @bind="_categoryForm.SortOrder"/>
+                        </div>
+                        <div class="sm:col-span-2">
+                            <label for="category-image" class="field-label">@Text(ImageLabel)</label>
+                            <input id="category-image" type="url" placeholder="@UrlPlaceholder" class="field" @bind="_categoryForm.ImageUrl"/>
+                        </div>
+                        <div class="sm:col-span-2">
+                            <label for="category-description" class="field-label">@Text(DescriptionLabel)</label>
+                            <textarea id="category-description" rows="3" class="field" @bind="_categoryForm.Description"></textarea>
+                        </div>
+                    </div>
+                    <div class="flex gap-3">
+                        <button type="submit" class="btn-primary px-8">@Text(SaveLabel)</button>
+                        <button type="button" class="btn-outline px-8" @onclick="CancelForms">@Text(CancelLabel)</button>
+                    </div>
+                </form>
+            }
+
+            <div class="divide-y divide-border overflow-hidden rounded-2xl border border-border bg-surface shadow-sm">
+                @foreach (var category in _categories)
+                {
+                    <article class="grid gap-3 p-4 md:grid-cols-12 md:items-center md:gap-4">
+                        <div class="md:col-span-5">
+                            <p class="font-medium text-accent-strong">@Text(category.Name)</p>
+                            <p class="text-xs text-muted">@Text(category.Slug)</p>
+                        </div>
+                        <a href="@ProductsUrl" class="text-sm text-muted hover:text-accent md:col-span-2">@Text($"{FormatNumber(category.ProductCount)} {ProductsWord}")</a>
+                        <div class="md:col-span-1"><span class="@CatalogBadge(category.Status).CssClass">@Text(CatalogBadge(category.Status).Label)</span></div>
+                        <div class="md:col-span-4">
+                            <StatusActions Status="@category.Status" CanDelete="@category.CanDelete" OnStatus="CategoryStatusHandler(category.Id)" OnDelete="CategoryDeleteHandler(category.Id)">
+                                <button type="button" class="text-accent hover:text-accent-strong" @onclick="EditCategoryHandler(category.Id)">@Text(EditLabel)</button>
+                            </StatusActions>
+                        </div>
+                    </article>
+                }
+                @if (_categories.Count == 0)
+                {
+                    <p class="px-4 py-8 text-center text-muted">@Text(NoCategories)</p>
+                }
+            </div>
+        </section>
+
+        <section class="space-y-4">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+                <h2 class="font-serif text-3xl text-accent-strong">@Text(TagsTitle)</h2>
+                <button type="button" class="btn-outline px-5 py-2" @onclick="StartNewTag"><i class="bi bi-plus-lg"></i>@Text(NewTagLabel)</button>
+            </div>
+
+            @if (_tagForm is not null)
+            {
+                <form class="space-y-5 rounded-2xl border border-border bg-surface p-5 shadow-sm sm:p-8" @onsubmit="SaveTagAsync">
+                    <div class="grid gap-5 sm:grid-cols-3">
+                        <div>
+                            <label for="tag-name" class="field-label">@Text(NameLabel)</label>
+                            <input id="tag-name" type="text" maxlength="60" class="field" @bind="_tagForm.Name" @bind:event="oninput" @bind:after="OnTagNameChanged"/>
+                        </div>
+                        <div>
+                            <label for="tag-slug" class="field-label">@Text(SlugLabel)</label>
+                            <input id="tag-slug" type="text" maxlength="80" class="field" @bind="_tagForm.Slug" @bind:after="OnSlugEdited"/>
+                        </div>
+                        <div>
+                            <label for="tag-order" class="field-label">@Text(OrderLabel)</label>
+                            <input id="tag-order" type="number" step="1" class="field" @bind="_tagForm.SortOrder"/>
+                        </div>
+                    </div>
+                    <div class="flex gap-3">
+                        <button type="submit" class="btn-primary px-8">@Text(SaveLabel)</button>
+                        <button type="button" class="btn-outline px-8" @onclick="CancelForms">@Text(CancelLabel)</button>
+                    </div>
+                </form>
+            }
+
+            <ul class="flex flex-wrap gap-2">
+                @foreach (var tag in _tags)
+                {
+                    <li class="flex items-center gap-2 rounded-full border border-border bg-surface px-4 py-2 text-sm">
+                        <span class="text-accent-strong">@Text(tag.Name)</span>
+                        <span class="text-xs text-muted">@Text(FormatNumber(tag.ProductCount))</span>
+                        <button type="button" class="text-accent hover:text-accent-strong" aria-label="@EditLabel" @onclick="EditTagHandler(tag.Id)"><i class="bi bi-pencil"></i></button>
+                        <button type="button" class="text-muted hover:text-danger" aria-label="@DeleteLabel" @onclick="DeleteTagHandler(tag.Id)"><i class="bi bi-trash"></i></button>
+                    </li>
+                }
+                @if (_tags.Count == 0)
+                {
+                    <li class="text-sm text-muted">@Text(NoTags)</li>
+                }
+            </ul>
         </section>
     }
 </div>
 
 @code {
-    private static class Texts
-    {
-        public const string PageTitle = "Secções | Unayka";
-        public const string Title = "Secções";
-        public const string Eyebrow = "Catálogo";
-        public const string Subtitle = "O primeiro nível da loja, por exemplo chás, cosméticos ou livros.";
-        public const string NewLabel = "Nova secção";
-        public const string NewTitle = "Nova secção";
-        public const string EditTitle = "Editar secção";
-        public const string NameLabel = "Nome";
-        public const string SlugLabel = "Endereço (slug)";
-        public const string StatusLabel = "Estado";
-        public const string OrderLabel = "Ordem";
-        public const string ImageLabel = "Endereço da imagem";
-        public const string DescriptionLabel = "Descrição";
-        public const string CountsColumn = "Conteúdo";
-        public const string ActionsColumn = "Ações";
-        public const string Save = "Guardar";
-        public const string Cancel = "Cancelar";
-        public const string Edit = "Editar";
-        public const string Saved = "Secção guardada.";
-        public const string EmptyTitle = "Sem secções";
-        public const string EmptyMessage = "Crie a primeira secção para organizar a loja.";
-        public const string Categories = "categorias";
-        public const string Products = "produtos";
-        public const string CountSeparator = " | ";
-    }
+    private const string PageTitle = "Secções | Unayka";
+    private const string Eyebrow = "Catálogo";
+    private const string ListTitle = "Secções";
+    private const string ListSubtitle = "O primeiro nível da loja. Abra uma secção para gerir as categorias e as etiquetas dela.";
+    private const string DetailSubtitle = "Categorias e etiquetas desta secção.";
+    private const string BackLabel = "Todas as secções";
+    private const string NewSectionLabel = "Nova secção";
+    private const string EditSectionLabel = "Editar secção";
+    private const string CategoriesTitle = "Categorias";
+    private const string NewCategoryLabel = "Nova categoria";
+    private const string TagsTitle = "Etiquetas";
+    private const string NewTagLabel = "Nova etiqueta";
+    private const string NameLabel = "Nome";
+    private const string SlugLabel = "Endereço (slug)";
+    private const string StatusLabel = "Estado";
+    private const string OrderLabel = "Ordem";
+    private const string ImageLabel = "URL da imagem";
+    private const string UrlPlaceholder = "https://";
+    private const string DescriptionLabel = "Descrição";
+    private const string PreparationLabel = "Os produtos desta secção são preparados no balcão (aparecem no quadro de preparação).";
+    private const string SaveLabel = "Guardar";
+    private const string CancelLabel = "Cancelar";
+    private const string EditLabel = "Editar";
+    private const string DeleteLabel = "Eliminar";
+    private const string OpenLabel = "Abrir";
+    private const string ProductsWord = "produtos";
+    private const string CategoriesWord = "categorias";
+    private const string Saved = "Guardado.";
+    private const string NoSections = "Ainda não há secções.";
+    private const string NoCategories = "Esta secção ainda não tem categorias.";
+    private const string NoTags = "Esta secção ainda não tem etiquetas.";
+    private static readonly string ListUrl = ToUrl("/admin/seccoes");
+    private static readonly string ProductsUrl = ToUrl("/admin/produtos");
 
-    private IReadOnlyList<SectionRow> _rows = [];
-    private SectionForm? _form;
+    [Parameter]
+    public int? SectionId { get; set; }
+
+    private IReadOnlyList<SectionRow> _sections = [];
+    private SectionRow? _section;
+    private IReadOnlyList<CategoryRow> _categories = [];
+    private IReadOnlyList<TagRow> _tags = [];
+    private SectionForm? _sectionForm;
+    private CategoryForm? _categoryForm;
+    private TagForm? _tagForm;
     private IReadOnlyList<string> _errors = [];
-    private IReadOnlyList<string> _actionErrors = [];
-    private string _formTitle = Texts.NewTitle;
     private string? _notice;
+    private string _title = ListTitle;
+    private string _subtitle = ListSubtitle;
     private bool _slugEdited;
 
-    protected override async Task OnInitializedAsync()
+    protected override async Task OnParametersSetAsync()
     {
-        await base.OnInitializedAsync();
+        CancelForms();
+        _notice = null;
         await ReloadAsync();
     }
 
-    private static string CountsText(SectionRow section) =>
-        $"{FormatNumber(section.CategoryCount)} {Texts.Categories}{Texts.CountSeparator}{FormatNumber(section.ProductCount)} {Texts.Products}";
+    private static string SectionUrl(int id) => ToUrl($"/admin/seccoes/{id}");
 
-    private Func<Task> EditHandler(int id) => () => EditAsync(id);
+    private static string SectionCounts(SectionRow row) =>
+        $"{FormatNumber(row.CategoryCount)} {CategoriesWord} | {FormatNumber(row.ProductCount)} {ProductsWord}";
 
-    private EventCallback<CatalogStatus> StatusHandler(SectionRow section) =>
-        EventCallback.Factory.Create<CatalogStatus>(this, status => ChangeStatusAsync(section, status));
+    private EventCallback<CatalogStatus> SectionStatusHandler(int id) =>
+        EventCallback.Factory.Create<CatalogStatus>(this, status => ApplyAsync(Taxonomy.SetSectionStatusAsync(ActorUserId, id, status)));
 
-    private EventCallback DeleteHandler(SectionRow section) =>
-        EventCallback.Factory.Create(this, () => DeleteAsync(section));
+    private EventCallback SectionDeleteHandler(int id) =>
+        EventCallback.Factory.Create(this, () => ApplyAsync(Taxonomy.DeleteSectionAsync(ActorUserId, id)));
+
+    private EventCallback<CatalogStatus> CategoryStatusHandler(int id) =>
+        EventCallback.Factory.Create<CatalogStatus>(this, status => ApplyAsync(Taxonomy.SetCategoryStatusAsync(ActorUserId, id, status)));
+
+    private EventCallback CategoryDeleteHandler(int id) =>
+        EventCallback.Factory.Create(this, () => ApplyAsync(Taxonomy.DeleteCategoryAsync(ActorUserId, id)));
+
+    private Func<Task> EditCategoryHandler(int id) => async () =>
+    {
+        CancelForms();
+        _categoryForm = await Taxonomy.GetCategoryAsync(id);
+        _slugEdited = true;
+    };
+
+    private Func<Task> EditTagHandler(int id) => async () =>
+    {
+        CancelForms();
+        _tagForm = await Taxonomy.GetTagAsync(id);
+        _slugEdited = true;
+    };
+
+    private Func<Task> DeleteTagHandler(int id) => () => ApplyAsync(Taxonomy.DeleteTagAsync(ActorUserId, id));
 
     private async Task ReloadAsync()
     {
-        _rows = await Taxonomy.ListSectionsAsync();
+        _sections = await Taxonomy.ListSectionsAsync();
+        _section = SectionId is { } id ? _sections.FirstOrDefault(row => row.Id == id) : null;
+        _title = _section?.Name ?? ListTitle;
+        _subtitle = _section is null ? ListSubtitle : DetailSubtitle;
+        _categories = _section is null ? [] : await Taxonomy.ListCategoriesAsync(_section.Id);
+        _tags = _section is null ? [] : await Taxonomy.ListTagsAsync(_section.Id);
     }
 
-    private void StartNew()
+    private void CancelForms()
     {
-        _form = new SectionForm { SortOrder = _rows.Count + 1 };
-        _formTitle = Texts.NewTitle;
+        _sectionForm = null;
+        _categoryForm = null;
+        _tagForm = null;
+        _errors = [];
+    }
+
+    private void StartNewSection()
+    {
+        CancelForms();
+        _sectionForm = new SectionForm { SortOrder = _sections.Count + 1 };
         _slugEdited = false;
-        _errors = [];
-        _notice = null;
     }
 
-    private async Task EditAsync(int id)
+    private async Task EditCurrentSection()
     {
-        _form = await Taxonomy.GetSectionAsync(id);
-        _formTitle = Texts.EditTitle;
-        _slugEdited = true;
-        _errors = [];
-        _notice = null;
-    }
-
-    private void CancelEdit()
-    {
-        _form = null;
-        _errors = [];
-    }
-
-    private void OnNameChanged()
-    {
-        if (_form is not null && !_slugEdited)
-        {
-            _form.Slug = Slugs.FromName(_form.Name);
-        }
-    }
-
-    private void OnSlugEdited()
-    {
+        CancelForms();
+        _sectionForm = _section is null ? null : await Taxonomy.GetSectionAsync(_section.Id);
         _slugEdited = true;
     }
 
-    private async Task ChangeStatusAsync(SectionRow section, CatalogStatus status)
+    private void StartNewCategory()
     {
-        var result = await Taxonomy.SetSectionStatusAsync(ActorUserId, section.Id, status);
-        _actionErrors = result.Errors;
-        await ReloadAsync();
+        CancelForms();
+        _categoryForm = new CategoryForm { SectionId = _section!.Id, SortOrder = _categories.Count + 1 };
+        _slugEdited = false;
     }
 
-    private async Task DeleteAsync(SectionRow section)
+    private void StartNewTag()
     {
-        var result = await Taxonomy.DeleteSectionAsync(ActorUserId, section.Id);
-        _actionErrors = result.Errors;
-        await ReloadAsync();
+        CancelForms();
+        _tagForm = new TagForm { SectionId = _section!.Id, SortOrder = _tags.Count + 1 };
+        _slugEdited = false;
     }
 
-    private async Task SaveAsync()
+    private void OnSectionNameChanged()
     {
-        if (_form is null)
+        if (_sectionForm is not null && !_slugEdited)
         {
-            return;
+            _sectionForm.Slug = Slugs.FromName(_sectionForm.Name);
         }
+    }
 
-        var result = await Taxonomy.SaveSectionAsync(ActorUserId, _form);
+    private void OnCategoryNameChanged()
+    {
+        if (_categoryForm is not null && !_slugEdited)
+        {
+            _categoryForm.Slug = Slugs.FromName(_categoryForm.Name);
+        }
+    }
+
+    private void OnTagNameChanged()
+    {
+        if (_tagForm is not null && !_slugEdited)
+        {
+            _tagForm.Slug = Slugs.FromName(_tagForm.Name);
+        }
+    }
+
+    private void OnSlugEdited() => _slugEdited = true;
+
+    private Task SaveSectionAsync() => _sectionForm is null ? Task.CompletedTask : SaveAsync(Taxonomy.SaveSectionAsync(ActorUserId, _sectionForm));
+
+    private Task SaveCategoryAsync() => _categoryForm is null ? Task.CompletedTask : SaveAsync(Taxonomy.SaveCategoryAsync(ActorUserId, _categoryForm));
+
+    private Task SaveTagAsync() => _tagForm is null ? Task.CompletedTask : SaveAsync(Taxonomy.SaveTagAsync(ActorUserId, _tagForm));
+
+    private async Task SaveAsync(Task<AdminResult> save)
+    {
+        var result = await save;
         _errors = result.Errors;
         if (!result.Succeeded)
         {
             return;
         }
 
-        _form = null;
-        _notice = Texts.Saved;
+        CancelForms();
+        _notice = Saved;
+        await ReloadAsync();
+    }
+
+    private async Task ApplyAsync(Task<AdminResult> action)
+    {
+        var result = await action;
+        _errors = result.Errors;
+        _notice = null;
         await ReloadAsync();
     }
 }

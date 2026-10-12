@@ -17,11 +17,8 @@ Notes from the user (2026-10-12):
 - Each payment method (M-Pesa, e-Mola, card) sits behind one interface (IPaymentMethod) so a method could use another provider; in practice all use PaySuite.
 - Implement PaySuite from the official documentation (merges 5.1 and 5.3).
 
-- [ ] R2 (S) Dashboard screen "Site": edit site blocks per page (hero slides, steps, story, values, contact strip, SEO, social networks with Bootstrap Icons class) and payment options (label, logo URL, icon, provider code, online, counter, active).
-- [ ] R4 (S) Get below 100 tracked files (101 now): R7 removes Categories.razor and Tags.razor; fold AccessDenied into Routes if still needed.
 - [ ] R6 (O) Product images: 15 products with real photos by URL (Wikimedia Commons and Openverse, CC licenses, credit stored per image). Still missing: package photos for teas, applied photos for coconut oil, cosmetics beyond body care, book covers that match each title. The product page must show the credit line.
-- [ ] R7 (S) Dashboard nested per section: /admin/seccoes opens one section with its categories and tags inside (IAdminTaxonomy already filters by section); remove the global Categorias and Etiquetas screens; product form images by URL with the upload option shown as temporarily unavailable.
-- [ ] R8 (S) Fix buttons whose pressed or active color equals their text color.
+- [ ] R8 (S) Buttons with the pressed color equal to the text color: utilities now set explicit active colors and no static case was found; waiting for the user to name the exact buttons if it still happens.
 
 ### Payments (PaySuite)
 

@@ -54,7 +54,7 @@ Numbered list, one line per file as "N. path - what it does", sorted by path; th
 50. src/Unayka.Web/Components/App.razor - HTML shell, fonts, Bootstrap Icons from the CDN, Blazor and carousel scripts
 51. src/Unayka.Web/Components/Base/UnaykaBase.cs - view helpers (Text, ToUrl, formats, status badges), component and layout bases, and StaffPageBase with the signed in user id, select options and counter links
 52. src/Unayka.Web/Components/Checkout/OrderStatusLive.razor - interactive payment status with polling, link to the PaySuite page and retry
-53. src/Unayka.Web/Components/Layout/AdminLayout.razor - administration layout with sidebar and sign out
+53. src/Unayka.Web/Components/Layout/AdminLayout.razor - administration layout with sidebar (sections, site, counter and the rest) and sign out
 54. src/Unayka.Web/Components/Layout/MainLayout.razor - store layout: announcement, header (navigation, search, account, cart), footer (brand, payment options, social links, sections, help links, locations) and added to cart notice, all from the database
 55. src/Unayka.Web/Components/Pages/About.razor - /about with hero, story and values from site blocks
 56. src/Unayka.Web/Components/Pages/Account/AccountPage.razor - /conta with greeting, orders with lines and download links, and sign out
@@ -62,55 +62,54 @@ Numbered list, one line per file as "N. path - what it does", sorted by path; th
 58. src/Unayka.Web/Components/Pages/Account/Setup.razor - /configurar first administrator screen (email and password typed twice), shown while there are no users
 59. src/Unayka.Web/Components/Pages/Admin/_Imports.razor - AdminLayout, AdminPageBase and usings for admin pages
 60. src/Unayka.Web/Components/Pages/Admin/AuditPage.razor - /admin/auditoria read only log
-61. src/Unayka.Web/Components/Pages/Admin/Categories.razor - /admin/categorias list and inline form
-62. src/Unayka.Web/Components/Pages/Admin/CouponsPage.razor - /admin/cupoes list and inline form
-63. src/Unayka.Web/Components/Pages/Admin/CustomerDetailPage.razor - /admin/clientes/{id} detail with orders
-64. src/Unayka.Web/Components/Pages/Admin/Customers.razor - /admin/clientes list
-65. src/Unayka.Web/Components/Pages/Admin/DashboardPage.razor - /admin dashboard with figures, daily sales bars, top products, latest orders and low stock
-66. src/Unayka.Web/Components/Pages/Admin/LocationsPage.razor - /admin/lojas locations and contacts administration
-67. src/Unayka.Web/Components/Pages/Admin/OrderDetailPage.razor - /admin/pedidos/{number} detail, payments timeline and status actions
-68. src/Unayka.Web/Components/Pages/Admin/OrdersPage.razor - /admin/pedidos list with filters
-69. src/Unayka.Web/Components/Pages/Admin/PaymentsPage.razor - /admin/pagamentos list with filters and totals
-70. src/Unayka.Web/Components/Pages/Admin/ProductEdit.razor - /admin/produtos/novo and /admin/produtos/{id} form
-71. src/Unayka.Web/Components/Pages/Admin/Products.razor - /admin/produtos list with tabs, filters, status actions and pager
-72. src/Unayka.Web/Components/Pages/Admin/Sections.razor - /admin/seccoes sections administration
-73. src/Unayka.Web/Components/Pages/Admin/Tags.razor - /admin/etiquetas tags per section administration
-74. src/Unayka.Web/Components/Pages/Cart/CartPage.razor - /carrinho with lines, quantity forms, coupon and summary
-75. src/Unayka.Web/Components/Pages/Checkout/CheckoutPage.razor - /checkout single page form with payment options from the database, redirects to the PaySuite page
-76. src/Unayka.Web/Components/Pages/Checkout/OrderStatusPage.razor - /pedido/{number} access check, live status and order summary
-77. src/Unayka.Web/Components/Pages/Contact.razor - /contacto with hero from site blocks and each location with contacts and map
-78. src/Unayka.Web/Components/Pages/Counter/CashShifts.razor - /balcao/caixa open, close and history of cash shifts
-79. src/Unayka.Web/Components/Pages/Counter/PointOfSale.razor - /balcao point of sale: product tiles, ticket, counter payment options from the database and receipt
-80. src/Unayka.Web/Components/Pages/Counter/PreparationBoardPage.razor - /balcao/preparacao board with order cards per status and 5 second refresh
-81. src/Unayka.Web/Components/Pages/Error.razor - generic error page
-82. src/Unayka.Web/Components/Pages/Home.razor - home with hero slides, product rows, steps and contact strip, all from site blocks and catalog
-83. src/Unayka.Web/Components/Pages/NotFound.razor - not found page
-84. src/Unayka.Web/Components/Pages/Store/CatalogPage.razor - /loja/todos, /loja/categoria/{slug} and /loja/{section}: hero, filters (section, category, tags), search, sort, product grid and pagination
-85. src/Unayka.Web/Components/Pages/Store/ProductPage.razor - /produto/{slug} gallery, price, order forms, share links, story and ingredient images, facts, related products and photo credits
-86. src/Unayka.Web/Components/Pages/Store/Shop.razor - /loja with search, category chips, contained featured marquee, category shortcuts and new arrivals grid
-87. src/Unayka.Web/Components/Routes.razor - router with default layout and not found page
-88. src/Unayka.Web/Components/Shared/AccessDenied.razor - redirects anonymous users to sign in, shows a message to others
-89. src/Unayka.Web/Components/Shared/AdminPager.razor - previous and next buttons for interactive staff lists
-90. src/Unayka.Web/Components/Shared/SeoComponent.razor - head title, description, canonical, Open Graph and structured data
-91. src/Unayka.Web/Components/Shared/StatusActions.razor - activate, deactivate, archive or delete (with confirm) actions for catalog rows
-92. src/Unayka.Web/Components/Store/ProductRail.razor - endless looping product row with arrows when it has more than two items, static row otherwise
-93. src/Unayka.Web/Components/Store/StoreProductCard.razor - product card with cross fading images, badges, price, add to cart and share menu
-94. src/Unayka.Web/Endpoints/AccountEndpoints.cs - setup gate and POST /configurar, external sign in, staff sign in and sign out
-95. src/Unayka.Web/Endpoints/Security.cs - cookie auth, policies, antiforgery, data protection, rate limit policies, external providers, security headers and CSP
-96. src/Unayka.Web/Endpoints/StoreEndpoints.cs - cart, checkout (redirect to PaySuite), PaySuite webhook, cookies, downloads, contact redirects and health endpoints
-97. src/Unayka.Web/Program.cs - app startup, loads .env first, validates configuration, feature service lines (AddUnayka*), database migrate (SQLite) or create (Postgres) and seed, security pipeline, feature endpoint lines (Map*Endpoints), Razor components
-98. src/Unayka.Web/Unayka.Web.csproj - Web project (Blazor only)
-99. src/Unayka.Web/wwwroot/images/pay/ - M-Pesa, e-Mola and mKesh logos referenced by payment options in the database
-100. src/Unayka.Web/wwwroot/scripts/carousel.js - hero swipe, arrows and autoplay, endless unayka-rail, unayka-fade one at a time crossfade, unayka-collapse and unayka-share elements
-101. src/Unayka.Web/wwwroot/styles/globals.css - Tailwind entry with semantic color tokens (accent, surface, ink, brand), fonts and base layer
-102. TASKS.md - open work only (In progress, Next, On hold)
+61. src/Unayka.Web/Components/Pages/Admin/CouponsPage.razor - /admin/cupoes list and inline form
+62. src/Unayka.Web/Components/Pages/Admin/CustomerDetailPage.razor - /admin/clientes/{id} detail with orders
+63. src/Unayka.Web/Components/Pages/Admin/Customers.razor - /admin/clientes list
+64. src/Unayka.Web/Components/Pages/Admin/DashboardPage.razor - /admin dashboard with figures, daily sales bars, top products, latest orders and low stock
+65. src/Unayka.Web/Components/Pages/Admin/LocationsPage.razor - /admin/lojas locations and contacts administration
+66. src/Unayka.Web/Components/Pages/Admin/OrderDetailPage.razor - /admin/pedidos/{number} detail, payments timeline and status actions
+67. src/Unayka.Web/Components/Pages/Admin/OrdersPage.razor - /admin/pedidos list with filters
+68. src/Unayka.Web/Components/Pages/Admin/PaymentsPage.razor - /admin/pagamentos list with filters and totals
+69. src/Unayka.Web/Components/Pages/Admin/ProductEdit.razor - /admin/produtos/novo and /admin/produtos/{id} form with images by URL (kind, alt text, credit) and the upload option shown as temporarily unavailable
+70. src/Unayka.Web/Components/Pages/Admin/Products.razor - /admin/produtos list with tabs, filters, status actions and pager
+71. src/Unayka.Web/Components/Pages/Admin/Sections.razor - /admin/seccoes list of sections and /admin/seccoes/{id} with that section's categories and tags inside (nested navigation)
+72. src/Unayka.Web/Components/Pages/Admin/SitePage.razor - /admin/site site blocks per page (texts, image URLs, Bootstrap Icons, links) and payment options; upload shown as temporarily unavailable
+73. src/Unayka.Web/Components/Pages/Cart/CartPage.razor - /carrinho with lines, quantity forms, coupon and summary
+74. src/Unayka.Web/Components/Pages/Checkout/CheckoutPage.razor - /checkout single page form with payment options from the database, redirects to the PaySuite page
+75. src/Unayka.Web/Components/Pages/Checkout/OrderStatusPage.razor - /pedido/{number} access check, live status and order summary
+76. src/Unayka.Web/Components/Pages/Contact.razor - /contacto with hero from site blocks and each location with contacts and map
+77. src/Unayka.Web/Components/Pages/Counter/CashShifts.razor - /balcao/caixa open, close and history of cash shifts
+78. src/Unayka.Web/Components/Pages/Counter/PointOfSale.razor - /balcao point of sale: product tiles, ticket, counter payment options from the database and receipt
+79. src/Unayka.Web/Components/Pages/Counter/PreparationBoardPage.razor - /balcao/preparacao board with order cards per status and 5 second refresh
+80. src/Unayka.Web/Components/Pages/Error.razor - generic error page
+81. src/Unayka.Web/Components/Pages/Home.razor - home with hero slides, product rows, steps and contact strip, all from site blocks and catalog
+82. src/Unayka.Web/Components/Pages/NotFound.razor - not found page
+83. src/Unayka.Web/Components/Pages/Store/CatalogPage.razor - /loja/todos, /loja/categoria/{slug} and /loja/{section}: hero, filters (section, category, tags), search, sort, product grid and pagination
+84. src/Unayka.Web/Components/Pages/Store/ProductPage.razor - /produto/{slug} gallery, price, order forms, share links, story and ingredient images, facts, related products and photo credits
+85. src/Unayka.Web/Components/Pages/Store/Shop.razor - /loja with search, category chips, contained featured marquee, category shortcuts and new arrivals grid
+86. src/Unayka.Web/Components/Routes.razor - router with default layout and not found page
+87. src/Unayka.Web/Components/Shared/AccessDenied.razor - redirects anonymous users to sign in, shows a message to others
+88. src/Unayka.Web/Components/Shared/AdminPager.razor - previous and next buttons for interactive staff lists
+89. src/Unayka.Web/Components/Shared/SeoComponent.razor - head title, description, canonical, Open Graph and structured data
+90. src/Unayka.Web/Components/Shared/StatusActions.razor - activate, deactivate, archive or delete (with confirm) actions for catalog rows
+91. src/Unayka.Web/Components/Store/ProductRail.razor - endless looping product row with arrows when it has more than two items, static row otherwise
+92. src/Unayka.Web/Components/Store/StoreProductCard.razor - product card with cross fading images, badges, price, add to cart and share menu
+93. src/Unayka.Web/Endpoints/AccountEndpoints.cs - setup gate and POST /configurar, external sign in, staff sign in and sign out
+94. src/Unayka.Web/Endpoints/Security.cs - cookie auth, policies, antiforgery, data protection, rate limit policies, external providers, security headers and CSP
+95. src/Unayka.Web/Endpoints/StoreEndpoints.cs - cart, checkout (redirect to PaySuite), PaySuite webhook, cookies, downloads, contact redirects and health endpoints
+96. src/Unayka.Web/Program.cs - app startup, loads .env first, validates configuration, feature service lines (AddUnayka*), database migrate (SQLite) or create (Postgres) and seed, security pipeline, feature endpoint lines (Map*Endpoints), Razor components
+97. src/Unayka.Web/Unayka.Web.csproj - Web project (Blazor only)
+98. src/Unayka.Web/wwwroot/images/pay/ - M-Pesa, e-Mola and mKesh logos referenced by payment options in the database
+99. src/Unayka.Web/wwwroot/scripts/carousel.js - hero swipe, arrows and autoplay, endless unayka-rail, unayka-fade one at a time crossfade, unayka-collapse and unayka-share elements
+100. src/Unayka.Web/wwwroot/styles/globals.css - Tailwind entry with semantic color tokens, fonts, base layer and button utilities with explicit hover, active and disabled states
+101. TASKS.md - open work only (In progress, Next, On hold)
 
 ## Interactive render modes
 
 No global render mode; AddInteractiveServerComponents is enabled in Program.cs.
 
-103. src/Unayka.Web/Components/Pages/Counter/PointOfSale.razor - /balcao, InteractiveServer: live ticket, payment method and receipt
-104. src/Unayka.Web/Components/Pages/Counter/CashShifts.razor - /balcao/caixa, InteractiveServer: live difference while counting the drawer
-105. src/Unayka.Web/Components/Pages/Counter/PreparationBoardPage.razor - /balcao/preparacao, InteractiveServer: board refreshed by a timer
-106. src/Unayka.Web/Components/Checkout/OrderStatusLive.razor - InteractiveServer: polls payment status every 2 seconds and retries through PaySuite without reload
-107. src/Unayka.Web/Components/Pages/Admin/ - InteractiveServer on every administration page for filters, forms and toggles
+102. src/Unayka.Web/Components/Pages/Counter/PointOfSale.razor - /balcao, InteractiveServer: live ticket, payment method and receipt
+103. src/Unayka.Web/Components/Pages/Counter/CashShifts.razor - /balcao/caixa, InteractiveServer: live difference while counting the drawer
+104. src/Unayka.Web/Components/Pages/Counter/PreparationBoardPage.razor - /balcao/preparacao, InteractiveServer: board refreshed by a timer
+105. src/Unayka.Web/Components/Checkout/OrderStatusLive.razor - InteractiveServer: polls payment status every 2 seconds and retries through PaySuite without reload
+106. src/Unayka.Web/Components/Pages/Admin/ - InteractiveServer on every administration page for filters, forms and toggles
