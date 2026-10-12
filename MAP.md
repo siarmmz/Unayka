@@ -107,6 +107,26 @@ src/Unayka.Web.Test/Pages/LoginFlowTests.cs: login page, antiforgery and sign in
 src/Unayka.Core.Test: tests for configuration and presentation helpers
 src/Unayka.Web.Test: in memory server tests for pages, health and the no loose text rule
 
+<!-- Sprint L: storefront -->
+src/Unayka.Core/Catalog/ICatalogQuery.cs: catalog read contract (featured, best sellers, new arrivals, categories, search, detail, related)
+src/Unayka.Core/Catalog/CatalogQuery.cs: EF implementation with filters, text search, sorting and paging of 12
+src/Unayka.Core/Catalog/CatalogModels.cs: ProductSearch, ProductPage, CategorySummary, ProductDetail and related read models
+src/Unayka.Core/Catalog/StockLevel.cs: stock state (in stock, low stock, out of stock) from quantity
+src/Unayka.Core/Catalog/CatalogServiceExtensions.cs: services.AddUnaykaCatalog()
+src/Unayka.Core.Test/Catalog/CatalogQueryTests.cs: filtering, sorting, paging and detail tests
+src/Unayka.Core.Test/Catalog/StockLevelsTests.cs: stock level thresholds tests
+src/Unayka.Web/Components/Store/CatalogLinks.cs: catalog query string parsing and URL building, sort options and price ranges
+src/Unayka.Web/Components/Store/CatalogView.razor: filters sidebar, search and sort form, product grid, pagination
+src/Unayka.Web/Components/Store/ProductGallery.razor: CSS only product gallery with thumbnails
+src/Unayka.Web/Components/Store/StoreStructuredData.cs: schema.org Product and Store JSON-LD builders
+src/Unayka.Web/Components/Pages/Store/Shop.razor: /loja catalog
+src/Unayka.Web/Components/Pages/Store/CoffeeShop.razor: /loja/cafes catalog with banner
+src/Unayka.Web/Components/Pages/Store/CosmeticsShop.razor: /loja/cosmeticos catalog with banner
+src/Unayka.Web/Components/Pages/Store/CategoryPage.razor: /loja/categoria/{slug} catalog with category hero
+src/Unayka.Web/Components/Pages/Store/ProductPage.razor: /produto/{slug} narrative page with order forms and mobile bottom bar
+src/Unayka.Web/Components/Pages/Home.razor: home with hero, categories, featured, story, best sellers, banners, value props and visit block
+src/Unayka.Web.Test/Pages/StorefrontTests.cs: 200, 404, search and product form tests
+
 ## Interactive render modes
 
 None yet. AddInteractiveServerComponents is enabled in Program.cs; there is no global render mode.

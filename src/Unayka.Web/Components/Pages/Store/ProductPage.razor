@@ -1,0 +1,203 @@
+@page "/produto/{Slug}"
+@using Unayka.Web.Components.Store
+@inject ICatalogQuery Catalog
+
+@if (_product is not null)
+{
+    <SeoComponent Title="@_seoTitle" Description="@_product.ShortDescription" StructuredDataJson="@_structuredData"/>
+
+    <article class="pb-28 md:pb-0">
+        <section class="container-page py-8 md:py-14">
+            <a href="@_categoryUrl" class="text-xs uppercase tracking-widest text-stone transition hover:text-clay">@Text(_product.CategoryName)</a>
+            <div class="mt-6 grid gap-10 lg:grid-cols-2 lg:gap-16">
+                <ProductGallery Images="_product.Images"/>
+
+                <div class="lg:sticky lg:top-28 lg:self-start">
+                    @if (_product.Badge is not null)
+                    {
+                        <span class="inline-block rounded-full bg-rose-soft px-3 py-1 text-xs font-medium tracking-wide text-clay">@Text(_product.Badge)</span>
+                    }
+                    <h1 class="mt-3 font-serif text-4xl leading-tight text-espresso md:text-5xl">@Text(_product.Name)</h1>
+                    <div class="mt-5">
+                        <PriceTag PriceMinor="_product.PriceMinor" CompareAtPriceMinor="_product.CompareAtPriceMinor" Large="true"/>
+                    </div>
+                    <p class="mt-6 text-lg leading-relaxed text-stone">@Text(_product.ShortDescription)</p>
+                    <p class="@_stockClass">@Text(_stockLabel)</p>
+
+                    <form id="@OrderFormId" method="post" action="@Data.AddAction" class="mt-8 space-y-5">
+                        <AntiforgeryToken/>
+                        <input type="hidden" name="ProductId" value="@_product.Id"/>
+                        <input type="hidden" name="ReturnUrl" value="@_returnUrl"/>
+                        <div class="max-w-[8rem]">
+                            <label for="quantity" class="field-label">@Text(Data.QuantityLabel)</label>
+                            <input id="quantity" type="number" name="Quantity" value="1" min="1" max="@_maxQuantity" inputmode="numeric" disabled="@_soldOut" class="field disabled:opacity-40"/>
+                        </div>
+                        <div class="flex flex-col gap-3 sm:flex-row">
+                            <button type="submit" disabled="@_soldOut" class="btn-primary disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-espresso sm:flex-1">@Text(_addLabel)</button>
+                            <button type="submit" formaction="@Data.BuyNowAction" disabled="@_soldOut" class="btn-outline disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-espresso sm:flex-1">@Text(Data.BuyNowLabel)</button>
+                        </div>
+                    </form>
+
+                    <ul class="mt-10 space-y-3 border-t border-sand pt-6 text-sm text-stone">
+                        @foreach (var promise in Data.Promises)
+                        {
+                            <li>@Text(promise)</li>
+                        }
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        @if (_package is not null)
+        {
+            <section class="bg-cream">
+                <div class="container-page grid items-center gap-10 py-16 md:grid-cols-2 md:gap-16 md:py-24">
+                    <img src="@_packageUrl" alt="@_package.Alt" loading="lazy" class="aspect-[4/5] w-full rounded-3xl object-cover"/>
+                    <div>
+                        <SectionHeading Eyebrow="@Data.StoryEyebrow" Title="@_product.Name"/>
+                        <p class="mt-6 text-lg leading-relaxed text-stone">@Text(_product.Description)</p>
+                    </div>
+                </div>
+            </section>
+        }
+
+        @if (_showDetails)
+        {
+            <section class="container-page py-16 md:py-24">
+                <div class="@_detailsGridClass">
+                    <div>
+                        <SectionHeading Eyebrow="@Data.DetailsEyebrow" Title="@Data.DetailsTitle"/>
+                        @foreach (var group in _product.FactGroups)
+                        {
+                            <h3 class="mt-8 font-serif text-2xl text-espresso">@Text(group.Name)</h3>
+                            <dl class="mt-3 divide-y divide-sand border-y border-sand">
+                                @foreach (var row in group.Rows)
+                                {
+                                    <div class="flex justify-between gap-6 py-3 text-sm">
+                                        <dt class="text-stone">@Text(row.Label)</dt>
+                                        <dd class="text-right text-espresso">@Text(row.Value)</dd>
+                                    </div>
+                                }
+                            </dl>
+                        }
+                    </div>
+                    @if (_elements is not null)
+                    {
+                        <img src="@_elementsUrl" alt="@_elements.Alt" loading="lazy" class="aspect-square w-full rounded-3xl object-cover"/>
+                    }
+                </div>
+            </section>
+        }
+
+        @if (_related.Count > 0)
+        {
+            <section class="border-t border-sand">
+                <div class="container-page py-16 md:py-24">
+                    <SectionHeading Eyebrow="@Data.RelatedEyebrow" Title="@Data.RelatedTitle" Centered="true"/>
+                    <div class="mt-12 grid grid-cols-2 gap-x-4 gap-y-10 md:grid-cols-4 md:gap-x-6">
+                        @foreach (var item in _related)
+                        {
+                            <ProductCard Model="item"/>
+                        }
+                    </div>
+                </div>
+            </section>
+        }
+
+        <div class="fixed inset-x-0 bottom-0 z-40 flex items-center justify-between gap-4 border-t border-sand bg-paper/95 px-4 py-3 backdrop-blur md:hidden">
+            <div class="min-w-0">
+                <p class="truncate text-xs text-stone">@Text(_product.Name)</p>
+                <PriceTag PriceMinor="_product.PriceMinor"/>
+            </div>
+            <button type="submit" form="@OrderFormId" disabled="@_soldOut" class="btn-primary shrink-0 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-espresso">@Text(_addLabel)</button>
+        </div>
+    </article>
+}
+
+@code {
+    private const string OrderFormId = "order-form";
+    private const string TitleSuffix = " | Unayka";
+    private const int MaxQuantity = 20;
+    private const int RelatedCount = 4;
+    private const string StockClassBase = "mt-4 text-sm font-medium ";
+    private const string TwoColumnsClass = "grid items-center gap-10 lg:grid-cols-2 lg:gap-16";
+    private const string OneColumnClass = "max-w-2xl";
+
+    private static readonly (string AddAction, string BuyNowAction, string AddLabel, string SoldOutLabel, string BuyNowLabel, string QuantityLabel, string InStock, string LowStock, string OutOfStock, string StoryEyebrow, string DetailsEyebrow, string DetailsTitle, string RelatedEyebrow, string RelatedTitle, string[] Promises) Data = (
+        "/carrinho/adicionar",
+        "/carrinho/comprar-agora",
+        "Adicionar ao carrinho",
+        "Esgotado",
+        "Comprar agora",
+        "Quantidade",
+        "Em stock",
+        "Últimas unidades",
+        "Esgotado",
+        "Sobre este produto",
+        "Por dentro",
+        "O que contém",
+        "Continue a explorar",
+        "Também vai gostar",
+        [
+            "Levantamento na loja ou entrega em Maputo.",
+            "Pagamento por M-Pesa ou e-Mola.",
+            "Preço final em meticais, sem surpresas.",
+        ]);
+
+    [Parameter]
+    public string Slug { get; set; } = string.Empty;
+
+    private ProductDetail? _product;
+    private IReadOnlyList<ProductCardModel> _related = [];
+    private ProductImage? _package;
+    private ProductImage? _elements;
+    private string _packageUrl = string.Empty;
+    private string _elementsUrl = string.Empty;
+    private string _seoTitle = string.Empty;
+    private string _structuredData = string.Empty;
+    private string _categoryUrl = string.Empty;
+    private string _returnUrl = string.Empty;
+    private string _stockLabel = string.Empty;
+    private string _stockClass = StockClassBase;
+    private string _addLabel = string.Empty;
+    private string _detailsGridClass = OneColumnClass;
+    private bool _soldOut;
+    private bool _showDetails;
+    private int _maxQuantity;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _product = await Catalog.FindProductAsync(Slug);
+        if (_product is null)
+        {
+            Navigation.NotFound();
+            return;
+        }
+
+        _related = await Catalog.RelatedAsync(Slug, RelatedCount);
+        _package = _product.Images.FirstOrDefault(image => image.Kind == ProductMediaKind.Package);
+        _elements = _product.Images.FirstOrDefault(image => image.Kind == ProductMediaKind.Elements);
+        _packageUrl = ToUrl(_package?.Url);
+        _elementsUrl = ToUrl(_elements?.Url);
+        _seoTitle = _product.Name + TitleSuffix;
+        _structuredData = StoreStructuredData.Product(_product, StoreStructuredData.Root(Navigation.BaseUri));
+        _categoryUrl = ToUrl(StoreUrls.Category(_product.CategorySlug));
+        _returnUrl = StoreUrls.Product(_product.Slug);
+        _showDetails = _product.FactGroups.Count > 0 || _elements is not null;
+        _detailsGridClass = _elements is null ? OneColumnClass : TwoColumnsClass;
+        _maxQuantity = Math.Clamp(_product.StockQuantity, 1, MaxQuantity);
+        ApplyStock(StockLevels.For(_product.StockQuantity));
+    }
+
+    private void ApplyStock(StockLevel level)
+    {
+        _soldOut = level == StockLevel.OutOfStock;
+        _addLabel = _soldOut ? Data.SoldOutLabel : Data.AddLabel;
+        (_stockLabel, _stockClass) = level switch
+        {
+            StockLevel.OutOfStock => (Data.OutOfStock, StockClassBase + "text-rose"),
+            StockLevel.LowStock => (Data.LowStock, StockClassBase + "text-clay"),
+            _ => (Data.InStock, StockClassBase + "text-sage"),
+        };
+    }
+}

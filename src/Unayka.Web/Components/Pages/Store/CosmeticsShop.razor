@@ -1,0 +1,16 @@
+@page "/loja/cosmeticos"
+@using Unayka.Web.Components.Store
+
+<SeoComponent Title="@Data.Seo.Title" Description="@Data.Seo.Description"/>
+
+<PageHero Title="@Data.Title" Eyebrow="@Data.Eyebrow" Subtitle="@Data.Subtitle" ImageUrl="@SiteImages.CosmeticsBannerUrl"/>
+
+<CatalogView BasePath="@StoreUrls.Cosmetics" Kind="CategoryKind.Cosmetic"/>
+
+@code {
+    private static readonly (string Title, string Eyebrow, string Subtitle, (string Title, string Description) Seo) Data = (
+        "Cosméticos",
+        "Cuidado com calma",
+        "Pele, cabelo e corpo, com uma seleção cuidada de produtos para o dia a dia.",
+        ("Cosméticos | Unayka", "Cuidados de pele, cabelo e corpo selecionados pela Unayka. Peça online e levante na loja."));
+}

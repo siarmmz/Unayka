@@ -14,7 +14,7 @@ Wave 1 (one worktree, branch sprint-l/foundation, Sonnet):
 Note for L1: the database is created with EnsureCreated at startup (no migrations yet); migrations are a later task before production. The CSP allows 'unsafe-inline' scripts because the Blazor import map is inline; replace with a nonce later.
 
 Wave 2 (four worktrees in parallel, Sonnet, split by feature folder):
-- [ ] L2 Store front: home (hero, featured, categories, best sellers, story), catalog with filters and search, category, product narrative page (branch sprint-l/storefront)
+- [x] L2 Store front: home (hero, featured, categories, best sellers, story), catalog with filters and search, category, product narrative page (branch sprint-l/storefront)
 - [ ] L3 Cart and checkout: server cart, drawer, coupon engine, single page checkout, mock wallet payment with status, order confirmation, customer account and orders (branch sprint-l/checkout)
 - [ ] L4 Administration: dashboard, products, categories, orders, coupons, customers, audit (branch sprint-l/admin)
 - [ ] L5 Counter: point of sale charge mode, cash shift, preparation board (branch sprint-l/counter)

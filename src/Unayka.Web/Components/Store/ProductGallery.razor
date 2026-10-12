@@ -1,0 +1,47 @@
+<div class="relative grid grid-cols-4 gap-3">
+    @foreach (var tile in _tiles)
+    {
+        <input type="radio" name="@GroupName" id="@tile.Id" checked="@tile.Checked" class="@tile.InputClass" aria-label="@tile.Alt"/>
+    }
+    @foreach (var tile in _tiles)
+    {
+        <img src="@tile.Url" alt="@tile.Alt" class="@tile.ImageClass"/>
+    }
+    @foreach (var tile in _thumbnails)
+    {
+        <label for="@tile.Id" class="@tile.LabelClass"><img src="@tile.Url" alt="" loading="lazy" class="aspect-square w-full object-cover"/></label>
+    }
+</div>
+
+@code {
+    private const string GroupName = "product-gallery";
+    private const string LabelBase = "block cursor-pointer overflow-hidden rounded-xl border-2 border-transparent transition hover:opacity-80 ";
+    private const string ImageBase = "col-span-4 hidden aspect-square w-full rounded-3xl bg-cream object-cover ";
+
+    private sealed record TileStyle(string InputClass, string ImageClass, string LabelClass);
+
+    private sealed record Tile(string Id, string Url, string Alt, bool Checked, string InputClass, string ImageClass, string LabelClass);
+
+    private static readonly TileStyle[] Styles =
+    [
+        new("peer/g0 sr-only", ImageBase + "peer-checked/g0:block", LabelBase + "peer-checked/g0:border-clay"),
+        new("peer/g1 sr-only", ImageBase + "peer-checked/g1:block", LabelBase + "peer-checked/g1:border-clay"),
+        new("peer/g2 sr-only", ImageBase + "peer-checked/g2:block", LabelBase + "peer-checked/g2:border-clay"),
+        new("peer/g3 sr-only", ImageBase + "peer-checked/g3:block", LabelBase + "peer-checked/g3:border-clay"),
+    ];
+
+    [Parameter, EditorRequired]
+    public IReadOnlyList<ProductImage> Images { get; set; } = [];
+
+    private List<Tile> _tiles = [];
+    private List<Tile> _thumbnails = [];
+
+    protected override void OnParametersSet()
+    {
+        _tiles = Images
+            .Take(Styles.Length)
+            .Select((image, index) => new Tile($"gallery-{index}", ToUrl(image.Url), image.Alt, index == 0, Styles[index].InputClass, Styles[index].ImageClass, Styles[index].LabelClass))
+            .ToList();
+        _thumbnails = _tiles.Count > 1 ? _tiles : [];
+    }
+}
