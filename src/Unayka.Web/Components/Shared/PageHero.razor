@@ -1,0 +1,35 @@
+<section class="relative isolate overflow-hidden bg-espresso">
+    <img src="@_imageUrl" alt="" class="absolute inset-0 -z-10 h-full w-full object-cover opacity-45"/>
+    <div class="container-page py-20 md:py-28">
+        @if (Eyebrow is not null)
+        {
+            <p class="font-script text-3xl text-rose">@Text(Eyebrow)</p>
+        }
+        <h1 class="max-w-2xl font-serif text-4xl leading-tight text-paper md:text-6xl">@Text(Title)</h1>
+        @if (Subtitle is not null)
+        {
+            <p class="mt-5 max-w-xl text-lg text-sand">@Text(Subtitle)</p>
+        }
+    </div>
+</section>
+
+@code {
+    [Parameter, EditorRequired]
+    public string Title { get; set; } = string.Empty;
+
+    [Parameter, EditorRequired]
+    public string ImageUrl { get; set; } = string.Empty;
+
+    [Parameter]
+    public string? Eyebrow { get; set; }
+
+    [Parameter]
+    public string? Subtitle { get; set; }
+
+    private string _imageUrl = string.Empty;
+
+    protected override void OnParametersSet()
+    {
+        _imageUrl = ToUrl(ImageUrl);
+    }
+}

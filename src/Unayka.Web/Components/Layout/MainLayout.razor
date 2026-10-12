@@ -1,35 +1,14 @@
 @inherits UnaykaLayoutBase
 
-<div class="min-h-screen flex flex-col bg-paper text-ink">
-    <header class="px-6 py-6 flex flex-wrap items-center justify-between gap-4">
-        <a href="@ToUrl(Data.HomeUrl)" class="font-script text-3xl">@Text(Data.BrandName)</a>
-        <nav class="flex flex-wrap gap-5 text-sm">
-            @foreach (var item in Data.Navigation)
-            {
-                <a href="@ToUrl(item.Url)" class="hover:text-clay">@Text(item.Label)</a>
-            }
-        </nav>
-    </header>
-
-    <main class="flex-1 px-6 py-10 mx-auto w-full max-w-3xl">
+<div class="flex min-h-screen flex-col bg-paper text-ink">
+    <div class="bg-espresso px-4 py-2 text-center text-xs tracking-wide text-sand">@Text(Announcement)</div>
+    <SiteHeader/>
+    <main class="flex-1">
         @Body
     </main>
-
-    <footer class="px-6 py-8 text-sm text-clay">
-        <p>@Text(Data.FooterText)</p>
-    </footer>
+    <SiteFooter/>
 </div>
 
 @code {
-    private static readonly (string BrandName, string HomeUrl, string FooterText, (string Label, string Url)[] Navigation) Data = (
-        "Unayka",
-        "/",
-        "Cafés e cosméticos num ambiente de salão moderno",
-        [
-            ("Serviços", "/services"),
-            ("Sobre", "/about"),
-            ("Localização", "/location"),
-            ("Contato", "/contact"),
-        ]
-    );
+    private static readonly string Announcement = "Entrega em Maputo e levantamento na loja. Pague com M-Pesa ou e-Mola.";
 }

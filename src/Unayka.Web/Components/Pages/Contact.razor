@@ -2,13 +2,39 @@
 
 <SeoComponent Title="@Data.Seo.Title" Description="@Data.Seo.Description"/>
 
-<h1 class="font-script text-5xl leading-tight">@Text(Data.Title)</h1>
-<p class="mt-6 text-lg">@Text(Data.Message)</p>
+<PageHero Title="@Data.Title" Eyebrow="@Data.Eyebrow" Subtitle="@Data.Subtitle" ImageUrl="@Data.HeroImage"/>
+
+<section class="container-page py-20">
+    <div class="grid gap-6 md:grid-cols-3">
+        @foreach (var channel in Data.Channels)
+        {
+            <div class="rounded-3xl bg-cream p-8 text-center">
+                <p class="font-script text-3xl text-clay">@Text(channel.Title)</p>
+                <p class="mt-3 text-espresso">@Text(channel.Value)</p>
+            </div>
+        }
+    </div>
+
+    <p class="mx-auto mt-12 max-w-xl text-center text-stone">@Text(Data.Note)</p>
+    <div class="mt-8 text-center">
+        <a href="@ToUrl(Data.LocationUrl)" class="btn-outline">@Text(Data.LocationLabel)</a>
+    </div>
+</section>
 
 @code {
-    private static readonly (string Title, string Message, (string Title, string Description) Seo) Data = (
+    private static readonly (string Title, string Eyebrow, string Subtitle, string HeroImage, string Note, string LocationLabel, string LocationUrl, (string Title, string Value)[] Channels, (string Title, string Description) Seo) Data = (
         "Contato",
-        "Os canais de contato da loja serão publicados aqui muito em breve.",
+        "Fale connosco",
+        "Teremos prazer em ouvir a sua mensagem.",
+        SiteImages.ContactUrl,
+        "Os canais de contato da loja serão publicados aqui muito em breve. Até lá, passe pelo balcão ou faça o seu pedido online.",
+        "Ver localização",
+        "/location",
+        [
+            ("Telemóvel", "Em breve"),
+            ("Email", "Em breve"),
+            ("Balcão", "Avenida 24 de Julho, Maputo"),
+        ],
         ("Contato | Unayka", "Fale com a Unayka.")
     );
 }

@@ -2,19 +2,54 @@
 
 <SeoComponent Title="@Data.Seo.Title" Description="@Data.Seo.Description"/>
 
-<h1 class="font-script text-5xl leading-tight">@Text(Data.Title)</h1>
+<PageHero Title="@Data.Title" Eyebrow="@Data.Eyebrow" Subtitle="@Data.Subtitle" ImageUrl="@Data.HeroImage"/>
 
-@foreach (var paragraph in Data.Paragraphs)
-{
-    <p class="mt-6 text-lg">@Text(paragraph)</p>
-}
+<section class="container-page grid items-center gap-12 py-20 lg:grid-cols-2">
+    <img src="@StoryImage" alt="@Data.StoryAlt" loading="lazy" class="aspect-[4/5] w-full rounded-3xl object-cover"/>
+    <div class="space-y-6">
+        <SectionHeading Eyebrow="@Data.StoryEyebrow" Title="@Data.StoryTitle"/>
+        @foreach (var paragraph in Data.Paragraphs)
+        {
+            <p class="text-lg leading-relaxed text-stone">@Text(paragraph)</p>
+        }
+    </div>
+</section>
+
+<section class="bg-cream py-20">
+    <div class="container-page">
+        <SectionHeading Title="@Data.ValuesTitle" Centered="true"/>
+        <div class="mt-12 grid gap-6 md:grid-cols-3">
+            @foreach (var value in Data.Values)
+            {
+                <div class="rounded-3xl bg-paper p-8">
+                    <h3 class="font-serif text-2xl">@Text(value.Title)</h3>
+                    <p class="mt-3 text-stone">@Text(value.Description)</p>
+                </div>
+            }
+        </div>
+    </div>
+</section>
 
 @code {
-    private static readonly (string Title, string[] Paragraphs, (string Title, string Description) Seo) Data = (
+    private static readonly string StoryImage = ToUrl(SiteImages.StoryUrl);
+
+    private static readonly (string Title, string Eyebrow, string Subtitle, string HeroImage, string StoryEyebrow, string StoryTitle, string StoryAlt, string[] Paragraphs, string ValuesTitle, (string Title, string Description)[] Values, (string Title, string Description) Seo) Data = (
         "Sobre a Unayka",
+        "A nossa história",
+        "Dois gestos de cuidado num só lugar.",
+        SiteImages.AboutUrl,
+        "Do grão ao balcão",
+        "Um café bem tirado, um produto bem escolhido",
+        "Café a ser torrado",
         [
             "A Unayka nasceu da vontade de juntar dois gestos de cuidado: uma boa chávena de café e um produto de beleza bem escolhido.",
-            "O espaço é pensado como um salão moderno, calmo e acolhedor, onde cada visita é sem pressa.",
+            "O espaço é pensado como um salão moderno, calmo e acolhedor, onde cada visita é sem pressa. Pode pedir no balcão ou online e pagar com a sua carteira móvel.",
+        ],
+        "O que nos guia",
+        [
+            ("Ingredientes claros", "Mostramos a tabela nutricional dos cafés e a composição dos cosméticos, sem letras pequenas."),
+            ("Calma", "Um ambiente tranquilo, com tempo para escolher e para conversar."),
+            ("Perto de si", "Peça online, levante na loja ou receba em casa em Maputo."),
         ],
         ("Sobre | Unayka", "Conheça a Unayka, uma loja de cafés e cosméticos com ambiente de salão moderno.")
     );

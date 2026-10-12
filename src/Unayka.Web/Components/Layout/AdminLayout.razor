@@ -1,0 +1,62 @@
+@inherits UnaykaLayoutBase
+
+<div class="min-h-screen bg-cream text-ink lg:flex">
+    <aside class="bg-espresso text-sand lg:min-h-screen lg:w-64 lg:shrink-0">
+        <div class="flex items-center justify-between px-5 py-4 lg:block lg:py-8">
+            <a href="@ToUrl(Data.HomeUrl)" class="font-script text-4xl text-paper">@Text(Data.BrandName)</a>
+            <p class="text-xs uppercase tracking-widest text-rose">@Text(Data.AreaLabel)</p>
+        </div>
+        <nav class="flex gap-1 overflow-x-auto px-3 pb-3 lg:flex-col lg:overflow-visible lg:pb-8">
+            @foreach (var item in Data.Navigation)
+            {
+                <NavLink href="@ToUrl(item.Url)" Match="@item.Match" class="whitespace-nowrap rounded-xl px-4 py-2 text-sm text-sand/80 transition hover:bg-white/10 hover:text-paper" ActiveClass="bg-white/10 text-paper">@Text(item.Label)</NavLink>
+            }
+        </nav>
+    </aside>
+
+    <div class="flex min-w-0 flex-1 flex-col">
+        <header class="flex items-center justify-between gap-4 border-b border-sand bg-paper px-4 py-3 sm:px-8">
+            <p class="text-sm text-stone">@Text(_userName)</p>
+            <form method="post" action="@Data.SignOutUrl">
+                <AntiforgeryToken/>
+                <button type="submit" class="btn-outline px-5 py-2">@Text(Data.SignOutLabel)</button>
+            </form>
+        </header>
+        <main class="flex-1 p-4 sm:p-8">
+            @Body
+        </main>
+    </div>
+</div>
+
+@code {
+    private static readonly (string BrandName, string AreaLabel, string HomeUrl, string SignOutLabel, string SignOutUrl, (string Label, string Url, NavLinkMatch Match)[] Navigation) Data = (
+        "Unayka",
+        "Administração",
+        "/",
+        "Sair",
+        StoreUrls.SignOut,
+        [
+            ("Painel", "/admin", NavLinkMatch.All),
+            ("Pedidos", "/admin/pedidos", NavLinkMatch.Prefix),
+            ("Produtos", "/admin/produtos", NavLinkMatch.Prefix),
+            ("Categorias", "/admin/categorias", NavLinkMatch.Prefix),
+            ("Cupões", "/admin/cupoes", NavLinkMatch.Prefix),
+            ("Clientes", "/admin/clientes", NavLinkMatch.Prefix),
+            ("Pagamentos", "/admin/pagamentos", NavLinkMatch.Prefix),
+            ("Balcão", "/balcao", NavLinkMatch.All),
+            ("Preparação", "/balcao/preparacao", NavLinkMatch.Prefix),
+            ("Auditoria", "/admin/auditoria", NavLinkMatch.Prefix),
+        ]
+    );
+
+    [CascadingParameter]
+    private Task<AuthenticationState>? AuthenticationState { get; set; }
+
+    private string _userName = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var state = AuthenticationState is null ? null : await AuthenticationState;
+        _userName = state?.User.Identity?.Name ?? string.Empty;
+    }
+}

@@ -1,0 +1,38 @@
+<div class="@_alignment">
+    @if (Eyebrow is not null)
+    {
+        <p class="font-script text-2xl text-clay">@Text(Eyebrow)</p>
+    }
+    <h2 class="font-serif text-3xl leading-tight text-espresso md:text-4xl">@Text(Title)</h2>
+    @if (Subtitle is not null)
+    {
+        <p class="mt-3 max-w-2xl text-stone @_subtitleAlignment">@Text(Subtitle)</p>
+    }
+</div>
+
+@code {
+    private const string LeftClass = "text-left";
+    private const string CenterClass = "text-center";
+    private const string CenterSubtitleClass = "mx-auto";
+
+    [Parameter, EditorRequired]
+    public string Title { get; set; } = string.Empty;
+
+    [Parameter]
+    public string? Eyebrow { get; set; }
+
+    [Parameter]
+    public string? Subtitle { get; set; }
+
+    [Parameter]
+    public bool Centered { get; set; }
+
+    private string _alignment = LeftClass;
+    private string _subtitleAlignment = string.Empty;
+
+    protected override void OnParametersSet()
+    {
+        _alignment = Centered ? CenterClass : LeftClass;
+        _subtitleAlignment = Centered ? CenterSubtitleClass : string.Empty;
+    }
+}

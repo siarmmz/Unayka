@@ -1,0 +1,40 @@
+<span class="@_cssClass">@Text(_label)</span>
+
+@code {
+    private const string BaseClass = "inline-flex items-center rounded-full px-3 py-1 text-xs font-medium";
+
+    private static readonly Dictionary<StatusTone, string> ToneClasses = new()
+    {
+        [StatusTone.Neutral] = "bg-cream text-stone",
+        [StatusTone.Info] = "bg-sage-soft text-sage",
+        [StatusTone.Success] = "bg-emerald-50 text-emerald-700",
+        [StatusTone.Warning] = "bg-amber-50 text-amber-700",
+        [StatusTone.Danger] = "bg-rose-soft text-red-700",
+    };
+
+    [Parameter]
+    public OrderStatus? Order { get; set; }
+
+    [Parameter]
+    public PaymentStatus? Payment { get; set; }
+
+    private string _label = string.Empty;
+    private string _cssClass = BaseClass;
+
+    protected override void OnParametersSet()
+    {
+        var (label, tone) = ResolveStatus();
+        _label = label;
+        _cssClass = $"{BaseClass} {ToneClasses[tone]}";
+    }
+
+    private (string Label, StatusTone Tone) ResolveStatus()
+    {
+        if (Order is not null)
+        {
+            return StatusLabels.For(Order.Value);
+        }
+
+        return Payment is not null ? StatusLabels.For(Payment.Value) : (string.Empty, StatusTone.Neutral);
+    }
+}

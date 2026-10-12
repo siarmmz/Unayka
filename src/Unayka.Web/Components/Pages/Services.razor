@@ -2,26 +2,38 @@
 
 <SeoComponent Title="@Data.Seo.Title" Description="@Data.Seo.Description"/>
 
-<h1 class="font-script text-5xl leading-tight">@Text(Data.Title)</h1>
+<PageHero Title="@Data.Title" Eyebrow="@Data.Eyebrow" Subtitle="@Data.Subtitle" ImageUrl="@Data.HeroImage"/>
 
-<div class="mt-10 grid gap-8">
-    @foreach (var service in Data.Services)
-    {
-        <section class="border-t border-sand pt-6">
-            <h2 class="text-2xl">@Text(service.Title)</h2>
-            <p class="mt-3">@Text(service.Description)</p>
-        </section>
-    }
-</div>
+<section class="container-page py-20">
+    <div class="grid gap-6 md:grid-cols-2">
+        @foreach (var service in Data.Services)
+        {
+            <div class="rounded-3xl border border-sand bg-paper p-8 transition hover:bg-cream">
+                <p class="font-script text-2xl text-clay">@Text(service.Eyebrow)</p>
+                <h2 class="mt-1 font-serif text-3xl">@Text(service.Title)</h2>
+                <p class="mt-3 text-stone">@Text(service.Description)</p>
+            </div>
+        }
+    </div>
+
+    <div class="mt-14 text-center">
+        <a href="@ToUrl(Data.ShopUrl)" class="btn-primary">@Text(Data.ShopLabel)</a>
+    </div>
+</section>
 
 @code {
-    private static readonly (string Title, (string Title, string Description)[] Services, (string Title, string Description) Seo) Data = (
+    private static readonly (string Title, string Eyebrow, string Subtitle, string HeroImage, string ShopLabel, string ShopUrl, (string Eyebrow, string Title, string Description)[] Services, (string Title, string Description) Seo) Data = (
         "Serviços",
+        "O que fazemos",
+        "Café, cosméticos e comodidade no mesmo lugar.",
+        SiteImages.ServicesUrl,
+        "Ver a loja",
+        StoreUrls.Shop,
         [
-            ("Cafés", "Preparamos cafés na hora, para tomar no salão ou levar consigo."),
-            ("Cosméticos", "Produtos selecionados para a pele e o cabelo, com informação clara de composição."),
-            ("Pedidos online", "Faça o pedido no telemóvel e levante na loja quando estiver pronto."),
-            ("Pagamento por carteira móvel", "Receba o pedido de pagamento no telemóvel e confirme em segundos."),
+            ("Para beber", "Cafés", "Preparamos cafés na hora, para tomar no salão ou levar consigo."),
+            ("Para cuidar", "Cosméticos", "Produtos selecionados para a pele e o cabelo, com informação clara de composição."),
+            ("Sem filas", "Pedidos online", "Faça o pedido no telemóvel e levante na loja quando estiver pronto."),
+            ("Sem dinheiro vivo", "Pagamento por carteira móvel", "Receba o pedido de pagamento no telemóvel e confirme em segundos."),
         ],
         ("Serviços | Unayka", "Cafés, cosméticos, pedidos online e pagamento por carteira móvel.")
     );

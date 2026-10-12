@@ -4,15 +4,54 @@
 
 @theme {
   --color-paper: #faf7f2;
+  --color-cream: #f3ede4;
   --color-ink: #2b2623;
+  --color-stone: #6f6560;
   --color-sand: #e6dccf;
   --color-clay: #8f6f5b;
-  --font-sans: "Helvetica Neue", "Segoe UI", Arial, sans-serif;
-  --font-script: "Segoe Script", "Brush Script MT", "Snell Roundhand", cursive;
+  --color-espresso: #3b2a22;
+  --color-sage: #7f8f7a;
+  --color-sage-soft: #e4e9df;
+  --color-rose: #c9a29a;
+  --color-rose-soft: #f3e6e2;
+  --font-sans: "Inter", "Helvetica Neue", "Segoe UI", Arial, sans-serif;
+  --font-serif: "Cormorant Garamond", "Georgia", "Times New Roman", serif;
+  --font-script: "Caveat", "Segoe Script", "Brush Script MT", cursive;
 }
 
 @layer base {
   html {
-    @apply bg-paper text-ink font-sans antialiased;
+    @apply bg-paper text-ink font-sans antialiased scroll-smooth;
   }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    @apply font-serif text-espresso;
+  }
+
+  ::selection {
+    @apply bg-rose-soft text-espresso;
+  }
+}
+
+@utility container-page {
+  @apply mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8;
+}
+
+@utility btn-primary {
+  @apply inline-flex items-center justify-center rounded-full bg-espresso px-7 py-3 text-sm font-medium tracking-wide text-paper transition hover:bg-clay focus:outline-none focus-visible:ring-2 focus-visible:ring-clay focus-visible:ring-offset-2;
+}
+
+@utility btn-outline {
+  @apply inline-flex items-center justify-center rounded-full border border-espresso px-7 py-3 text-sm font-medium tracking-wide text-espresso transition hover:bg-espresso hover:text-paper focus:outline-none focus-visible:ring-2 focus-visible:ring-clay focus-visible:ring-offset-2;
+}
+
+@utility field {
+  @apply block w-full rounded-xl border border-sand bg-white px-4 py-3 text-sm text-ink placeholder:text-stone/60 focus:border-clay focus:outline-none focus:ring-1 focus:ring-clay;
+}
+
+@utility field-label {
+  @apply mb-1.5 block text-xs font-medium uppercase tracking-widest text-stone;
 }

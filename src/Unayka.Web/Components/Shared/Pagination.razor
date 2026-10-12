@@ -1,0 +1,56 @@
+@if (_links.Count > 0)
+{
+    <nav class="flex flex-wrap items-center justify-center gap-2">
+        @foreach (var link in _links)
+        {
+            <a href="@link.Url" class="@link.CssClass">@Text(link.Label)</a>
+        }
+    </nav>
+}
+
+@code {
+    private const string PageParameter = "page";
+    private const int WindowSize = 2;
+    private const string BaseClass = "min-w-10 rounded-full px-4 py-2 text-center text-sm transition";
+    private const string IdleClass = BaseClass + " border border-sand text-espresso hover:bg-cream";
+    private const string CurrentClass = BaseClass + " bg-espresso text-paper";
+    private const string DisabledClass = BaseClass + " pointer-events-none border border-sand text-stone/40";
+    private const string PreviousLabel = "Anterior";
+    private const string NextLabel = "Seguinte";
+
+    private sealed record PageLink(string Label, string Url, string CssClass);
+
+    [Parameter, EditorRequired]
+    public int Page { get; set; }
+
+    [Parameter, EditorRequired]
+    public int PageCount { get; set; }
+
+    [Parameter, EditorRequired]
+    public string BaseUrl { get; set; } = string.Empty;
+
+    private List<PageLink> _links = [];
+
+    protected override void OnParametersSet()
+    {
+        _links = [];
+        if (PageCount <= 1)
+        {
+            return;
+        }
+
+        _links.Add(new PageLink(PreviousLabel, UrlFor(Page - 1), Page > 1 ? IdleClass : DisabledClass));
+        for (var number = Math.Max(1, Page - WindowSize); number <= Math.Min(PageCount, Page + WindowSize); number++)
+        {
+            _links.Add(new PageLink(number.ToString(System.Globalization.CultureInfo.InvariantCulture), UrlFor(number), number == Page ? CurrentClass : IdleClass));
+        }
+
+        _links.Add(new PageLink(NextLabel, UrlFor(Page + 1), Page < PageCount ? IdleClass : DisabledClass));
+    }
+
+    private string UrlFor(int number)
+    {
+        var separator = BaseUrl.Contains('?', StringComparison.Ordinal) ? '&' : '?';
+        return ToUrl($"{BaseUrl}{separator}{PageParameter}={Math.Clamp(number, 1, PageCount)}");
+    }
+}

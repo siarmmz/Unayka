@@ -1,0 +1,64 @@
+<footer class="mt-24 bg-espresso text-sand">
+    <div class="container-page grid gap-12 py-16 md:grid-cols-2 lg:grid-cols-6">
+        <div class="lg:col-span-2">
+            <p class="font-script text-5xl text-paper">@Text(Data.BrandName)</p>
+            <p class="mt-4 max-w-xs text-sm leading-relaxed text-sand/80">@Text(Data.Tagline)</p>
+            <p class="mt-6 text-sm text-rose">@Text(Data.WalletNote)</p>
+        </div>
+
+        @foreach (var column in Data.Columns)
+        {
+            <div>
+                <p class="mb-4 text-xs font-medium uppercase tracking-widest text-rose">@Text(column.Title)</p>
+                <ul class="space-y-3 text-sm">
+                    @foreach (var link in column.Links)
+                    {
+                        <li><a href="@ToUrl(link.Url)" class="text-sand/80 transition hover:text-paper">@Text(link.Label)</a></li>
+                    }
+                </ul>
+            </div>
+        }
+
+        <div>
+            <p class="mb-4 text-xs font-medium uppercase tracking-widest text-rose">@Text(Data.ContactTitle)</p>
+            <ul class="space-y-3 text-sm text-sand/80">
+                @foreach (var line in Data.ContactLines)
+                {
+                    <li>@Text(line)</li>
+                }
+            </ul>
+        </div>
+    </div>
+
+    <div class="border-t border-white/10">
+        <div class="container-page py-6 text-xs text-sand/60">@Text(_copyright)</div>
+    </div>
+</footer>
+
+@code {
+    private static readonly (string BrandName, string Tagline, string WalletNote, string ContactTitle, string[] ContactLines, (string Title, (string Label, string Url)[] Links)[] Columns) Data = (
+        "Unayka",
+        "Cafés e cosméticos num ambiente de salão moderno, no balcão e online.",
+        "Pagamento por carteira móvel: M-Pesa e e-Mola.",
+        "Contacto",
+        [
+            "Avenida 24 de Julho, Maputo",
+            "Endereço completo em breve",
+            "Segunda a sexta, 7h30 às 19h",
+            "Sábado, 8h às 17h",
+            "Domingo, 9h às 14h",
+        ],
+        [
+            ("Loja", [("Todos os produtos", StoreUrls.Shop), ("Cafés", StoreUrls.Coffee), ("Cosméticos", StoreUrls.Cosmetics)]),
+            ("Unayka", [("Sobre nós", "/about"), ("Serviços", "/services"), ("Localização", "/location")]),
+            ("Ajuda", [("Contato", "/contact"), ("A minha conta", StoreUrls.Account), ("Carrinho", StoreUrls.Cart)]),
+        ]
+    );
+
+    private string _copyright = string.Empty;
+
+    protected override void OnInitialized()
+    {
+        _copyright = $"© {DateTime.UtcNow.Year} Unayka. Todos os direitos reservados.";
+    }
+}

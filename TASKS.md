@@ -9,7 +9,9 @@ Rule: Opus analyzes and details each item before any execution. Suggested model 
 Goal: a complete, lively e-commerce running locally on port 5000 with real data flow (SQLite, seeded catalog with images, accounts, cart, checkout, mock payment, administration and counter). External providers (PaySuite, SMS, Google) are mocked behind interfaces until their open decisions are resolved.
 
 Wave 1 (one worktree, branch sprint-l/foundation, Sonnet):
-- [ ] L1 Foundation: EF Core (SQLite/Npgsql), entities for catalog, users, OTP, carts, coupons, orders, payments, audit; seed with categories and about 24 products with real photos; cookie auth with phone code (dev sender) and staff email/password; roles; layout with Google Fonts, header (logo, nav, search, account, cart count), rich footer; feature service registration in Program.cs; extension points for waves 2 features.
+- [x] L1 Foundation: EF Core (SQLite/Npgsql), entities for catalog, users, OTP, carts, coupons, orders, payments, audit; seed with categories and about 24 products with real photos; cookie auth with phone code (dev sender) and staff email/password; roles; layout with Google Fonts, header (logo, nav, search, account, cart count), rich footer; feature service registration in Program.cs; extension points for waves 2 features.
+
+Note for L1: the database is created with EnsureCreated at startup (no migrations yet); migrations are a later task before production. The CSP allows 'unsafe-inline' scripts because the Blazor import map is inline; replace with a nonce later.
 
 Wave 2 (four worktrees in parallel, Sonnet, split by feature folder):
 - [ ] L2 Store front: home (hero, featured, categories, best sellers, story), catalog with filters and search, category, product narrative page (branch sprint-l/storefront)

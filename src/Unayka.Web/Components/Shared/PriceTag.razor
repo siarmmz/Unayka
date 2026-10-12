@@ -1,0 +1,46 @@
+<div class="@_wrapperClass">
+    <span class="@_priceClass">@Text(_price)</span>
+    @if (_hasDiscount)
+    {
+        <span class="text-sm text-stone line-through">@Text(_comparePrice)</span>
+        <span class="rounded-full bg-rose-soft px-2 py-0.5 text-xs font-medium text-clay">@Text(_discountLabel)</span>
+    }
+</div>
+
+@code {
+    private const string NormalPriceClass = "font-serif text-xl font-semibold text-espresso";
+    private const string LargePriceClass = "font-serif text-4xl font-semibold text-espresso";
+    private const string WrapperClass = "flex flex-wrap items-baseline gap-x-3 gap-y-1";
+    private const int PercentBase = 100;
+
+    [Parameter, EditorRequired]
+    public long PriceMinor { get; set; }
+
+    [Parameter]
+    public long? CompareAtPriceMinor { get; set; }
+
+    [Parameter]
+    public bool Large { get; set; }
+
+    private string _wrapperClass = WrapperClass;
+    private string _priceClass = NormalPriceClass;
+    private string _price = string.Empty;
+    private string _comparePrice = string.Empty;
+    private string _discountLabel = string.Empty;
+    private bool _hasDiscount;
+
+    protected override void OnParametersSet()
+    {
+        _priceClass = Large ? LargePriceClass : NormalPriceClass;
+        _price = FormatMoney(PriceMinor);
+        _hasDiscount = CompareAtPriceMinor is > 0 && CompareAtPriceMinor > PriceMinor;
+        if (!_hasDiscount)
+        {
+            return;
+        }
+
+        var compare = CompareAtPriceMinor!.Value;
+        _comparePrice = FormatMoney(compare);
+        _discountLabel = $"-{(compare - PriceMinor) * PercentBase / compare}%";
+    }
+}

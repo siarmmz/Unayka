@@ -1,0 +1,132 @@
+@inject ICartSummary CartSummary
+
+<header class="sticky top-0 z-40 border-b border-sand bg-paper/90 backdrop-blur">
+    <div class="container-page flex h-16 items-center gap-3 lg:h-20 lg:gap-8">
+        <details class="relative lg:hidden">
+            <summary class="flex h-10 w-10 cursor-pointer list-none items-center justify-center rounded-full hover:bg-cream" aria-label="@Data.MenuLabel">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4 7h16M4 12h16M4 17h16"/></svg>
+            </summary>
+            <div class="absolute left-0 top-12 w-72 rounded-2xl border border-sand bg-paper p-5 shadow-xl">
+                <form method="get" action="@Data.SearchUrl">
+                    <input type="search" name="q" placeholder="@Data.SearchPlaceholder" aria-label="@Data.SearchPlaceholder" class="field"/>
+                </form>
+                <nav class="mt-5 flex flex-col gap-3 text-sm">
+                    @foreach (var item in Data.Navigation)
+                    {
+                        <a href="@ToUrl(item.Url)" class="text-espresso hover:text-clay">@Text(item.Label)</a>
+                    }
+                </nav>
+            </div>
+        </details>
+
+        <a href="@ToUrl(Data.HomeUrl)" class="font-script text-4xl leading-none text-espresso">@Text(Data.BrandName)</a>
+
+        <nav class="hidden items-center gap-7 text-sm lg:ml-6 lg:flex">
+            @foreach (var item in Data.Navigation)
+            {
+                <a href="@ToUrl(item.Url)" class="text-espresso transition hover:text-clay">@Text(item.Label)</a>
+            }
+        </nav>
+
+        <div class="flex-1"></div>
+
+        <form method="get" action="@Data.SearchUrl" class="hidden md:block">
+            <input type="search" name="q" placeholder="@Data.SearchPlaceholder" aria-label="@Data.SearchPlaceholder" class="field w-56 rounded-full py-2"/>
+        </form>
+
+        @if (_isSignedIn)
+        {
+            <details class="relative">
+                <summary class="flex h-10 cursor-pointer list-none items-center gap-2 rounded-full px-3 text-sm text-espresso hover:bg-cream">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6.75a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.5 19.5a7.5 7.5 0 0115 0"/></svg>
+                    <span class="hidden sm:inline">@Text(_firstName)</span>
+                </summary>
+                <div class="absolute right-0 top-12 w-52 rounded-2xl border border-sand bg-paper p-3 text-sm shadow-xl">
+                    <a href="@ToUrl(Data.AccountUrl)" class="block rounded-xl px-3 py-2 text-espresso hover:bg-cream">@Text(Data.AccountLabel)</a>
+                    @if (_isStaff)
+                    {
+                        <a href="@ToUrl(Data.AdminUrl)" class="block rounded-xl px-3 py-2 text-espresso hover:bg-cream">@Text(Data.AdminLabel)</a>
+                    }
+                    <form method="post" action="@Data.SignOutUrl">
+                        <AntiforgeryToken/>
+                        <button type="submit" class="block w-full rounded-xl px-3 py-2 text-left text-espresso hover:bg-cream">@Text(Data.SignOutLabel)</button>
+                    </form>
+                </div>
+            </details>
+        }
+        @if (!_isSignedIn)
+        {
+            <a href="@ToUrl(Data.SignInUrl)" class="flex h-10 items-center gap-2 rounded-full px-3 text-sm text-espresso hover:bg-cream">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6.75a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.5 19.5a7.5 7.5 0 0115 0"/></svg>
+                <span>@Text(Data.SignInLabel)</span>
+            </a>
+        }
+
+        <a href="@ToUrl(Data.CartUrl)" class="relative flex h-10 w-10 items-center justify-center rounded-full text-espresso hover:bg-cream" aria-label="@Data.CartLabel">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 8h12l-1 11H7L6 8zM9 8a3 3 0 016 0"/></svg>
+            @if (_cartCount > 0)
+            {
+                <span class="absolute -right-0.5 -top-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-clay px-1 text-[11px] font-medium text-paper">@Text(_cartCountText)</span>
+            }
+        </a>
+    </div>
+</header>
+
+@code {
+    private const int MaxBadgeCount = 99;
+
+    private static readonly (string BrandName, string HomeUrl, string SearchUrl, string SearchPlaceholder, string MenuLabel, string SignInLabel, string SignInUrl, string AccountLabel, string AccountUrl, string AdminLabel, string AdminUrl, string SignOutLabel, string SignOutUrl, string CartLabel, string CartUrl, (string Label, string Url)[] Navigation) Data = (
+        "Unayka",
+        "/",
+        StoreUrls.Shop,
+        "Pesquisar na loja",
+        "Abrir o menu",
+        "Entrar",
+        StoreUrls.SignIn,
+        "A minha conta",
+        StoreUrls.Account,
+        "Administração",
+        StoreUrls.Admin,
+        "Sair",
+        StoreUrls.SignOut,
+        "Carrinho",
+        StoreUrls.Cart,
+        [
+            ("Loja", StoreUrls.Shop),
+            ("Cafés", StoreUrls.Coffee),
+            ("Cosméticos", StoreUrls.Cosmetics),
+            ("Serviços", "/services"),
+            ("Sobre", "/about"),
+            ("Contato", "/contact"),
+        ]
+    );
+
+    [CascadingParameter]
+    private Task<AuthenticationState>? AuthenticationState { get; set; }
+
+    [CascadingParameter]
+    private HttpContext? HttpContext { get; set; }
+
+    private bool _isSignedIn;
+    private bool _isStaff;
+    private string _firstName = string.Empty;
+    private int _cartCount;
+    private string _cartCountText = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var state = AuthenticationState is null ? null : await AuthenticationState;
+        var user = state?.User;
+        _isSignedIn = user?.Identity?.IsAuthenticated == true;
+        if (_isSignedIn)
+        {
+            _firstName = (user!.Identity!.Name ?? string.Empty).Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? string.Empty;
+            _isStaff = user.IsInRole(nameof(UserRole.Cashier)) || user.IsInRole(nameof(UserRole.Manager)) || user.IsInRole(nameof(UserRole.Administrator));
+        }
+
+        var cookie = HttpContext?.Request.Cookies[CartCookie.Name];
+        Guid? cartId = Guid.TryParse(cookie, out var parsed) ? parsed : null;
+        _cartCount = await CartSummary.CountItemsAsync(cartId);
+        _cartCountText = _cartCount > MaxBadgeCount ? $"{MaxBadgeCount}+" : _cartCount.ToString(System.Globalization.CultureInfo.InvariantCulture);
+    }
+}

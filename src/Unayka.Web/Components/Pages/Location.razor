@@ -2,13 +2,46 @@
 
 <SeoComponent Title="@Data.Seo.Title" Description="@Data.Seo.Description"/>
 
-<h1 class="font-script text-5xl leading-tight">@Text(Data.Title)</h1>
-<p class="mt-6 text-lg">@Text(Data.Message)</p>
+<PageHero Title="@Data.Title" Eyebrow="@Data.Eyebrow" Subtitle="@Data.Subtitle" ImageUrl="@Data.HeroImage"/>
+
+<section class="container-page grid gap-8 py-20 md:grid-cols-2">
+    <div class="rounded-3xl bg-cream p-10">
+        <p class="font-script text-3xl text-clay">@Text(Data.AddressTitle)</p>
+        @foreach (var line in Data.AddressLines)
+        {
+            <p class="mt-2 text-lg text-espresso">@Text(line)</p>
+        }
+        <p class="mt-6 text-sm text-stone">@Text(Data.AddressNote)</p>
+    </div>
+    <div class="rounded-3xl border border-sand p-10">
+        <p class="font-script text-3xl text-clay">@Text(Data.HoursTitle)</p>
+        <dl class="mt-4 divide-y divide-sand">
+            @foreach (var hour in Data.Hours)
+            {
+                <div class="flex justify-between py-3">
+                    <dt class="text-stone">@Text(hour.Days)</dt>
+                    <dd class="text-espresso">@Text(hour.Time)</dd>
+                </div>
+            }
+        </dl>
+    </div>
+</section>
 
 @code {
-    private static readonly (string Title, string Message, (string Title, string Description) Seo) Data = (
+    private static readonly (string Title, string Eyebrow, string Subtitle, string HeroImage, string AddressTitle, string[] AddressLines, string AddressNote, string HoursTitle, (string Days, string Time)[] Hours, (string Title, string Description) Seo) Data = (
         "Localização",
-        "O endereço e o horário da loja serão publicados aqui muito em breve.",
+        "Visite-nos",
+        "Um espaço calmo no coração de Maputo.",
+        SiteImages.LocationUrl,
+        "Onde estamos",
+        ["Avenida 24 de Julho", "Maputo, Moçambique"],
+        "O endereço completo será confirmado muito em breve.",
+        "Horário",
+        [
+            ("Segunda a sexta", "7h30 às 19h"),
+            ("Sábado", "8h às 17h"),
+            ("Domingo", "9h às 14h"),
+        ],
         ("Localização | Unayka", "Onde encontrar a Unayka e o horário de funcionamento.")
     );
 }
