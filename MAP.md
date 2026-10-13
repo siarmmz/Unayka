@@ -86,13 +86,13 @@ Numbered list, one line per file as "N. path - what it does", sorted by path; th
 82. src/Unayka.Web/Components/Pages/NotFound.razor - not found page
 83. src/Unayka.Web/Components/Pages/Store/CatalogPage.razor - /loja/todos, /loja/categoria/{slug} and /loja/{section}: hero, filters (section, category, tags), search, sort, product grid and pagination
 84. src/Unayka.Web/Components/Pages/Store/ProductPage.razor - /produto/{slug} gallery, price, order forms, share links, story and ingredient images, facts, related products and photo credits
-85. src/Unayka.Web/Components/Pages/Store/Shop.razor - /loja with search, category chips, contained featured marquee, category shortcuts and new arrivals grid
+85. src/Unayka.Web/Components/Pages/Store/Shop.razor - /loja with search, section chips, featured and new arrivals rails, two looping rails per section with Ver mais, and category shortcuts
 86. src/Unayka.Web/Components/Routes.razor - router with default layout and not found page
 87. src/Unayka.Web/Components/Shared/AccessDenied.razor - redirects anonymous users to sign in, shows a message to others
 88. src/Unayka.Web/Components/Shared/AdminPager.razor - previous and next buttons for interactive staff lists
 89. src/Unayka.Web/Components/Shared/SeoComponent.razor - head title, description, canonical, Open Graph and structured data
 90. src/Unayka.Web/Components/Shared/StatusActions.razor - activate, deactivate, archive or delete (with confirm) actions for catalog rows
-91. src/Unayka.Web/Components/Store/ProductRail.razor - endless looping product row with arrows when it has more than two items, static row otherwise
+91. src/Unayka.Web/Components/Store/ProductRail.razor - product row that loops with arrows when it has at least as many items as fit the width, static otherwise
 92. src/Unayka.Web/Components/Store/StoreProductCard.razor - product card with cross fading images, badges, price, add to cart and share menu
 93. src/Unayka.Web/Endpoints/AccountEndpoints.cs - setup gate and POST /configurar, external sign in, staff sign in and sign out
 94. src/Unayka.Web/Endpoints/Security.cs - cookie auth, policies, antiforgery, data protection, rate limit policies, external providers, security headers and CSP
@@ -100,7 +100,7 @@ Numbered list, one line per file as "N. path - what it does", sorted by path; th
 96. src/Unayka.Web/Program.cs - app startup, loads .env first, validates configuration, feature service lines (AddUnayka*), database migrate (SQLite) or create (Postgres) and seed, security pipeline, feature endpoint lines (Map*Endpoints), Razor components
 97. src/Unayka.Web/Unayka.Web.csproj - Web project (Blazor only)
 98. src/Unayka.Web/wwwroot/images/pay/ - M-Pesa, e-Mola and mKesh logos referenced by payment options in the database
-99. src/Unayka.Web/wwwroot/scripts/carousel.js - hero swipe, arrows and autoplay, endless unayka-rail, unayka-fade one at a time crossfade, unayka-collapse and unayka-share elements
+99. src/Unayka.Web/wwwroot/scripts/carousel.js - hero swipe, arrows and autoplay, endless unayka-rail (static when every item fits), unayka-fade one at a time crossfade, unayka-collapse and unayka-share elements
 100. src/Unayka.Web/wwwroot/styles/globals.css - Tailwind entry with semantic color tokens, fonts, base layer and button utilities with explicit hover, active and disabled states
 101. TASKS.md - open work only (In progress, Next, On hold)
 

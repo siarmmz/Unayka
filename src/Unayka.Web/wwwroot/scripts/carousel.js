@@ -11,6 +11,8 @@ const copiedResetMs = 2000;
 const desktopQuery = "(min-width: 768px)";
 const activeAttribute = "data-active";
 const draggingAttribute = "data-dragging";
+const cloneAttribute = "data-rail-clone";
+const staticAttribute = "data-static";
 
 const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
 
@@ -99,11 +101,32 @@ class UnaykaCarousel extends HTMLElement {
 
 class UnaykaRail extends HTMLElement {
     connectedCallback() {
+        setTimeout(() => this.initialize(), 0);
+    }
+
+    initialize() {
         this.track = this.querySelector("[data-rail-track]");
-        this.originals = [...this.track.children];
+        if (!this.track || !this.isConnected) {
+            return;
+        }
+        this.disconnectedCallback();
+        this.originals =[...this.track.children].filter(item => !item.hasAttribute(cloneAttribute));
         this.hovered = false;
         this.pausedUntil = 0;
+        this.listen();
         this.buildLoop();
+        this.resizeObserver = new ResizeObserver(() => this.buildLoop());
+        this.resizeObserver.observe(this.track);
+        if (!reducedMotion.matches) {
+            this.timer = setInterval(() => this.advance(), railIntervalMs);
+        }
+    }
+
+    listen() {
+        if (this.listening) {
+            return;
+        }
+        this.listening = true;
         this.addEventListener("pointerenter", () => (this.hovered = true));
         this.addEventListener("pointerleave", () => (this.hovered = false));
         this.track.addEventListener("pointerdown", event => this.beginDrag(event));
@@ -114,11 +137,6 @@ class UnaykaRail extends HTMLElement {
         this.addEventListener("focusin", () => this.pause());
         this.querySelector("[data-rail-previous]")?.addEventListener("click", () => this.move(-1, true));
         this.querySelector("[data-rail-next]")?.addEventListener("click", () => this.move(1, true));
-        this.resizeObserver = new ResizeObserver(() => this.buildLoop());
-        this.resizeObserver.observe(this.track);
-        if (!reducedMotion.matches) {
-            this.timer = setInterval(() => this.advance(), railIntervalMs);
-        }
     }
 
     disconnectedCallback() {
@@ -127,17 +145,27 @@ class UnaykaRail extends HTMLElement {
         this.resizeObserver?.disconnect();
     }
 
+    fitsAll() {
+        const step = this.step();
+        const visibleCount = step > 0 ? Math.max(1, Math.floor((this.track.clientWidth + this.gap()) / step)) : 0;
+        return this.originals.length < visibleCount;
+    }
+
     buildLoop() {
-        this.track.querySelectorAll("[data-rail-clone]").forEach(clone => clone.remove());
+        this.track.querySelectorAll(`[${cloneAttribute}]`).forEach(clone => clone.remove());
+        this.setWidth = 0;
         const gap = this.gap();
         const setWidth = this.originals.reduce((total, item) => total + item.getBoundingClientRect().width + gap, 0);
-        if (setWidth < 1) {
+        const isStatic = setWidth < 1 || this.fitsAll();
+        this.toggleAttribute(staticAttribute, isStatic);
+        if (isStatic) {
+            this.track.scrollLeft = 0;
             return;
         }
         const sidesNeeded = Math.ceil(this.track.clientWidth / setWidth) + railBufferSets;
         const cloneSet = () => this.originals.map(item => {
             const clone = item.cloneNode(true);
-            clone.setAttribute("data-rail-clone", "");
+            clone.setAttribute(cloneAttribute, "");
             clone.setAttribute("aria-hidden", "true");
             clone.querySelectorAll("a, button").forEach(element => element.setAttribute("tabindex", "-1"));
             return clone;
@@ -164,7 +192,7 @@ class UnaykaRail extends HTMLElement {
     }
 
     advance() {
-        if (this.hovered || Date.now() < this.pausedUntil || document.hidden) {
+        if (!this.setWidth || this.hovered || Date.now() < this.pausedUntil || document.hidden) {
             return;
         }
         this.move(1, false);

@@ -8,16 +8,9 @@ Only work still to do. A finished item is removed (Git history keeps it). Opus a
 
 ## Next
 
-### L. Looping product rails on home and loja (reported 2026-10-13)
+### L. Looping product rails (reported 2026-10-13)
 
-Reference: the loja highlight rail already loops correctly; reuse its behavior instead of writing a second one.
-
-- [ ] L1 (O) Analyze the working loja highlight rail and the broken home highlight rail; decide between a quick fix or one shared rail component (for example ProductRail) that renders a list of products and loops. Prefer the shared component if the fix is not trivial.
-- [ ] L2 (S) Fix the home highlight rail: the slide container does not loop.
-- [ ] L3 (S) Every home section (teas, cosmetics and the others) loops like the highlight, not only the highlight.
-- [ ] L4 (S) Loja follows the same logic as home: each section shows two product rows, both looping, followed by a "Ver mais" button. Sections above (for example Novidades, Novo) keep a single row, shown only when they have products, and loop as well.
-- [ ] L5 (S) Loop rule: a row loops only when it has at least as many products as fit in the visible width at the current breakpoint (if 4 fit, it needs at least 4); otherwise it stays static. Each section loads a configurable maximum (for example 10) and splits it across rows as evenly as possible, first row larger (10 gives 5 and 5, 9 gives 5 and 4).
-- [ ] L6 (H) Check home and loja at 375, 768 and 1280 widths: loops, static rows below the threshold, "Ver mais" links.
+- [ ] L6 (H) Check home and loja at 375, 768 and 1280 widths: loops, static rows below the threshold, Ver mais links (Chrome extension disconnected during the first check).
 
 ### R. Data only from the database, leaner Web, real products (approved, executing)
 
