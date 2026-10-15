@@ -50,18 +50,15 @@
 {
     <section class="@row.SectionClass">
         <div class="container-page py-16 md:py-20">
-            <div class="flex items-end justify-between gap-6">
-                <div>
-                    <p class="font-script text-2xl text-accent">@Text(row.Eyebrow)</p>
-                    <h2 class="font-serif text-3xl leading-tight text-accent-strong md:text-4xl">@Text(row.Title)</h2>
-                    <p class="mt-3 max-w-2xl text-muted">@Text(row.Subtitle)</p>
-                </div>
-                <a href="@row.Url" class="hidden shrink-0 text-base text-accent-strong underline-offset-4 hover:text-accent hover:underline md:inline">@Text(MoreLabel)</a>
+            <div>
+                <p class="font-script text-2xl text-accent">@Text(row.Eyebrow)</p>
+                <h2 class="font-serif text-3xl leading-tight text-accent-strong md:text-4xl">@Text(row.Title)</h2>
+                <p class="mt-3 max-w-2xl text-muted">@Text(row.Subtitle)</p>
             </div>
             <div class="mt-10">
                 <ProductRail Items="row.Items"/>
             </div>
-            <div class="mt-8 text-center md:hidden">
+            <div class="mt-8 text-center">
                 <a href="@row.Url" class="btn-outline">@Text(MoreLabel)</a>
             </div>
         </div>
