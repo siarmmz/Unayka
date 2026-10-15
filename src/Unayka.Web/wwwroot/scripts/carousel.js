@@ -369,7 +369,8 @@ define("unayka-collapse", UnaykaCollapse);
 define("unayka-share", UnaykaShare);
 
 document.addEventListener("dragstart", event => {
-    if (event.target instanceof HTMLImageElement) {
+    const target = event.target instanceof Element ? event.target : null;
+    if (target?.closest("img, a, picture")) {
         event.preventDefault();
     }
 });
