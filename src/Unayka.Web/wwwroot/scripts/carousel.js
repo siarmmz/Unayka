@@ -374,3 +374,31 @@ document.addEventListener("dragstart", event => {
         event.preventDefault();
     }
 });
+
+document.addEventListener("click", event => {
+    const link = event.target instanceof Element ? event.target.closest("a[href]") : null;
+    if (!link || event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || (link.target && link.target !== "_self")) {
+        return;
+    }
+
+    const url = new URL(link.href, location.href);
+    if (url.origin !== location.origin || url.pathname !== location.pathname || url.search !== location.search) {
+        return;
+    }
+
+    const anchor = url.hash ? document.getElementById(decodeURIComponent(url.hash.slice(1))) : null;
+    if (url.hash && !anchor) {
+        return;
+    }
+
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    const behavior = matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth";
+    if (anchor) {
+        anchor.scrollIntoView({ behavior, block: "start" });
+        history.pushState(history.state, "", url.hash);
+        return;
+    }
+
+    window.scrollTo({ top: 0, behavior });
+}, true);
