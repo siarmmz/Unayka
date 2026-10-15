@@ -31,10 +31,10 @@
             </div>
         }
         <div aria-hidden="true" class="pointer-events-none absolute bottom-24 right-6 z-20 flex opacity-0 transition-opacity duration-500 animate-swipe-hint group-hover/swipe:animate-none group-hover/swipe:opacity-100 motion-reduce:hidden md:right-10">
-            <span class="flex h-14 w-14 items-center justify-center rounded-full bg-surface/90 text-2xl text-accent-strong shadow-lg"><i class="bi bi-arrow-left-right animate-swipe-nudge"></i></span>
+            <span class="flex h-14 w-14 items-center justify-center rounded-full bg-surface/90 text-2xl text-accent-strong shadow-lg"><i class="bi bi-hand-index-thumb animate-swipe-nudge md:hidden"></i><i class="bi bi-mouse hidden animate-swipe-nudge md:inline"></i></span>
         </div>
-        <button type="button" data-hero-previous aria-label="@PreviousLabel" class="@HeroArrowClass left-4"><i class="bi bi-chevron-left"></i></button>
-        <button type="button" data-hero-next aria-label="@NextLabel" class="@HeroArrowClass right-4"><i class="bi bi-chevron-right"></i></button>
+        <button type="button" data-hero-previous aria-label="@PreviousLabel" class="@HeroArrowClass left-4"><i class="bi bi-hand-index-thumb -rotate-90"></i></button>
+        <button type="button" data-hero-next aria-label="@NextLabel" class="@HeroArrowClass right-4"><i class="bi bi-hand-index-thumb rotate-90"></i></button>
         <div class="absolute bottom-6 left-1/2 z-20 flex -translate-x-1/2 gap-1 rounded-full bg-surface/85 px-2 shadow-sm">
             @foreach (var slide in _slides)
             {

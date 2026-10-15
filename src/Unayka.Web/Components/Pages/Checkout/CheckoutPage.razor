@@ -109,11 +109,11 @@
                         {
                             <label class="flex min-h-16 cursor-pointer items-center gap-4 rounded-2xl border border-border bg-surface p-4 transition hover:border-accent has-[:checked]:border-accent-strong has-[:checked]:bg-surface-alt">
                                 <input type="radio" name="method" id="@option.Id" value="@option.Value" checked="@option.IsSelected" class="h-5 w-5 accent-accent-strong"/>
-                                @if (option.LogoUrl is not null)
+                                @foreach (var logoUrl in option.LogoUrls)
                                 {
-                                    <img src="@option.LogoUrl" alt="@option.Title" width="40" height="40" class="h-10 w-10 shrink-0 rounded-lg border border-border bg-surface object-contain p-0.5"/>
+                                    <img src="@logoUrl" alt="@option.Title" width="40" height="40" class="h-10 w-10 shrink-0 rounded-lg border border-border bg-surface object-contain p-0.5"/>
                                 }
-                                @if (option.LogoUrl is null)
+                                @if (option.LogoUrls.Count == 0)
                                 {
                                     <i class="bi @option.Icon flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-border bg-surface text-xl text-accent-strong"></i>
                                 }
@@ -179,7 +179,7 @@
         string PlaceOrderButton, string PaymentNote, string BackToCart, string QuantityTemplate, string StockTemplate,
         string SignInNeeded, string SignInLabel, string DigitalLine, string PickupLineTemplate, string ItemTemplate);
 
-    private sealed record ChoiceOption(string Id, string Value, string Title, bool IsSelected, string? LogoUrl, string Icon);
+    private sealed record ChoiceOption(string Id, string Value, string Title, bool IsSelected, List<string> LogoUrls, string Icon);
 
     private sealed record SummaryLine(string Name, string Quantity, string Total, string ImageUrl, string Where);
 
@@ -314,7 +314,7 @@
         var options = await Payments.OnlineOptionsAsync();
         var selected = options.FirstOrDefault(option => option.Method.ToString() == MethodValue) ?? options.FirstOrDefault();
         _methodOptions = options
-            .Select(option => new ChoiceOption($"method-{option.Method.ToString().ToLowerInvariant()}", option.Method.ToString(), option.Label, option == selected, string.IsNullOrEmpty(option.LogoUrl) ? null : ToUrl(option.LogoUrl), option.Icon))
+            .Select(option => new ChoiceOption($"method-{option.Method.ToString().ToLowerInvariant()}", option.Method.ToString(), option.Label, option == selected, option.LogoUrls.Select(ToUrl).ToList(), option.Icon))
             .ToList();
     }
 

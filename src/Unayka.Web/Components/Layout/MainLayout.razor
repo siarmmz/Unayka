@@ -100,12 +100,12 @@
                 <ul class="mt-3 flex flex-wrap gap-2">
                     @foreach (var option in _paymentOptions)
                     {
-                        <li title="@option.Label">
-                            @if (option.LogoUrl is not null)
+                        <li title="@option.Label" class="flex gap-2">
+                            @foreach (var logoUrl in option.LogoUrls)
                             {
-                                <img src="@option.LogoUrl" alt="@option.Label" width="40" height="40" loading="lazy" class="h-10 w-10 rounded-lg border border-border bg-surface object-contain p-0.5"/>
+                                <img src="@logoUrl" alt="@option.Label" width="40" height="40" loading="lazy" class="h-10 w-10 rounded-lg border border-border bg-surface object-contain p-0.5"/>
                             }
-                            @if (option.LogoUrl is null)
+                            @if (option.LogoUrls.Count == 0)
                             {
                                 <span class="flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-surface text-xl text-accent-strong"><i class="bi @option.Icon"></i></span>
                             }
@@ -226,7 +226,7 @@
     private int _cartCount;
     private string _cartCountText = string.Empty;
     private string _cartAriaLabel = CartLabel;
-    private List<(string Label, string? LogoUrl, string Icon)> _paymentOptions = [];
+    private List<(string Label, List<string> LogoUrls, string Icon)> _paymentOptions = [];
     private List<(string Label, string Url, string Icon)> _social = [];
     private List<(string Title, List<(string Label, string Url)> Links)> _columns = [];
     private IReadOnlyList<LocationSummary> _locations = [];
@@ -242,7 +242,7 @@
         _copyright = $"© {DateTime.UtcNow.Year} {_brand.Title}{CopyrightSuffix}";
         _social = shared.Many(SitePlacements.Social).Select(link => (link.Title, ToUrl(link.ActionUrl), link.Icon)).ToList();
         _paymentOptions = (await Payments.OnlineOptionsAsync())
-            .Select(option => (option.Label, string.IsNullOrEmpty(option.LogoUrl) ? null : ToUrl(option.LogoUrl), option.Icon))
+            .Select(option => (option.Label, option.LogoUrls.Select(ToUrl).ToList(), option.Icon))
             .ToList();
         var shopLinks = (await Catalog.SectionsAsync()).Select(section => (section.Name, ToUrl(StoreUrls.Section(section.Slug)))).Prepend((AllProductsLabel, ToUrl(StoreUrls.AllProducts))).ToList();
         var helpLinks = shared.Many(SitePlacements.HelpLink).Select(link => (link.Title, ToUrl(link.ActionUrl))).ToList();

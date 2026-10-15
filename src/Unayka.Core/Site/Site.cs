@@ -246,7 +246,11 @@ public sealed class AdminSite(IDbContextFactory<UnaykaDbContext> factory, IAudit
             errors.Add(InvalidLabel);
         }
 
-        AddUrlError(errors, form.LogoUrl);
+        foreach (var logoUrl in PaymentLogos.Split(form.LogoUrl))
+        {
+            AddUrlError(errors, logoUrl);
+        }
+
         AddIconError(errors, form.Icon);
         if (errors.Count > 0)
         {
@@ -261,7 +265,7 @@ public sealed class AdminSite(IDbContextFactory<UnaykaDbContext> factory, IAudit
         }
 
         option.Label = form.Label.Trim();
-        option.LogoUrl = Clean(form.LogoUrl);
+        option.LogoUrl = Clean(string.Join(' ', PaymentLogos.Split(form.LogoUrl)));
         option.Icon = form.Icon.Trim();
         option.Provider = form.Provider.Trim();
         option.ProviderCode = Clean(form.ProviderCode);

@@ -69,7 +69,7 @@
     private sealed record ProviderStyle(string Label, string Icon, string CssClass);
 
     private const string ButtonBase = "flex min-h-14 w-full items-center justify-center gap-3 rounded-full px-6 text-base font-medium transition focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 ";
-    private const string GoogleButton = ButtonBase + "border border-brand-google-border bg-brand-google text-brand-google-text hover:bg-surface-alt";
+    private const string GoogleButton = ButtonBase + "border border-brand-google-border bg-brand-google text-brand-google-text hover:bg-brand-google-hover";
     private const string FacebookButton = ButtonBase + "bg-brand-facebook text-brand-facebook-text hover:opacity-90";
 
     private static readonly LoginTexts Texts = new(

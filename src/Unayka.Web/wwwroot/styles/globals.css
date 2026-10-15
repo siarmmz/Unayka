@@ -16,9 +16,13 @@
   --color-warning: #a65f00;
   --color-warning-soft: #fdf0d8;
   --color-danger: #b3261e;
-  --color-brand-google: #ffffff;
-  --color-brand-google-text: #1f1f1f;
-  --color-brand-google-border: #747775;
+  --color-price: #1e7a3c;
+  --color-discount: #d9381e;
+  --color-discount-text: #fffdf9;
+  --color-brand-google: #fbbc05;
+  --color-brand-google-hover: #f29900;
+  --color-brand-google-text: #231f1c;
+  --color-brand-google-border: #e8a200;
   --color-google-blue: #4285f4;
   --color-google-red: #ea4335;
   --color-google-yellow: #fbbc05;

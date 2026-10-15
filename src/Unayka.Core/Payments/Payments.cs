@@ -78,7 +78,14 @@ public sealed class PaymentOption
 }
 
 /// <summary>Payment option as shown to customers and cashiers.</summary>
-public sealed record PaymentOptionView(PaymentMethod Method, string Label, string? LogoUrl, string Icon);
+public sealed record PaymentOptionView(PaymentMethod Method, string Label, IReadOnlyList<string> LogoUrls, string Icon);
+
+/// <summary>Reads the space separated logo URLs stored on a payment option.</summary>
+public static class PaymentLogos
+{
+    public static IReadOnlyList<string> Split(string? logoUrl) =>
+        string.IsNullOrWhiteSpace(logoUrl) ? [] : logoUrl.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+}
 
 /// <summary>Payment request sent to the provider. Reference is unique per attempt; ReturnUrl is where the customer comes back to.</summary>
 public sealed record PaymentRequest(string Reference, long AmountMinor, string Description, string? ProviderCode, string? ReturnUrl);
@@ -297,13 +304,15 @@ public sealed class PaymentService(
     }
 
     private async Task<IReadOnlyList<PaymentOptionView>> OptionsAsync(
-        System.Linq.Expressions.Expression<Func<PaymentOption, bool>> channel, CancellationToken cancellationToken) =>
-        await database.PaymentOptions.AsNoTracking()
+        System.Linq.Expressions.Expression<Func<PaymentOption, bool>> channel, CancellationToken cancellationToken)
+    {
+        var options = await database.PaymentOptions.AsNoTracking()
             .Where(option => option.IsActive)
             .Where(channel)
             .OrderBy(option => option.SortOrder)
-            .Select(option => new PaymentOptionView(option.Method, option.Label, option.LogoUrl, option.Icon))
             .ToListAsync(cancellationToken);
+        return options.Select(option => new PaymentOptionView(option.Method, option.Label, PaymentLogos.Split(option.LogoUrl), option.Icon)).ToList();
+    }
 
     private Task<Order?> LoadOrderAsync(string orderNumber, CancellationToken cancellationToken) =>
         database.Orders
