@@ -63,6 +63,11 @@
     -webkit-tap-highlight-color: transparent;
   }
 
+  img {
+    @apply select-none;
+    -webkit-user-drag: none;
+  }
+
   h1,
   h2,
   h3,

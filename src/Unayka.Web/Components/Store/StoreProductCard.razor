@@ -17,11 +17,11 @@
         <div class="mt-4 space-y-1">
             <p class="text-xs uppercase tracking-widest text-muted">@Text(Model.CategoryName)</p>
             <h3 class="font-serif text-xl text-accent-strong transition group-hover:text-accent">@Text(Model.Name)</h3>
-            <div class="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-                <span class="font-serif text-2xl font-bold text-price">@Text(_price)</span>
+            <p class="font-serif text-2xl font-bold text-price">@Text(_price)</p>
+            <div class="flex min-h-7 items-center gap-2">
                 @if (_comparePrice is not null)
                 {
-                    <span class="text-base text-muted line-through">@Text(_comparePrice)</span>
+                    <span class="text-sm text-muted line-through">@Text(_comparePrice)</span>
                     <span class="rounded-full bg-discount px-2.5 py-0.5 text-sm font-bold text-discount-text">@Text(_discount)</span>
                 }
             </div>

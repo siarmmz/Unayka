@@ -100,7 +100,7 @@ Numbered list, one line per file as "N. path - what it does", sorted by path; th
 96. src/Unayka.Web/Program.cs - app startup, loads .env first, validates configuration, feature service lines (AddUnayka*), database migrate (SQLite) or create (Postgres) and seed, security pipeline, feature endpoint lines (Map*Endpoints), Razor components
 97. src/Unayka.Web/Unayka.Web.csproj - Web project (Blazor only)
 98. src/Unayka.Web/wwwroot/images/pay/ - M-Pesa, e-Mola and mKesh logos referenced by payment options in the database
-99. src/Unayka.Web/wwwroot/scripts/carousel.js - hero swipe, arrows and autoplay, endless unayka-rail (static when every item fits), unayka-fade one at a time crossfade, unayka-collapse and unayka-share elements
+99. src/Unayka.Web/wwwroot/scripts/carousel.js - hero swipe, arrows and autoplay, endless unayka-rail (static when every item fits), unayka-fade one at a time crossfade, unayka-collapse and unayka-share elements, blocks dragging images
 100. src/Unayka.Web/wwwroot/styles/app.css - compiled Tailwind output of globals.css, regenerated with the Tailwind CLI and never edited by hand
 101. src/Unayka.Web/wwwroot/styles/globals.css - Tailwind entry with semantic color tokens, fonts, base layer and button utilities with explicit hover, active and disabled states
 102. TASKS.md - open work only (In progress, Next, On hold)

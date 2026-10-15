@@ -367,3 +367,9 @@ define("unayka-rail", UnaykaRail);
 define("unayka-fade", UnaykaFade);
 define("unayka-collapse", UnaykaCollapse);
 define("unayka-share", UnaykaShare);
+
+document.addEventListener("dragstart", event => {
+    if (event.target instanceof HTMLImageElement) {
+        event.preventDefault();
+    }
+});
