@@ -5,7 +5,6 @@ obj/
 *.user
 
 .env
-src/Unayka.Web/wwwroot/styles/app.css
 /data/
 /src/Unayka.Web/data/
 

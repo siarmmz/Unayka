@@ -33,7 +33,7 @@ Unayka/
       .env.example
       .env                     (ignored by Git)
       wwwroot/styles/globals.css
-      wwwroot/styles/app.css   (generated, ignored by Git)
+      wwwroot/styles/app.css   (generated, versioned)
     Unayka.Core.Test/
     Unayka.Web.Test/
 ```
