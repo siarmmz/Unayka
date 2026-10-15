@@ -105,6 +105,8 @@
     private const int FeaturedCount = 10;
     private const int LatestCount = 10;
     private const int SectionItemCount = 10;
+    private const int RowCapacity = 5;
+    private const int MinimumOverflowRowCount = 2;
     private const string PlainSection = "";
     private const string TintedSection = "bg-surface-alt";
     private const string ChipClass = "inline-flex min-h-11 shrink-0 items-center rounded-full border border-border bg-surface px-5 text-base text-accent-strong transition hover:border-accent";
@@ -155,7 +157,7 @@
             if (items.Count > 0)
             {
                 var sectionClass = sectionRows.Count % 2 == 0 ? TintedSection : PlainSection;
-                sectionRows.Add(new SectionRows(sectionClass, section.Name, section.Description, ToUrl(StoreUrls.Section(section.Slug)), SplitInTwoRows(items)));
+                sectionRows.Add(new SectionRows(sectionClass, section.Name, section.Description, ToUrl(StoreUrls.Section(section.Slug)), ArrangeIntoRows(items)));
             }
         }
 
@@ -165,11 +167,15 @@
             .ToList();
     }
 
-    private static List<IReadOnlyList<ProductCardModel>> SplitInTwoRows(IReadOnlyList<ProductCardModel> items)
+    private static List<IReadOnlyList<ProductCardModel>> ArrangeIntoRows(IReadOnlyList<ProductCardModel> items)
     {
-        var firstRowCount = (items.Count + 1) / 2;
-        List<IReadOnlyList<ProductCardModel>> rows = [items.Take(firstRowCount).ToList(), items.Skip(firstRowCount).ToList()];
-        return rows.Where(row => row.Count > 0).ToList();
+        var overflowCount = items.Count - RowCapacity;
+        if (overflowCount < MinimumOverflowRowCount)
+        {
+            return [items.ToList()];
+        }
+
+        return [items.Take(RowCapacity).ToList(), items.Skip(RowCapacity).ToList()];
     }
 
     private static string CountLabel(int count) => count == 1 ? "1 produto" : $"{count} produtos";
